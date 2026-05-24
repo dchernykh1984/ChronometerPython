@@ -39,7 +39,7 @@ _N_SLOTS = 5
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("Chronometer (pulse-sports.ru)")
+        self.setWindowTitle("Chronometer")
         self._results_file: str = ""
         self._group_start_file: str = ""
         self._show_time: bool = False
