@@ -447,8 +447,9 @@ class MainWindow(QMainWindow):
             return
         t = get_current_time(summer_time=self._chk_summer_time.isChecked())
         time_str = t + "#DSQ"
-        self._write_to_finish(number, time_str)
-        self._edit_dsq.clear()
+        ok = self._write_to_finish(number, time_str)
+        if ok:
+            self._edit_dsq.clear()
         self._update_crosses()
 
     def _on_second_user_toggled(self, checked: bool) -> None:
@@ -473,7 +474,9 @@ class MainWindow(QMainWindow):
         number_0 = self._number_edits[0].text()
         time_0 = self._time_edits[0].text()
         if number_0 or time_0:
-            self._write_to_finish(number_0, time_0)
+            ok = self._write_to_finish(number_0, time_0)
+            if not ok:
+                return
 
         for i in range(_N_SLOTS - 1):
             self._number_edits[i].setText(self._number_edits[i + 1].text())
