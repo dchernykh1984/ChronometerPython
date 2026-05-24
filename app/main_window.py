@@ -299,7 +299,7 @@ class MainWindow(QMainWindow):
         if self._chk_disable_backup.isChecked():
             return
         ts = int(time.time())
-        path = f"temp/stc{ts}.txt"
+        path = str(Path("temp") / f"stc{ts}.txt")
         log_items = [self._log.item(i).text() for i in range(self._log.count())]
         slots = [
             (self._number_edits[i].text(), self._time_edits[i].text())

@@ -140,10 +140,10 @@ def load_config(path: str) -> tuple[list[str], str, str]:
         if lines[i] == "configFiles":
             i += 1
             if i < len(lines):
-                results_file = lines[i]
+                results_file = lines[i].replace("\\", "/")
                 i += 1
             if i < len(lines):
-                group_start_file = lines[i]
+                group_start_file = lines[i].replace("\\", "/")
             break
         groups.append(lines[i])
         i += 1
