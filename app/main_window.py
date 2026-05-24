@@ -88,7 +88,6 @@ class MainWindow(QMainWindow):
             slots_layout.addWidget(num_edit, row, 1)
 
             time_edit = QLineEdit()
-            time_edit.setReadOnly(True)
             time_edit.setMinimumWidth(200)
             self._time_edits.append(time_edit)
             slots_layout.addWidget(time_edit, row, 2)
@@ -155,20 +154,22 @@ class MainWindow(QMainWindow):
 
         # Group start section
         grp_box = QGroupBox("Group start")
-        grp_layout = QHBoxLayout(grp_box)
+        grp_layout = QVBoxLayout(grp_box)
         self._combo_group = QComboBox()
         self._combo_group.setEditable(True)
         grp_layout.addWidget(self._combo_group)
+        grp_btn_row = QHBoxLayout()
         self._edit_group_time = QLineEdit()
         self._edit_group_time.setReadOnly(True)
         self._edit_group_time.setMinimumWidth(180)
-        grp_layout.addWidget(self._edit_group_time)
+        grp_btn_row.addWidget(self._edit_group_time)
         self._btn_start_group = QPushButton("Start")
         self._btn_start_group.clicked.connect(self._on_start_group)
-        grp_layout.addWidget(self._btn_start_group)
+        grp_btn_row.addWidget(self._btn_start_group)
         self._btn_save_group = QPushButton("Save group")
         self._btn_save_group.clicked.connect(self._on_save_group)
-        grp_layout.addWidget(self._btn_save_group)
+        grp_btn_row.addWidget(self._btn_save_group)
+        grp_layout.addLayout(grp_btn_row)
         right.addWidget(grp_box)
 
         # DSQ section
