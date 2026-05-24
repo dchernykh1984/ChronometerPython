@@ -392,6 +392,7 @@ class MainWindow(QMainWindow):
                 "Set the path in the Files section before saving.",
             )
             return
+        all_ok = True
         for i in range(_N_SLOTS):
             number = self._number_edits[i].text()
             time_str = self._time_edits[i].text()
@@ -400,7 +401,10 @@ class MainWindow(QMainWindow):
                 if ok:
                     self._number_edits[i].clear()
                     self._time_edits[i].clear()
-        self._next_number.clear()
+                else:
+                    all_ok = False
+        if all_ok:
+            self._next_number.clear()
         self._save_backup_if_enabled()
         self._update_crosses()
 
@@ -470,13 +474,13 @@ class MainWindow(QMainWindow):
         self._save_backup_if_enabled()
         self._update_crosses()
 
-    def _shift_fields_up(self, get_next_competitor: bool) -> None:
+    def _shift_fields_up(self, get_next_competitor: bool) -> bool:
         number_0 = self._number_edits[0].text()
         time_0 = self._time_edits[0].text()
         if number_0 or time_0:
             ok = self._write_to_finish(number_0, time_0)
             if not ok:
-                return
+                return False
 
         for i in range(_N_SLOTS - 1):
             self._number_edits[i].setText(self._number_edits[i + 1].text())
@@ -493,6 +497,7 @@ class MainWindow(QMainWindow):
             self._time_edits[_N_SLOTS - 1].clear()
 
         self._update_crosses()
+        return True
 
     def _check_possibility_to_empty_upper(self) -> None:
         focused_idx = None
@@ -584,9 +589,8 @@ class MainWindow(QMainWindow):
             elif obj is self._next_number:
                 if key == Qt.Key.Key_Return or key == Qt.Key.Key_Enter:
                     if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                        self._shift_fields_up(True)
-                        # override action to "nextStage" (Ctrl+Enter)
-                        if _N_SLOTS > 0:
+                        shifted = self._shift_fields_up(True)
+                        if shifted and _N_SLOTS > 0:
                             t = get_current_time(
                                 summer_time=self._chk_summer_time.isChecked()
                             )
