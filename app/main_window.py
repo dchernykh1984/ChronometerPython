@@ -234,7 +234,7 @@ class MainWindow(QMainWindow):
         file_layout.addWidget(self._chk_disable_backup, 3, 0, 1, 3)
         self._chk_summer_time = QCheckBox("Summer time (+1h)")
         file_layout.addWidget(self._chk_summer_time, 4, 0, 1, 3)
-        btn_load_config = QPushButton("Load groups list")
+        btn_load_config = QPushButton("Load race config")
         btn_load_config.clicked.connect(self._on_load_config)
         file_layout.addWidget(btn_load_config, 5, 0, 1, 3)
         right.addWidget(file_box)
@@ -279,11 +279,15 @@ class MainWindow(QMainWindow):
         if not number and not time_str:
             return False
         result_line = f"{number}#{time_str}#"
-        ok = append_to_finish_file(self._results_path(), number, time_str)
+        path = self._results_path()
+        ok = append_to_finish_file(path, number, time_str)
         if not ok:
-            QMessageBox.warning(
-                self, "File error", f"Cannot open results file: {self._results_path()}"
+            msg = (
+                "Results file path is not configured."
+                if not path
+                else f"Cannot open results file:\n{path}"
             )
+            QMessageBox.warning(self, "File error", msg)
             return False
         self._log.addItem(result_line)
         self._log.scrollToBottom()
@@ -374,6 +378,18 @@ class MainWindow(QMainWindow):
         self._save_backup_if_enabled()
 
     def _on_save_all_and_empty(self) -> None:
+        has_data = any(
+            self._number_edits[i].text() or self._time_edits[i].text()
+            for i in range(_N_SLOTS)
+        )
+        if has_data and not self._results_path():
+            QMessageBox.warning(
+                self,
+                "File error",
+                "Results file path is not configured.\n"
+                "Set the path in the Files section before saving.",
+            )
+            return
         for i in range(_N_SLOTS):
             number = self._number_edits[i].text()
             time_str = self._time_edits[i].text()
