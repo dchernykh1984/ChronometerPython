@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -40,6 +42,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Chronometer")
+        self.setWindowIcon(QIcon(str(Path(__file__).parent / "app.ico")))
         self._results_file: str = ""
         self._group_start_file: str = ""
         self._show_time: bool = False
