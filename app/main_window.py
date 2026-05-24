@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
 from app.models import (
     append_to_finish_file,
     append_to_group_file,
-    format_elapsed,
     get_current_time,
     get_number_of_crosses,
     load_config,
@@ -43,7 +42,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Chronometer (pulse-sports.ru)")
         self._results_file: str = ""
         self._group_start_file: str = ""
-        self._start_epoch: float = time.time()
         self._show_time: bool = False
         self._setup_ui()
         self._load_config(_CONFIG_PATH)
@@ -146,6 +144,7 @@ class MainWindow(QMainWindow):
         self._lbl_finish_all.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._lbl_finish_all.setVisible(False)
         slots_layout.addWidget(self._lbl_finish_all, _N_SLOTS + 5, 0, 1, 6)
+        slots_layout.setRowStretch(_N_SLOTS + 6, 1)
 
         root.addWidget(slots_box)
 
@@ -333,8 +332,8 @@ class MainWindow(QMainWindow):
 
     def _on_timer_tick(self) -> None:
         if self._show_time:
-            elapsed = time.time() - self._start_epoch
-            self._lbl_timer.setText(format_elapsed(elapsed))
+            summer = self._chk_summer_time.isChecked()
+            self._lbl_timer.setText(get_current_time(accuracy=0, summer_time=summer))
         else:
             ms = int((time.time() - int(time.time())) * 1000)
             if ms == 0:
