@@ -247,6 +247,7 @@ class MainWindow(QMainWindow):
         right.addWidget(self._log)
 
         root.addLayout(right)
+        self._chk_freeze.setChecked(True)
 
     # ------------------------------------------------------------------
     # helpers
