@@ -392,7 +392,6 @@ class MainWindow(QMainWindow):
                 "Set the path in the Files section before saving.",
             )
             return
-        all_ok = True
         for i in range(_N_SLOTS):
             number = self._number_edits[i].text()
             time_str = self._time_edits[i].text()
@@ -401,10 +400,6 @@ class MainWindow(QMainWindow):
                 if ok:
                     self._number_edits[i].clear()
                     self._time_edits[i].clear()
-                else:
-                    all_ok = False
-        if all_ok:
-            self._next_number.clear()
         self._save_backup_if_enabled()
         self._update_crosses()
 
