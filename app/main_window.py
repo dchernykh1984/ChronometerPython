@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
         self._results_file: str = ""
         self._group_start_file: str = ""
         self._show_time: bool = False
+        self._focused_slot: int = 0
         self._setup_ui()
         self._load_config(_CONFIG_PATH)
         self._start_timer()
@@ -162,7 +163,7 @@ class MainWindow(QMainWindow):
         grp_layout.addWidget(self._combo_group)
         grp_btn_row = QHBoxLayout()
         self._edit_group_time = QLineEdit()
-        self._edit_group_time.setReadOnly(True)
+        self._edit_group_time.setText("0 00:00:00.000")
         self._edit_group_time.setMinimumWidth(180)
         grp_btn_row.addWidget(self._edit_group_time)
         self._btn_start_group = QPushButton("Start")
@@ -496,15 +497,11 @@ class MainWindow(QMainWindow):
         return True
 
     def _check_possibility_to_empty_upper(self) -> None:
-        focused_idx = None
-        for i, edit in enumerate(self._number_edits):
-            if edit.hasFocus():
-                focused_idx = i
-                break
-        if focused_idx is None:
-            focused_idx = 0
-        if focused_idx != 0 and self._time_edits[0].text():
-            self._shift_fields_up(get_next_competitor=False)
+        if self._focused_slot != 0 and self._time_edits[0].text():
+            shifted = self._shift_fields_up(get_next_competitor=False)
+            if shifted:
+                self._focused_slot = max(0, self._focused_slot - 1)
+                self._number_edits[self._focused_slot].setFocus()
 
     def _on_select_results_file(self) -> None:
         if self._chk_freeze.isChecked():
@@ -556,6 +553,11 @@ class MainWindow(QMainWindow):
 
     def eventFilter(self, obj, event) -> bool:  # noqa: N802, C901
         from PySide6.QtCore import QEvent
+
+        if event.type() == QEvent.Type.FocusIn:
+            if obj in self._number_edits:
+                self._focused_slot = self._number_edits.index(obj)
+            return super().eventFilter(obj, event)
 
         if event.type() == QEvent.Type.KeyPress:
             key = event.key()
