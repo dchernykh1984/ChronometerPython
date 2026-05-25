@@ -119,18 +119,18 @@ class MainWindow(QMainWindow):
 
         # action buttons
         btn_row = _N_SLOTS + 2
-        self._btn_finish_all = QPushButton("Finish ALL empty")
-        self._btn_finish_all.clicked.connect(self._on_finish_all)
-        slots_layout.addWidget(self._btn_finish_all, btn_row, 0, 1, 3)
+        self._btn_save_all_empty = QPushButton("Save All and Clear")
+        self._btn_save_all_empty.clicked.connect(self._on_save_all_and_empty)
+        slots_layout.addWidget(self._btn_save_all_empty, btn_row, 0, 1, 3)
 
         self._btn_save_shift = QPushButton("Save+Shift")
         self._btn_save_shift.clicked.connect(self._on_save_and_shift)
         slots_layout.addWidget(self._btn_save_shift, btn_row, 3, 1, 3)
 
         btn_row2 = _N_SLOTS + 3
-        self._btn_save_all_empty = QPushButton("Save all & Clear")
-        self._btn_save_all_empty.clicked.connect(self._on_save_all_and_empty)
-        slots_layout.addWidget(self._btn_save_all_empty, btn_row2, 0, 1, 3)
+        self._btn_finish_all = QPushButton("Finish ALL empty")
+        self._btn_finish_all.clicked.connect(self._on_finish_all)
+        slots_layout.addWidget(self._btn_finish_all, btn_row2, 0, 1, 3)
 
         self._btn_empty_all = QPushButton("Clear all")
         self._btn_empty_all.clicked.connect(self._on_empty_all)
