@@ -3,7 +3,72 @@
 from __future__ import annotations
 
 import time
+import uuid
 from pathlib import Path
+
+# Persisted HTTP/site settings for pushing timing data to the cycling site. Kept in a
+# separate key=value file so it never disturbs the positional groupsList.txt parsing.
+# ``device_id`` is the stable per-machine id (generated once); ``rev_finish`` and
+# ``rev_group`` are the per-stream counters the server uses to reject a stale overwrite.
+HTTP_CONFIG_PATH = "data/http_config.txt"
+_HTTP_CONFIG_DEFAULTS: dict[str, str] = {
+    "site_url": "",
+    "token": "",
+    "device_id": "",
+    "point_number": "0",
+    "rev_finish": "0",
+    "rev_group": "0",
+}
+
+
+def load_http_config(path: str = HTTP_CONFIG_PATH) -> dict[str, str]:
+    """Load the HTTP config; generate and persist a device_id on first use."""
+    cfg = dict(_HTTP_CONFIG_DEFAULTS)
+    p = Path(path)
+    if p.exists():
+        lines: list[str] = []
+        for enc in ("utf-8", "cp1251", "latin-1"):
+            try:
+                lines = p.read_text(encoding=enc).splitlines()
+                break
+            except UnicodeDecodeError:
+                continue
+        for ln in lines:
+            if "=" in ln:
+                key, _, value = ln.partition("=")
+                key = key.strip()
+                if key in cfg:
+                    cfg[key] = value.strip()
+    if not cfg["device_id"]:
+        cfg["device_id"] = str(uuid.uuid4())
+        save_http_config(cfg, path)
+    return cfg
+
+
+def save_http_config(cfg: dict[str, str], path: str = HTTP_CONFIG_PATH) -> bool:
+    """Persist the HTTP config (only the known keys, as key=value lines)."""
+    try:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with Path(path).open("w", encoding="utf-8") as f:
+            for key in _HTTP_CONFIG_DEFAULTS:
+                f.write(f"{key}={cfg.get(key, _HTTP_CONFIG_DEFAULTS[key])}\n")
+        return True
+    except OSError:
+        return False
+
+
+def read_file_lines(path: str) -> list[str]:
+    """Read non-empty lines from a results/groups file; [] if missing."""
+    p = Path(path)
+    if not path or not p.exists():
+        return []
+    for enc in ("utf-8", "cp1251", "latin-1"):
+        try:
+            return [ln for ln in p.read_text(encoding=enc).splitlines() if ln.strip()]
+        except UnicodeDecodeError:
+            continue
+    return []
+
 
 # ---------------------------------------------------------------------------
 # time helpers
