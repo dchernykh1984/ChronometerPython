@@ -274,3 +274,57 @@ class TestGetNumberOfCrosses:
     def test_partial_match_not_counted(self) -> None:
         log = ["12#T1#nextLap#"]
         assert get_number_of_crosses("1", log, []) == 0
+
+
+# ---------------------------------------------------------------------------
+# HTTP config + file reading (site upload support)
+# ---------------------------------------------------------------------------
+
+
+class TestHttpConfig:
+    def test_generates_and_persists_device_id(self, tmp_path) -> None:
+        from app.models import load_http_config
+
+        p = tmp_path / "http.txt"
+        cfg = load_http_config(str(p))
+        assert cfg["device_id"]
+        assert p.exists()
+        # reloading returns the same device_id (persisted, not regenerated)
+        assert load_http_config(str(p))["device_id"] == cfg["device_id"]
+
+    def test_round_trips_known_keys(self, tmp_path) -> None:
+        from app.models import load_http_config, save_http_config
+
+        p = tmp_path / "http.txt"
+        cfg = load_http_config(str(p))
+        cfg.update(site_url="https://x", token="t", point_number="2", rev_finish="7")
+        save_http_config(cfg, str(p))
+        got = load_http_config(str(p))
+        assert got["site_url"] == "https://x"
+        assert got["token"] == "t"
+        assert got["point_number"] == "2"
+        assert got["rev_finish"] == "7"
+
+    def test_ignores_unknown_keys(self, tmp_path) -> None:
+        from app.models import load_http_config
+
+        p = tmp_path / "http.txt"
+        p.write_text("device_id=abc\nbogus=ignored\n", encoding="utf-8")
+        cfg = load_http_config(str(p))
+        assert cfg["device_id"] == "abc"
+        assert "bogus" not in cfg
+
+
+class TestReadFileLines:
+    def test_skips_blank_lines(self, tmp_path) -> None:
+        from app.models import read_file_lines
+
+        p = tmp_path / "r.txt"
+        p.write_text("1#0 0:0:1#\n\n2#0 0:0:2#\n", encoding="utf-8")
+        assert read_file_lines(str(p)) == ["1#0 0:0:1#", "2#0 0:0:2#"]
+
+    def test_missing_or_empty_path_returns_empty(self, tmp_path) -> None:
+        from app.models import read_file_lines
+
+        assert read_file_lines("") == []
+        assert read_file_lines(str(tmp_path / "nope.txt")) == []

@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -25,17 +25,43 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.http_io import upload_finish_times, upload_group_times, upload_remote_points
 from app.models import (
     append_to_finish_file,
     append_to_group_file,
     get_current_time,
     get_number_of_crosses,
     load_config,
+    load_http_config,
+    read_file_lines,
     save_backup,
+    save_http_config,
 )
 
 _CONFIG_PATH = "data/groupsList.txt"
 _N_SLOTS = 5
+
+
+class _UploadWorker(QThread):
+    """Runs one timing upload off the UI thread so a slow network never blocks timing.
+
+    Emits ``log`` (marshalled to the main thread) with a short result so the action log
+    can show success/failure; any network error is reported, never raised into the UI.
+    """
+
+    log = Signal(str)
+
+    def __init__(self, func, *args) -> None:
+        super().__init__()
+        self._func = func
+        self._args = args
+
+    def run(self) -> None:
+        try:
+            count = self._func(*self._args)
+            self.log.emit(f"  site: uploaded {count} item(s)")
+        except Exception as exc:  # network errors must not crash timing
+            self.log.emit(f"  site upload error: {exc}")
 
 
 class MainWindow(QMainWindow):
@@ -47,8 +73,18 @@ class MainWindow(QMainWindow):
         self._group_start_file: str = ""
         self._show_time: bool = False
         self._focused_slot: int = 0
+        # Site-upload state: settings persisted in a key=value file; running upload
+        # threads are kept alive until they finish (a GC'd running QThread would crash).
+        self._http_cfg: dict[str, str] = load_http_config()
+        self._upload_workers: list[_UploadWorker] = []
         self._setup_ui()
         self._load_config(_CONFIG_PATH)
+        self._apply_http_config_to_ui()
+        # Debounce finish/remote uploads: a batch save writes several lines, but we push
+        # the resulting file snapshot once, shortly after the last write.
+        self._finish_upload_timer = QTimer(self)
+        self._finish_upload_timer.setSingleShot(True)
+        self._finish_upload_timer.timeout.connect(self._upload_finish_stream)
         self._start_timer()
 
     # ------------------------------------------------------------------
@@ -242,6 +278,40 @@ class MainWindow(QMainWindow):
         file_layout.addWidget(btn_load_config, 5, 0, 1, 3)
         right.addWidget(file_box)
 
+        # HTTP (site upload) section
+        http_box = QGroupBox("Site upload (HTTP)")
+        http_layout = QGridLayout(http_box)
+        http_layout.addWidget(QLabel("Site URL:"), 0, 0)
+        self._edit_site_url = QLineEdit()
+        self._edit_site_url.textChanged.connect(
+            lambda t: self._save_http_field("site_url", t)
+        )
+        http_layout.addWidget(self._edit_site_url, 0, 1, 1, 2)
+        http_layout.addWidget(QLabel("Token:"), 1, 0)
+        self._edit_token = QLineEdit()
+        self._edit_token.setEchoMode(QLineEdit.EchoMode.Password)
+        self._edit_token.textChanged.connect(
+            lambda t: self._save_http_field("token", t)
+        )
+        http_layout.addWidget(self._edit_token, 1, 1, 1, 2)
+        http_layout.addWidget(QLabel("Device ID:"), 2, 0)
+        self._edit_device_id = QLineEdit()
+        self._edit_device_id.textChanged.connect(
+            lambda t: self._save_http_field("device_id", t)
+        )
+        http_layout.addWidget(self._edit_device_id, 2, 1)
+        btn_gen_device = QPushButton("Generate")
+        btn_gen_device.clicked.connect(self._on_generate_device_id)
+        http_layout.addWidget(btn_gen_device, 2, 2)
+        http_layout.addWidget(QLabel("Point number (0 = finish):"), 3, 0, 1, 2)
+        self._spin_point = QSpinBox()
+        self._spin_point.setRange(0, 10000)
+        self._spin_point.valueChanged.connect(
+            lambda v: self._save_http_field("point_number", str(v))
+        )
+        http_layout.addWidget(self._spin_point, 3, 2)
+        right.addWidget(http_box)
+
         # Action log
         right.addWidget(QLabel("Action log:"))
         self._log = QListWidget()
@@ -295,6 +365,7 @@ class MainWindow(QMainWindow):
             return False
         self._log.addItem(result_line)
         self._log.scrollToBottom()
+        self._schedule_finish_upload()
         return True
 
     def _save_backup_if_enabled(self) -> None:
@@ -330,6 +401,88 @@ class MainWindow(QMainWindow):
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._on_timer_tick)
         self._timer.start(1)
+
+    # ------------------------------------------------------------------
+    # site upload (HTTP)
+    # ------------------------------------------------------------------
+
+    def _append_log(self, text: str) -> None:
+        self._log.addItem(text)
+        self._log.scrollToBottom()
+
+    def _apply_http_config_to_ui(self) -> None:
+        self._edit_site_url.setText(self._http_cfg.get("site_url", ""))
+        self._edit_token.setText(self._http_cfg.get("token", ""))
+        self._edit_device_id.setText(self._http_cfg.get("device_id", ""))
+        try:
+            self._spin_point.setValue(int(self._http_cfg.get("point_number", "0")))
+        except ValueError:
+            self._spin_point.setValue(0)
+
+    def _save_http_field(self, key: str, value: str) -> None:
+        self._http_cfg[key] = value.strip()
+        save_http_config(self._http_cfg)
+
+    def _on_generate_device_id(self) -> None:
+        import uuid
+
+        self._edit_device_id.setText(str(uuid.uuid4()))  # textChanged persists it
+
+    def _next_revision(self, key: str) -> int:
+        """Increment and persist a per-stream revision counter; return the new value."""
+        try:
+            rev = int(self._http_cfg.get(key, "0")) + 1
+        except ValueError:
+            rev = 1
+        self._http_cfg[key] = str(rev)
+        save_http_config(self._http_cfg)
+        return rev
+
+    def _start_upload(self, func, *args) -> None:
+        worker = _UploadWorker(func, *args)
+        worker.log.connect(self._append_log)
+        worker.finished.connect(
+            lambda w=worker: (
+                self._upload_workers.remove(w) if w in self._upload_workers else None
+            )
+        )
+        self._upload_workers.append(worker)
+        worker.start()
+
+    def _schedule_finish_upload(self) -> None:
+        # Collapse a batch of writes into a single upload shortly after the last one.
+        self._finish_upload_timer.start(400)
+
+    def _upload_finish_stream(self) -> None:
+        """Push results-file snapshot: point 0 -> finish endpoint, else remote point."""
+        site = self._http_cfg.get("site_url", "")
+        token = self._http_cfg.get("token", "")
+        device = self._http_cfg.get("device_id", "")
+        if not site or not token or not device:
+            return
+        items = read_file_lines(self._results_path())
+        rev = self._next_revision("rev_finish")
+        try:
+            point = int(self._http_cfg.get("point_number", "0"))
+        except ValueError:
+            point = 0
+        if point == 0:
+            self._start_upload(upload_finish_times, site, token, device, items, rev)
+        else:
+            self._start_upload(
+                upload_remote_points, site, token, device, point, items, rev
+            )
+
+    def _upload_group_stream(self) -> None:
+        """Push the current groups-file snapshot to the group-times endpoint."""
+        site = self._http_cfg.get("site_url", "")
+        token = self._http_cfg.get("token", "")
+        device = self._http_cfg.get("device_id", "")
+        if not site or not token or not device:
+            return
+        items = read_file_lines(self._groups_path())
+        rev = self._next_revision("rev_group")
+        self._start_upload(upload_group_times, site, token, device, items, rev)
 
     # ------------------------------------------------------------------
     # slots
@@ -438,6 +591,7 @@ class MainWindow(QMainWindow):
             return
         self._log.addItem(result_line)
         self._log.scrollToBottom()
+        self._upload_group_stream()
         self._combo_group.removeItem(self._combo_group.currentIndex())
         self._combo_group.setCurrentText("")
         self._edit_group_time.clear()
