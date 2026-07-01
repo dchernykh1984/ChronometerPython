@@ -77,14 +77,19 @@ class MainWindow(QMainWindow):
         # threads are kept alive until they finish (a GC'd running QThread would crash).
         self._http_cfg: dict[str, str] = load_http_config()
         self._upload_workers: list[_UploadWorker] = []
-        self._setup_ui()
-        self._load_config(_CONFIG_PATH)
-        self._apply_http_config_to_ui()
         # Debounce finish/remote uploads: a batch save writes several lines, but we push
         # the resulting file snapshot once, shortly after the last write.
         self._finish_upload_timer = QTimer(self)
         self._finish_upload_timer.setSingleShot(True)
         self._finish_upload_timer.timeout.connect(self._upload_finish_stream)
+        # Debounce config writes: field edits (and initial population) fire textChanged
+        # per keystroke, so persist once shortly after the last change.
+        self._http_save_timer = QTimer(self)
+        self._http_save_timer.setSingleShot(True)
+        self._http_save_timer.timeout.connect(self._flush_http_config)
+        self._setup_ui()
+        self._load_config(_CONFIG_PATH)
+        self._apply_http_config_to_ui()
         self._start_timer()
 
     # ------------------------------------------------------------------
@@ -423,6 +428,9 @@ class MainWindow(QMainWindow):
 
     def _save_http_field(self, key: str, value: str) -> None:
         self._http_cfg[key] = value.strip()
+        self._http_save_timer.start(500)
+
+    def _flush_http_config(self) -> None:
         save_http_config(self._http_cfg)
 
     def _on_generate_device_id(self) -> None:
@@ -712,6 +720,9 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.question(self, "Warning", "Are you sure to exit?")
         if reply == QMessageBox.StandardButton.Yes:
             self._finish_upload_timer.stop()
+            if self._http_save_timer.isActive():
+                self._http_save_timer.stop()
+                save_http_config(self._http_cfg)
             for worker in list(self._upload_workers):
                 try:
                     worker.log.disconnect()
