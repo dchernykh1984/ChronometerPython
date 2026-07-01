@@ -701,6 +701,14 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:  # noqa: N802
         reply = QMessageBox.question(self, "Warning", "Are you sure to exit?")
         if reply == QMessageBox.StandardButton.Yes:
+            self._finish_upload_timer.stop()
+            for worker in list(self._upload_workers):
+                try:
+                    worker.log.disconnect()
+                    worker.finished.disconnect()
+                except RuntimeError:
+                    pass
+                worker.wait(2000)
             event.accept()
         else:
             event.ignore()
