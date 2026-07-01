@@ -723,13 +723,17 @@ class MainWindow(QMainWindow):
             if self._http_save_timer.isActive():
                 self._http_save_timer.stop()
                 save_http_config(self._http_cfg)
+            # Never accept the close while an upload QThread runs: destroying a running
+            # QThread aborts the app. Wait until each finishes -- uploads are bounded by
+            # the 10s urlopen timeout, so this cannot hang indefinitely.
             for worker in list(self._upload_workers):
                 try:
                     worker.log.disconnect()
                     worker.finished.disconnect()
                 except RuntimeError:
                     pass
-                worker.wait(2000)
+                worker.wait()
+            self._upload_workers.clear()
             event.accept()
         else:
             event.ignore()

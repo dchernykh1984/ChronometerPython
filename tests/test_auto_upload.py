@@ -9,6 +9,7 @@ otherwise go unnoticed.
 from __future__ import annotations
 
 import os
+import time
 from unittest.mock import Mock
 
 import pytest
@@ -150,3 +151,32 @@ def test_no_upload_without_credentials(win, tmp_path):
     (tmp_path / "results.txt").write_text("1#0 0:0:1#\n", encoding="utf-8")
     win._upload_finish_stream()
     win._start_upload.assert_not_called()
+
+
+# -- shutdown waits for in-flight uploads ---------------------------------
+
+
+def test_close_waits_for_running_upload(win, monkeypatch):
+    # Regression guard: closeEvent must not accept while an upload thread is still
+    # running (destroying a running QThread aborts the app). The worker runs longer than
+    # the old 2s cap, so a premature accept would leave it running.
+    monkeypatch.setattr(
+        mw.QMessageBox,
+        "question",
+        lambda *a, **k: mw.QMessageBox.StandardButton.Yes,
+    )
+    done: list[bool] = []
+
+    def slow() -> int:
+        time.sleep(2.5)
+        done.append(True)
+        return 0
+
+    win._start_upload(slow)
+    worker = win._upload_workers[0]
+    event = Mock()
+    win.closeEvent(event)
+    assert done == [True]  # closeEvent blocked until the worker finished
+    assert not worker.isRunning()
+    event.accept.assert_called_once()
+    event.ignore.assert_not_called()
