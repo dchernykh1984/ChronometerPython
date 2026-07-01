@@ -191,7 +191,12 @@ class MainWindow(QMainWindow):
         slots_layout.addWidget(self._lbl_finish_all, _N_SLOTS + 5, 0, 1, 6)
         slots_layout.setRowStretch(_N_SLOTS + 6, 1)
 
-        root.addWidget(slots_box)
+        left = QVBoxLayout()
+        left.addWidget(slots_box)
+        left.addWidget(QLabel("Action log:"))
+        self._log = QListWidget()
+        left.addWidget(self._log)
+        root.addLayout(left)
 
         # ---- RIGHT panel ----
         right = QVBoxLayout()
@@ -316,11 +321,6 @@ class MainWindow(QMainWindow):
         )
         http_layout.addWidget(self._spin_point, 3, 2)
         right.addWidget(http_box)
-
-        # Action log
-        right.addWidget(QLabel("Action log:"))
-        self._log = QListWidget()
-        right.addWidget(self._log)
 
         root.addLayout(right)
         self._chk_freeze.setChecked(True)
