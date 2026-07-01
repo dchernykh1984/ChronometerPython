@@ -361,7 +361,9 @@ class MainWindow(QMainWindow):
                 if not path
                 else f"Cannot open results file:\n{path}"
             )
-            QMessageBox.warning(self, "File error", msg)
+            QTimer.singleShot(
+                0, lambda m=msg: QMessageBox.warning(self, "File error", m)
+            )
             return False
         self._log.addItem(result_line)
         self._log.scrollToBottom()
