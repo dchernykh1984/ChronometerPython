@@ -462,17 +462,23 @@ class MainWindow(QMainWindow):
         device = self._http_cfg.get("device_id", "")
         if not site or not token or not device:
             return
-        items = read_file_lines(self._results_path())
+        path = self._results_path()
         rev = self._next_revision("rev_finish")
         try:
             point = int(self._http_cfg.get("point_number", "0"))
         except ValueError:
             point = 0
         if point == 0:
-            self._start_upload(upload_finish_times, site, token, device, items, rev)
+            self._start_upload(
+                lambda: upload_finish_times(
+                    site, token, device, read_file_lines(path), rev
+                )
+            )
         else:
             self._start_upload(
-                upload_remote_points, site, token, device, point, items, rev
+                lambda: upload_remote_points(
+                    site, token, device, point, read_file_lines(path), rev
+                )
             )
 
     def _upload_group_stream(self) -> None:
@@ -482,9 +488,11 @@ class MainWindow(QMainWindow):
         device = self._http_cfg.get("device_id", "")
         if not site or not token or not device:
             return
-        items = read_file_lines(self._groups_path())
+        path = self._groups_path()
         rev = self._next_revision("rev_group")
-        self._start_upload(upload_group_times, site, token, device, items, rev)
+        self._start_upload(
+            lambda: upload_group_times(site, token, device, read_file_lines(path), rev)
+        )
 
     # ------------------------------------------------------------------
     # slots
