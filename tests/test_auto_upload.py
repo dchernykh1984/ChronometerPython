@@ -211,14 +211,19 @@ def test_get_groups_offline_leaves_dropdown_unchanged(win, monkeypatch):
     assert warned  # a popup was shown
 
 
-def test_get_groups_empty_result_leaves_dropdown_unchanged(win, monkeypatch):
+def test_get_groups_empty_result_clears_dropdown(win, monkeypatch):
+    # A successful empty response is a valid "no groups" answer, not a failure: the
+    # dropdown must be cleared so a start with no groups drops old groups.
     win._combo_group.clear()
     win._combo_group.addItem("Keep")
+    warned: list = []
     monkeypatch.setattr(mw, "fetch_groups", lambda site, token: [])
-    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a, **k: None)
+    monkeypatch.setattr(mw.QMessageBox, "information", lambda *a, **k: None)
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a, **k: warned.append(a))
     win._on_get_groups()
     items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
-    assert items == ["Keep"]
+    assert items == []
+    assert not warned  # empty is a success, so no warning popup
 
 
 def test_get_groups_missing_credentials_warns(win, monkeypatch):

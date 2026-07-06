@@ -415,8 +415,10 @@ class MainWindow(QMainWindow):
     def _on_get_groups(self) -> None:
         """Fetch the group list from the site and replace the Group start dropdown.
 
-        On any failure (missing URL/token, offline/timeout, or a bad response) a popup
-        is shown and the dropdown is left exactly as it was.
+        Only a failure (missing URL/token, offline/timeout, or a bad response) leaves
+        the dropdown unchanged. A successful response is applied as-is -- including an
+        empty list, which clears the dropdown so a start with no groups does not keep
+        showing a previous start's groups.
         """
         site = self._http_cfg.get("site_url", "").strip()
         token = self._http_cfg.get("token", "").strip()
@@ -427,11 +429,6 @@ class MainWindow(QMainWindow):
             groups = fetch_groups(site, token)
         except ValueError as exc:
             QMessageBox.warning(self, "Get groups", f"Could not load groups:\n{exc}")
-            return
-        if not groups:
-            QMessageBox.warning(
-                self, "Get groups", "No groups returned. The list was not changed."
-            )
             return
         current = self._combo_group.currentText()
         self._combo_group.clear()
