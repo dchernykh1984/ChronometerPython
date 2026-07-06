@@ -25,7 +25,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.http_io import upload_finish_times, upload_group_times, upload_remote_points
+from app.http_io import (
+    fetch_groups,
+    upload_finish_times,
+    upload_group_times,
+    upload_remote_points,
+)
 from app.models import (
     append_to_finish_file,
     append_to_group_file,
@@ -320,6 +325,9 @@ class MainWindow(QMainWindow):
             lambda v: self._save_http_field("point_number", str(v))
         )
         http_layout.addWidget(self._spin_point, 3, 2)
+        self._btn_get_groups = QPushButton("Get groups")
+        self._btn_get_groups.clicked.connect(self._on_get_groups)
+        http_layout.addWidget(self._btn_get_groups, 4, 0, 1, 3)
         right.addWidget(http_box)
 
         root.addLayout(right)
@@ -403,6 +411,36 @@ class MainWindow(QMainWindow):
             self._edit_results_file.setText(results_file)
         if group_start_file:
             self._edit_groups_file.setText(group_start_file)
+
+    def _on_get_groups(self) -> None:
+        """Fetch the group list from the site and replace the Group start dropdown.
+
+        On any failure (missing URL/token, offline/timeout, or a bad response) a popup
+        is shown and the dropdown is left exactly as it was.
+        """
+        site = self._http_cfg.get("site_url", "").strip()
+        token = self._http_cfg.get("token", "").strip()
+        if not site or not token:
+            QMessageBox.warning(self, "Get groups", "Site URL and Token must be set.")
+            return
+        try:
+            groups = fetch_groups(site, token)
+        except ValueError as exc:
+            QMessageBox.warning(self, "Get groups", f"Could not load groups:\n{exc}")
+            return
+        if not groups:
+            QMessageBox.warning(
+                self, "Get groups", "No groups returned. The list was not changed."
+            )
+            return
+        current = self._combo_group.currentText()
+        self._combo_group.clear()
+        for group in groups:
+            self._combo_group.addItem(group)
+        idx = self._combo_group.findText(current)
+        if idx >= 0:
+            self._combo_group.setCurrentIndex(idx)
+        QMessageBox.information(self, "Get groups", f"Loaded {len(groups)} group(s).")
 
     def _start_timer(self) -> None:
         self._timer = QTimer(self)

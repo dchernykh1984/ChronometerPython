@@ -13,7 +13,42 @@ from __future__ import annotations
 
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
+
+
+def fetch_groups(site_url: str, token: str) -> list[str]:
+    """Fetch the competition's group names from the cycling site.
+
+    Uses the same participants endpoint the start-list tool reads; the chronometer only
+    needs the group names (the ``categories`` list), not their lap counts. The request
+    has a 10s timeout so an offline machine fails fast instead of hanging.
+
+    Raises:
+        ValueError: on HTTP error, network/timeout error, or an invalid JSON response.
+    """
+    url = (
+        site_url.rstrip("/")
+        + "/api/v1/participants/?"
+        + urllib.parse.urlencode({"competition_token": token})
+    )
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:  # noqa: S310
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raise ValueError(f"HTTP {exc.code}: {exc.reason}") from exc
+    except urllib.error.URLError as exc:
+        raise ValueError(f"Connection error: {exc.reason}") from exc
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise ValueError(f"Invalid response: {exc}") from exc
+    groups: list[str] = []
+    seen: set[str] = set()
+    for cat in data.get("categories", []):
+        name = (cat.get("name") or "").strip()
+        if name and name not in seen:
+            seen.add(name)
+            groups.append(name)
+    return groups
 
 
 def _post(url: str, payload: dict) -> int:
