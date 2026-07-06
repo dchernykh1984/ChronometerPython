@@ -180,3 +180,55 @@ def test_close_waits_for_running_upload(win, monkeypatch):
     assert not worker.isRunning()
     event.accept.assert_called_once()
     event.ignore.assert_not_called()
+
+
+# -- Get groups (fetch group list into the dropdown) -----------------------
+
+
+def test_get_groups_replaces_dropdown(win, monkeypatch):
+    win._combo_group.clear()
+    win._combo_group.addItem("Old")
+    monkeypatch.setattr(mw, "fetch_groups", lambda site, token: ["G1", "G2"])
+    monkeypatch.setattr(mw.QMessageBox, "information", lambda *a, **k: None)
+    win._on_get_groups()
+    items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
+    assert items == ["G1", "G2"]
+
+
+def test_get_groups_offline_leaves_dropdown_unchanged(win, monkeypatch):
+    win._combo_group.clear()
+    win._combo_group.addItem("Keep")
+    warned: list = []
+
+    def _boom(site, token):
+        raise ValueError("Connection error: offline")
+
+    monkeypatch.setattr(mw, "fetch_groups", _boom)
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a, **k: warned.append(a))
+    win._on_get_groups()
+    items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
+    assert items == ["Keep"]  # unchanged
+    assert warned  # a popup was shown
+
+
+def test_get_groups_empty_result_leaves_dropdown_unchanged(win, monkeypatch):
+    win._combo_group.clear()
+    win._combo_group.addItem("Keep")
+    monkeypatch.setattr(mw, "fetch_groups", lambda site, token: [])
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a, **k: None)
+    win._on_get_groups()
+    items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
+    assert items == ["Keep"]
+
+
+def test_get_groups_missing_credentials_warns(win, monkeypatch):
+    win._http_cfg["site_url"] = ""
+    win._combo_group.clear()
+    win._combo_group.addItem("Keep")
+    called: list = []
+    monkeypatch.setattr(mw, "fetch_groups", lambda s, t: called.append(True) or [])
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a, **k: None)
+    win._on_get_groups()
+    assert not called  # never hit the network without a URL/token
+    items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
+    assert items == ["Keep"]
