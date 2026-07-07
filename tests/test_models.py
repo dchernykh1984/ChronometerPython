@@ -13,6 +13,7 @@ from app.models import (
     get_number_of_crosses,
     load_config,
     save_backup,
+    save_config,
 )
 
 # ---------------------------------------------------------------------------
@@ -243,6 +244,46 @@ class TestLoadConfig:
         path = self._tmp(content, encoding="cp1251")
         groups, _, _ = load_config(path)
         assert len(groups) == 2
+
+
+# ---------------------------------------------------------------------------
+# save_config
+# ---------------------------------------------------------------------------
+
+
+class TestSaveConfig:
+    def test_round_trips_with_load_config(self, tmp_path: Path) -> None:
+        path = str(tmp_path / "groupsList.txt")
+        ok = save_config(
+            path, ["GroupA", "GroupB"], "data/results.txt", "data/groups.txt"
+        )
+        assert ok is True
+        groups, results, group_start = load_config(path)
+        assert groups == ["GroupA", "GroupB"]
+        assert results == "data/results.txt"
+        assert group_start == "data/groups.txt"
+
+    def test_file_format(self, tmp_path: Path) -> None:
+        path = tmp_path / "groupsList.txt"
+        save_config(str(path), ["A", "B"], "r.txt", "g.txt")
+        assert path.read_text(encoding="utf-8") == "A\nB\nconfigFiles\nr.txt\ng.txt\n"
+
+    def test_empty_groups(self, tmp_path: Path) -> None:
+        path = str(tmp_path / "groupsList.txt")
+        save_config(path, [], "r.txt", "g.txt")
+        groups, results, group_start = load_config(path)
+        assert groups == []
+        assert results == "r.txt"
+        assert group_start == "g.txt"
+
+    def test_creates_parent_dirs(self, tmp_path: Path) -> None:
+        path = str(tmp_path / "nested" / "sub" / "groupsList.txt")
+        assert save_config(path, ["A"], "r.txt", "g.txt") is True
+        assert Path(path).exists()
+
+    def test_invalid_path_returns_false(self) -> None:
+        ok = save_config("/nonexistent_root/x/groupsList.txt", ["A"], "r", "g")
+        assert ok is False
 
 
 # ---------------------------------------------------------------------------
