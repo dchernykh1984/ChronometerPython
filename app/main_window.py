@@ -40,6 +40,7 @@ from app.models import (
     load_http_config,
     read_file_lines,
     save_backup,
+    save_config,
     save_http_config,
 )
 
@@ -93,7 +94,8 @@ class MainWindow(QMainWindow):
         self._http_save_timer.setSingleShot(True)
         self._http_save_timer.timeout.connect(self._flush_http_config)
         self._setup_ui()
-        self._load_config(_CONFIG_PATH)
+        self._config_path: str = _CONFIG_PATH
+        self._load_config(self._config_path)
         self._apply_http_config_to_ui()
         self._start_timer()
 
@@ -437,6 +439,20 @@ class MainWindow(QMainWindow):
         idx = self._combo_group.findText(current)
         if idx >= 0:
             self._combo_group.setCurrentIndex(idx)
+        saved = save_config(
+            self._config_path,
+            groups,
+            self._results_path(),
+            self._groups_path(),
+        )
+        if not saved:
+            QMessageBox.warning(
+                self,
+                "Get groups",
+                f"Loaded {len(groups)} group(s), but could not save the list to "
+                f"{self._config_path}.",
+            )
+            return
         QMessageBox.information(self, "Get groups", f"Loaded {len(groups)} group(s).")
 
     def _start_timer(self) -> None:

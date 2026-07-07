@@ -37,6 +37,7 @@ def win(monkeypatch, tmp_path):
     monkeypatch.setattr(mw, "save_http_config", lambda *a, **k: True)
     w = mw.MainWindow()
     w._chk_disable_backup.setChecked(True)  # don't write backup files during tests
+    w._config_path = str(tmp_path / "groupsList.txt")  # keep config writes out of repo
     w._edit_results_file.setText(str(tmp_path / "results.txt"))
     w._edit_groups_file.setText(str(tmp_path / "groups.txt"))
     yield w
@@ -237,3 +238,17 @@ def test_get_groups_missing_credentials_warns(win, monkeypatch):
     assert not called  # never hit the network without a URL/token
     items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
     assert items == ["Keep"]
+
+
+def test_get_groups_saves_config(win, monkeypatch):
+    from app.models import load_config
+
+    monkeypatch.setattr(mw, "fetch_groups", lambda site, token: ["G1", "G2"])
+    monkeypatch.setattr(mw.QMessageBox, "information", lambda *a, **k: None)
+    win._edit_results_file.setText("data/results.txt")
+    win._edit_groups_file.setText("data/groups.txt")
+    win._on_get_groups()
+    groups, results, group_start = load_config(win._config_path)
+    assert groups == ["G1", "G2"]
+    assert results == "data/results.txt"
+    assert group_start == "data/groups.txt"

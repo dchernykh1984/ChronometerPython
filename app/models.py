@@ -215,6 +215,28 @@ def load_config(path: str) -> tuple[list[str], str, str]:
     return groups, results_file, group_start_file
 
 
+def save_config(
+    path: str,
+    groups: list[str],
+    results_file: str,
+    group_start_file: str,
+) -> bool:
+    """
+    Write groupsList.txt: one group per line, then a ``configFiles`` marker followed by
+    the results-file and group-start-file paths. Inverse of load_config.
+    Returns True on success, False if the file cannot be written.
+    """
+    try:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        lines = [*groups, "configFiles", results_file, group_start_file]
+        with Path(path).open("w", encoding="utf-8") as f:
+            for ln in lines:
+                f.write(ln + "\n")
+        return True
+    except OSError:
+        return False
+
+
 # ---------------------------------------------------------------------------
 # crossing count
 # ---------------------------------------------------------------------------
