@@ -107,6 +107,17 @@ def format_elapsed(seconds_since_start: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 
+def dsq_status(reason: str = "") -> str:
+    """Build the DSQ status field written into ``number#time#<status>#``.
+
+    Returns bare ``DSQ`` when no reason is given (backward compatible), else
+    ``DSQ: <reason>``. ``#`` and newlines are stripped from the reason so they can never
+    break the ``#``-delimited record; surrounding whitespace is trimmed.
+    """
+    cleaned = reason.replace("#", " ").replace("\n", " ").replace("\r", " ").strip()
+    return f"DSQ: {cleaned}" if cleaned else "DSQ"
+
+
 # ---------------------------------------------------------------------------
 # file I/O helpers
 # ---------------------------------------------------------------------------

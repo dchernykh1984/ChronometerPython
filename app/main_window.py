@@ -34,6 +34,7 @@ from app.http_io import (
 from app.models import (
     append_to_finish_file,
     append_to_group_file,
+    dsq_status,
     get_current_time,
     get_number_of_crosses,
     load_config,
@@ -237,7 +238,10 @@ class MainWindow(QMainWindow):
         btn_dsq = QPushButton("DSQ")
         btn_dsq.clicked.connect(self._on_dsq)
         dsq_row.addWidget(btn_dsq)
-        dsq_row.addStretch()
+        dsq_row.addWidget(QLabel("DSQ reason:"))
+        self._edit_dsq_reason = QLineEdit()
+        self._edit_dsq_reason.setPlaceholderText("optional reason")
+        dsq_row.addWidget(self._edit_dsq_reason)
         right.addLayout(dsq_row)
 
         # Second user section
@@ -670,10 +674,11 @@ class MainWindow(QMainWindow):
         if not number:
             return
         t = get_current_time(summer_time=self._chk_summer_time.isChecked())
-        time_str = t + "#DSQ"
+        time_str = t + "#" + dsq_status(self._edit_dsq_reason.text())
         ok = self._write_to_finish(number, time_str)
         if ok:
             self._edit_dsq.clear()
+            self._edit_dsq_reason.clear()
         self._update_crosses()
 
     def _on_second_user_toggled(self, checked: bool) -> None:

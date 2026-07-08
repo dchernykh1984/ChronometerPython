@@ -8,6 +8,7 @@ from pathlib import Path
 from app.models import (
     append_to_finish_file,
     append_to_group_file,
+    dsq_status,
     format_elapsed,
     get_current_time,
     get_number_of_crosses,
@@ -15,6 +16,27 @@ from app.models import (
     save_backup,
     save_config,
 )
+
+
+class TestDsqStatus:
+    def test_no_reason_is_bare_dsq(self) -> None:
+        assert dsq_status("") == "DSQ"
+        assert dsq_status("   ") == "DSQ"
+
+    def test_reason_is_appended(self) -> None:
+        assert dsq_status("cut the course") == "DSQ: cut the course"
+
+    def test_reason_is_trimmed(self) -> None:
+        assert dsq_status("  rude  ") == "DSQ: rude"
+
+    def test_hash_is_stripped_from_reason(self) -> None:
+        # '#' is the field separator and must never survive into the record.
+        assert "#" not in dsq_status("a#b")[len("DSQ: ") :]
+        assert dsq_status("a#b") == "DSQ: a b"
+
+    def test_newlines_are_stripped(self) -> None:
+        assert dsq_status("line1\nline2\r\nline3") == "DSQ: line1 line2  line3"
+
 
 # ---------------------------------------------------------------------------
 # get_current_time
