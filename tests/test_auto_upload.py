@@ -252,3 +252,47 @@ def test_get_groups_saves_config(win, monkeypatch):
     assert groups == ["G1", "G2"]
     assert results == "data/results.txt"
     assert group_start == "data/groups.txt"
+
+
+# -- DSQ reason (write "number#time#DSQ: reason#") -------------------------
+
+
+def _results_lines(win) -> list[str]:
+    from app.models import read_file_lines
+
+    return read_file_lines(win._results_path())
+
+
+def test_dsq_with_reason_writes_reason_status(win):
+    win._edit_dsq.setText("42")
+    win._edit_dsq_reason.setText("cut the course")
+    win._on_dsq()
+    lines = _results_lines(win)
+    assert len(lines) == 1
+    assert lines[0].startswith("42#")
+    assert lines[0].endswith("#DSQ: cut the course#")
+
+
+def test_dsq_without_reason_writes_bare_dsq(win):
+    win._edit_dsq.setText("42")
+    win._on_dsq()
+    lines = _results_lines(win)
+    assert lines[0].endswith("#DSQ#")
+
+
+def test_dsq_clears_both_fields_on_success(win):
+    win._edit_dsq.setText("42")
+    win._edit_dsq_reason.setText("boarding")
+    win._on_dsq()
+    assert win._edit_dsq.text() == ""
+    assert win._edit_dsq_reason.text() == ""
+
+
+def test_dsq_reason_hash_is_sanitized(win):
+    win._edit_dsq.setText("42")
+    win._edit_dsq_reason.setText("a#b")
+    win._on_dsq()
+    line = _results_lines(win)[0]
+    # exactly 4 fields: number, time, status, trailing empty
+    assert line.count("#") == 3
+    assert line.endswith("#DSQ: a b#")
