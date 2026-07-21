@@ -44,8 +44,9 @@ from app.models import (
     save_config,
     save_http_config,
 )
+from app.paths import app_path
 
-_CONFIG_PATH = "data/groupsList.txt"
+_CONFIG_PATH = str(app_path("data", "groupsList.txt"))
 _N_SLOTS = 5
 
 
