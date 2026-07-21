@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.0...v0.1.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* reliable release builds (linux-aarch64 on ubuntu-24.04, drop Intel macOS) ([a99de44](https://github.com/dchernykh1984/ChronometerPython/commit/a99de445dcdfce0f9ebe22b7cdb65c84dc1e9262))
+
 ## 0.1.0 (2026-07-21)
 
 
