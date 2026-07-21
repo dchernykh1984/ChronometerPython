@@ -6,11 +6,13 @@ import time
 import uuid
 from pathlib import Path
 
+from app.paths import app_path
+
 # Persisted HTTP/site settings for pushing timing data to the cycling site. Kept in a
 # separate key=value file so it never disturbs the positional groupsList.txt parsing.
 # ``device_id`` is the stable per-machine id (generated once); ``rev_finish`` and
 # ``rev_group`` are the per-stream counters the server uses to reject a stale overwrite.
-HTTP_CONFIG_PATH = "data/http_config.txt"
+HTTP_CONFIG_PATH = str(app_path("data", "http_config.txt"))
 _HTTP_CONFIG_DEFAULTS: dict[str, str] = {
     "site_url": "",
     "token": "",
