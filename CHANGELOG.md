@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.2...v0.1.3) (2026-07-25)
+
+
+### Documentation
+
+* explain how to run the app from a release ([9e0e757](https://github.com/dchernykh1984/ChronometerPython/commit/9e0e757f5cb8a23c28aa0df21586f0d64bd56c8b))
+
 ## [0.1.2](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.1...v0.1.2) (2026-07-22)
 
 
