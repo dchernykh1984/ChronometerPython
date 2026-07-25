@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.3...v0.1.4) (2026-07-25)
+
+
+### Bug Fixes
+
+* keep uv.lock in step with the released version ([7bca9e7](https://github.com/dchernykh1984/ChronometerPython/commit/7bca9e7da6f28800643a6f78361f2eca7e8a676b))
+
 ## [0.1.3](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.2...v0.1.3) (2026-07-25)
 
 
