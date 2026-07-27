@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.4...v0.1.5) (2026-07-27)
+
+
+### Bug Fixes
+
+* give the macos bundle a proper identifier and version ([a178869](https://github.com/dchernykh1984/ChronometerPython/commit/a17886966b6839195dac28f1c7ce4b6d428ca41a))
+
 ## [0.1.4](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.3...v0.1.4) (2026-07-25)
 
 
