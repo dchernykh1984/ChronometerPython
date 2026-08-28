@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.5...v0.1.6) (2026-08-28)
+
+
+### Bug Fixes
+
+* keep the group start time after saving a group ([736f8c0](https://github.com/dchernykh1984/ChronometerPython/commit/736f8c009fd2358d49b15af32be24075afccaefd))
+
 ## [0.1.5](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.4...v0.1.5) (2026-07-27)
 
 
