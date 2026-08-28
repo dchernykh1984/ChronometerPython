@@ -668,7 +668,9 @@ class MainWindow(QMainWindow):
         self._upload_group_stream()
         self._combo_group.removeItem(self._combo_group.currentIndex())
         self._combo_group.setCurrentText("")
-        self._edit_group_time.clear()
+        # The time stays: groups often set off together, and saving each of them
+        # would otherwise mean copying the same start time back in every time.
+        # "Start" is what replaces it.
 
     def _on_dsq(self) -> None:
         number = self._edit_dsq.text().strip()
