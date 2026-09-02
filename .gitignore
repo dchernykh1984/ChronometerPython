@@ -29,8 +29,12 @@ Session.vim
 
 # ===== AI agents =====
 
-# Claude Code (Anthropic)
-.claude/
+# Claude Code (Anthropic). The shared project context (.claude/settings.json,
+# skills, hooks, CLAUDE.md) is committed on purpose; only per-machine overrides
+# and local state are ignored.
+.claude/settings.local.json
+.claude/*.local.json
+.claude/worktrees/
 
 # Cursor
 .cursor/
@@ -98,6 +102,12 @@ logs/
 # Windows
 Thumbs.db
 desktop.ini
+
+# ===== Local race data =====
+
+# Site-upload settings: holds the competition token and this machine's
+# device_id / revision counters. Never commit it.
+data/http_config.txt
 
 # ===== Temporary files =====
 
