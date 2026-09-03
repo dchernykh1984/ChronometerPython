@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.6...v0.1.7) (2026-09-03)
+
+
+### Documentation
+
+* add a claude guide for the project ([a49c5c9](https://github.com/dchernykh1984/ChronometerPython/commit/a49c5c9cf8a801c0b7615ebb625b0874cfc1a424))
+
 ## [0.1.6](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.5...v0.1.6) (2026-08-28)
 
 
