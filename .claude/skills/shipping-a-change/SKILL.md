@@ -55,6 +55,15 @@ Six run on every PR. Watch them in a loop rather than by repeated manual calls:
 gh pr checks <N> --json name,bucket --jq '.[] | "\(.bucket)\t\(.name)"' | sort
 ```
 
+Take the verdict from the rollup, not from that list: `gh pr checks` reports a
+per-check status that lags and can still say `pending` long after the job has
+finished, which reads like a hung check.
+
+```
+gh pr view <N> --json statusCheckRollup \
+  --jq '[.statusCheckRollup[] | {name:(.name//.context), s:(.conclusion//.state)}]'
+```
+
 | Check | What it does |
 | --- | --- |
 | `pre-commit` | The whole pre-commit config on all files. |
