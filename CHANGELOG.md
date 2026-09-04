@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.7...v0.1.8) (2026-09-04)
+
+
+### Documentation
+
+* take the CI verdict from the rollup, not the lagging checks list ([ca79eb4](https://github.com/dchernykh1984/ChronometerPython/commit/ca79eb4c01960b16440a916499287a6f6fea1ca5))
+
 ## [0.1.7](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.6...v0.1.7) (2026-09-03)
 
 
