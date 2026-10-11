@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from pathlib import Path
 
 from app.paths import app_path
 
@@ -26,7 +25,7 @@ _HTTP_CONFIG_DEFAULTS: dict[str, str] = {
 def load_http_config(path: str = HTTP_CONFIG_PATH) -> dict[str, str]:
     """Load the HTTP config; generate and persist a device_id on first use."""
     cfg = dict(_HTTP_CONFIG_DEFAULTS)
-    p = Path(path)
+    p = app_path(path)
     if p.exists():
         lines: list[str] = []
         for enc in ("utf-8", "cp1251", "latin-1"):
@@ -50,8 +49,8 @@ def load_http_config(path: str = HTTP_CONFIG_PATH) -> dict[str, str]:
 def save_http_config(cfg: dict[str, str], path: str = HTTP_CONFIG_PATH) -> bool:
     """Persist the HTTP config (only the known keys, as key=value lines)."""
     try:
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        with Path(path).open("w", encoding="utf-8") as f:
+        app_path(path).parent.mkdir(parents=True, exist_ok=True)
+        with app_path(path).open("w", encoding="utf-8") as f:
             for key in _HTTP_CONFIG_DEFAULTS:
                 f.write(f"{key}={cfg.get(key, _HTTP_CONFIG_DEFAULTS[key])}\n")
         return True
@@ -61,7 +60,7 @@ def save_http_config(cfg: dict[str, str], path: str = HTTP_CONFIG_PATH) -> bool:
 
 def read_file_lines(path: str) -> list[str]:
     """Read non-empty lines from a results/groups file; [] if missing."""
-    p = Path(path)
+    p = app_path(path)
     if not path or not p.exists():
         return []
     for enc in ("utf-8", "cp1251", "latin-1"):
@@ -135,8 +134,8 @@ def append_to_finish_file(path: str, number: str, time_str: str) -> bool:
         return False
     try:
         record = f"{number}#{time_str}#\n"
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        with Path(path).open("a", encoding="utf-8") as f:
+        app_path(path).parent.mkdir(parents=True, exist_ok=True)
+        with app_path(path).open("a", encoding="utf-8") as f:
             f.write(record)
         return True
     except OSError:
@@ -153,8 +152,8 @@ def append_to_group_file(path: str, group: str, time_str: str) -> bool:
         return False
     try:
         record = f"{group}#{time_str}#\n"
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        with Path(path).open("a", encoding="utf-8") as f:
+        app_path(path).parent.mkdir(parents=True, exist_ok=True)
+        with app_path(path).open("a", encoding="utf-8") as f:
             f.write(record)
         return True
     except OSError:
@@ -177,14 +176,14 @@ def save_backup(
     Returns True on success.
     """
     try:
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        app_path(path).parent.mkdir(parents=True, exist_ok=True)
         lines: list[str] = []
         lines.extend(log_items)
         lines.append(f"{group_number}#{group_time}#")
         action = "finish" if finish_mode else "nextLap"
         for number, time_str in slots:
             lines.append(f"{number}#{time_str}#{action}#")
-        with Path(path).open("w", encoding="utf-8") as f:
+        with app_path(path).open("w", encoding="utf-8") as f:
             for ln in lines:
                 f.write(ln + "\n")
         return True
@@ -201,7 +200,7 @@ def load_config(path: str) -> tuple[list[str], str, str]:
     groups: list[str] = []
     results_file = ""
     group_start_file = ""
-    p = Path(path)
+    p = app_path(path)
     if not p.exists():
         return groups, results_file, group_start_file
     for enc in ("utf-8", "cp1251", "latin-1"):
@@ -240,9 +239,9 @@ def save_config(
     Returns True on success, False if the file cannot be written.
     """
     try:
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        app_path(path).parent.mkdir(parents=True, exist_ok=True)
         lines = [*groups, "configFiles", results_file, group_start_file]
-        with Path(path).open("w", encoding="utf-8") as f:
+        with app_path(path).open("w", encoding="utf-8") as f:
             for ln in lines:
                 f.write(ln + "\n")
         return True
