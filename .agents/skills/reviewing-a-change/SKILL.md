@@ -36,8 +36,10 @@ the site. Adding a field, reordering, or changing the separator is a breaking
 change even though nothing in this repo will complain.
 
 **Does it change where data lives?** `app/paths.py:base_dir()` is what makes
-one copied folder per event work. A change that resolves a path against the
-current working directory instead would make two events share one file.
+one copied folder per event work. Use `app_path()` for relative runtime files,
+including backups and results/groups selected in the UI. Preserve absolute paths
+and the path strings stored in configs. Test a frozen executable with a different
+working directory: Finder can launch a macOS app from `/`.
 
 **Are the reads still tolerant?** Files written by the older C++ chronometer
 turn up in cp1251; every reader tries utf-8, then cp1251, then latin-1. Do not

@@ -26,12 +26,16 @@ their docstrings. Keep the ported behaviour unless a change is asked for.
 frozen (PyInstaller; on macOS the folder containing the `.app` bundle) and the
 current working directory in development. Every data file is resolved against
 it, so one copied folder per event keeps its own settings, results and counters.
+Use `app_path()` at file I/O boundaries: relative paths are based on this folder,
+absolute paths stay unchanged, and config values keep their original spelling.
+Finder may launch a macOS app with `/` as its working directory.
 
 - `data/groupsList.txt` - group list plus the two file paths, positional format.
 - `data/http_config.txt` - site upload settings, `key=value`. Holds the
   competition token: never commit it, never paste its contents anywhere.
 - results / groups files - paths chosen in the UI, one line per record,
   `number#time#action#` and `group#time#`.
+- `temp/stc<timestamp>.txt` - action backups, unless backup is disabled.
 
 ## Site upload (three streams, one snapshot each)
 
