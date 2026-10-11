@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.9](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.8...v0.1.9) (2026-10-11)
+
+
+### Bug Fixes
+
+* resolve runtime files beside the portable application ([8f0afd8](https://github.com/dchernykh1984/ChronometerPython/commit/8f0afd853ad771367387d4b2f180d4c254f271c4))
+
+
+### Documentation
+
+* clarify portable runtime paths for coding agents ([96e9086](https://github.com/dchernykh1984/ChronometerPython/commit/96e9086cff5436c8f9cb01fda1269996b68d30e3))
+
 ## [0.1.8](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.7...v0.1.8) (2026-09-04)
 
 
