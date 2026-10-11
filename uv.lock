@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.14.*"
 
 [[package]]
@@ -679,8 +679,9 @@ wheels = [
 
 [[package]]
 name = "windows-chronometer"
-version = "0.1.8"
+version = "0.1.9"
 source = { virtual = "." }
+default-groups = "all"
 dependencies = [
     { name = "pyside6" },
 ]
