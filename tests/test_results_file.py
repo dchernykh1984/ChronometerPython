@@ -77,7 +77,7 @@ def test_the_first_rewrite_of_a_missing_file_backs_up_nothing(tmp_path):
     path = tmp_path / "results.txt"
     backup = rf.rewrite_results(str(path), ["15#1 10:0:0#finish#"], tmp_path / "b")
     assert backup.read_bytes() == b""
-    assert rf.read_results(str(path)) == ["15#1 10:0:0#finish#"]
+    assert path.read_text(encoding="utf-8").splitlines() == ["15#1 10:0:0#finish#"]
 
 
 @pytest.mark.parametrize(
@@ -96,3 +96,13 @@ def test_a_crossing_is_checked_before_it_is_written(number, time_str, action, pr
     found = rf.crossing_problem(number, time_str, action)
     assert (found is None) if problem is None else (problem in found)
     assert rf.crossing_line("15", "1 10:0:0", "finish") == "15#1 10:0:0#finish#"
+
+
+def test_a_rewrite_ends_its_lines_as_appends_do(tmp_path):
+    from app.models import append_to_finish_file
+
+    path = tmp_path / "results.txt"
+    assert append_to_finish_file(str(path), "15", "1 10:0:0.000#nextLap")
+    appended = path.read_bytes()  # CRLF on Windows, LF elsewhere
+    rf.rewrite_results(str(path), ["15#1 10:0:0.000#nextLap#"], tmp_path / "b")
+    assert path.read_bytes() == appended

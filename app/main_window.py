@@ -75,7 +75,6 @@ from app.results_file import (
     ACTIONS,
     crossing_line,
     crossing_problem,
-    read_results,
     rewrite_results,
 )
 from app.sources_config import (
@@ -879,7 +878,7 @@ class MainWindow(QMainWindow):
             self._chip_state_dirty = True
         # A crash between writing a crossing and saving the state leaves it in the
         # results file, still waiting or made again here: never written twice.
-        done = {tuple(line.split("#")[:2]) for line in read_results(path)}
+        done = {tuple(line.split("#")[:2]) for line in read_file_lines(path)}
         waiting = [
             line for line in timing.unwritten if tuple(line.split("#")[:2]) not in done
         ]
@@ -1049,7 +1048,7 @@ class MainWindow(QMainWindow):
 
     def _refresh_crossings(self) -> None:
         """Re-read the results file: after a rewrite or a change of its path."""
-        self._result_lines = read_results(self._results_path())
+        self._result_lines = read_file_lines(self._results_path())
         self._result_counts = Counter(line.split("#")[0] for line in self._result_lines)
         self._crossings.clear()
         self._crossings.addItems(self._result_lines)
@@ -1104,7 +1103,7 @@ class MainWindow(QMainWindow):
                 self, "Crossings", "Results file path is not configured."
             )
             return None
-        return read_results(self._results_path())
+        return read_file_lines(self._results_path())
 
     def _selected_crossing(self, lines: list[str]) -> int:
         """The selected line's place in the file as it is now, or -1 (said aloud)."""
@@ -1126,7 +1125,7 @@ class MainWindow(QMainWindow):
         A device appends crossings while a dialog waits, so a change is made to the
         file as it is then, never to a copy read before the dialog.
         """
-        lines = read_results(self._results_path())
+        lines = read_file_lines(self._results_path())
         if row < len(lines) and lines[row] == line:
             return lines
         QMessageBox.warning(
@@ -1142,7 +1141,7 @@ class MainWindow(QMainWindow):
         got = self._ask_crossing("", now, self._action())
         if got is not None:
             line = crossing_line(*got)
-            lines = read_results(self._results_path())  # as it is after the dialog
+            lines = read_file_lines(self._results_path())  # as it is after the dialog
             self._change_results([*lines, line], f"added {line}")
 
     def _on_edit_crossing(self) -> None:

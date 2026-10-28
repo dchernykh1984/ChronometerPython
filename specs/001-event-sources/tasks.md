@@ -8,7 +8,7 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
 - [x] T001 `format_time(ms, summer_time)` and `parse_time(text)` in `app/models.py`;
   `get_current_time()` uses `format_time`. Unit tests, including summer time and milliseconds
   padding. -- `refactor(time): format any moment, not only the current one`
-- [x] T002 `app/results_file.py`: `read_results()`, `validate_crossing()`, `rewrite_results()`
+- [x] T002 `app/results_file.py`: `validate_crossing()`, `rewrite_results()`
   (backup to `temp/results<time>_<n>.txt`, refuse without it, temporary file, fsync,
   `os.replace`, retried for up to 2 s on a permission error). Unit tests: backup content, refusal,
   atomicity on a failing write, a replace that fails twice and then succeeds, validation.
