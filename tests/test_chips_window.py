@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 
 import pytest
 
@@ -297,3 +298,10 @@ def test_a_chip_state_that_could_not_be_saved_is_saved_later(
     fail[0] = False
     win._save_chip_state()
     assert not win._chip_state_dirty
+
+
+def test_steady_reads_do_not_put_off_the_state_save(win, chips_on):
+    win._on_source_event(Read("D", T0))
+    time.sleep(0.3)
+    win._on_source_event(Read("D", T0 + 300))
+    assert win._chip_state_timer.remainingTime() < 900

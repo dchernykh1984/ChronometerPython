@@ -912,7 +912,8 @@ class MainWindow(QMainWindow):
             ):
                 self._unknown_timer.start(500)  # a burst refreshes the list once
         self._chip_state_dirty = True
-        self._chip_state_timer.start(1000)
+        if not self._chip_state_timer.isActive():  # steady reads never put it off
+            self._chip_state_timer.start(1000)
 
     def _show_unknown(self) -> None:
         self._list_unknown.clear()
