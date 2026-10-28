@@ -191,3 +191,13 @@ def test_a_line_gone_while_the_dialog_is_open_is_not_edited(win, results, monkey
     win._on_edit_crossing()
     assert results.read_text(encoding="utf-8").splitlines() == [LINES[1]]
     assert "changed meanwhile" in warnings[0]
+
+
+def test_switching_the_results_file_updates_the_crossing_counts(win, results, tmp_path):
+    win._number_edits[0].setText("15")
+    other = tmp_path / "other.txt"
+    other.write_text(
+        "".join(f"15#1 10:{m}:0.000#nextLap#\n" for m in (0, 5, 9)), "utf-8"
+    )
+    win._edit_results_file.setText(str(other))
+    assert win._cross_labels[0].text() == "4"  # three in that file, and the slot
