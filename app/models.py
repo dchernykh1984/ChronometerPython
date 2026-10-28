@@ -277,30 +277,3 @@ def save_config(
         return True
     except OSError:
         return False
-
-
-# ---------------------------------------------------------------------------
-# crossing count
-# ---------------------------------------------------------------------------
-
-
-def get_number_of_crosses(
-    number: str,
-    log_items: list[str],
-    current_slots: list[str],
-) -> int:
-    """
-    Count how many times number appears in log_items + current_slots.
-    Port of C++ getNumberOfCrosses logic.
-    """
-    if not number:
-        return 0
-    count = 0
-    for entry in log_items:
-        entry_number = entry.split("#")[0] if "#" in entry else entry
-        if entry_number == number:
-            count += 1
-    for slot_number in current_slots:
-        if slot_number == number:
-            count += 1
-    return count

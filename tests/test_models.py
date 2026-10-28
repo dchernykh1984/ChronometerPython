@@ -11,7 +11,6 @@ from app.models import (
     dsq_status,
     format_elapsed,
     get_current_time,
-    get_number_of_crosses,
     load_config,
     save_backup,
     save_config,
@@ -306,37 +305,6 @@ class TestSaveConfig:
     def test_invalid_path_returns_false(self) -> None:
         ok = save_config("/nonexistent_root/x/groupsList.txt", ["A"], "r", "g")
         assert ok is False
-
-
-# ---------------------------------------------------------------------------
-# get_number_of_crosses
-# ---------------------------------------------------------------------------
-
-
-class TestGetNumberOfCrosses:
-    def test_empty(self) -> None:
-        assert get_number_of_crosses("1", [], []) == 0
-
-    def test_empty_number(self) -> None:
-        assert get_number_of_crosses("", ["1#T#nextLap#"], ["1"]) == 0
-
-    def test_from_log(self) -> None:
-        log = ["1#T1#nextLap#", "1#T2#nextLap#", "2#T3#nextLap#"]
-        assert get_number_of_crosses("1", log, []) == 2
-        assert get_number_of_crosses("2", log, []) == 1
-
-    def test_from_slots(self) -> None:
-        assert get_number_of_crosses("1", [], ["1", "1", "2", "", ""]) == 2
-
-    def test_combined(self) -> None:
-        log = ["1#T1#nextLap#"]
-        slots = ["1", "2", "", "", ""]
-        assert get_number_of_crosses("1", log, slots) == 2
-        assert get_number_of_crosses("2", log, slots) == 1
-
-    def test_partial_match_not_counted(self) -> None:
-        log = ["12#T1#nextLap#"]
-        assert get_number_of_crosses("1", log, []) == 0
 
 
 # ---------------------------------------------------------------------------
