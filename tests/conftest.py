@@ -7,17 +7,34 @@ handlers from drifting silently.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
 from app import main_window as mw
 from app import sources_config as sources
 
 _app = QApplication.instance() or QApplication([])
+
+# The developer's own settings, token included, and results live in data/.
+_DATA = Path(__file__).resolve().parents[1] / "data"
+
+
+def _data_state() -> dict[str, int]:
+    return {p.name: p.stat().st_mtime_ns for p in _DATA.glob("*")}
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _data_untouched():
+    """Fail the run when a test wrote into data/: it holds what no test may change."""
+    before = _data_state()
+    yield
+    assert _data_state() == before, "a test wrote into the developer's data/ folder"
 
 
 @pytest.fixture
@@ -43,4 +60,8 @@ def win(monkeypatch, tmp_path):
     w._edit_groups_file.setText(str(tmp_path / "groups.txt"))
     yield w
     w._stop_source(wait=True)  # no connector process outlives its test
+    # deleteLater waits for an event loop: a later test would run these timers,
+    # the 500 ms config save among them, after the fakes above are undone.
+    for timer in w.findChildren(QTimer):
+        timer.stop()
     w.deleteLater()
