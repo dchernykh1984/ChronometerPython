@@ -10,10 +10,11 @@ N-th bind nothing; any other line binds every chip to its bib.
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 
-from app.models import read_file_lines
+from app.models import parse_time, read_file_lines
 from app.paths import app_path
 
 CHIPS_FIELD = 11
@@ -78,3 +79,100 @@ def read_start_protocol(path: str) -> list[str] | None:
     if not path or not app_path(path).is_file():
         return None
     return read_file_lines(path)
+
+
+# -- reads to crossings ------------------------------------------------------------
+
+STATE_VERSION = 1
+
+
+def raw_read(line: str) -> tuple[str, int] | None:
+    """(chip, ms) of a raw chip reads line, or None when it is not one."""
+    fields = line.split("#")
+    at = parse_time(fields[1]) if len(fields) > 1 else None
+    chip = normalise_chip(fields[0])
+    return (chip, at) if chip and at is not None else None
+
+
+class ChipTiming:
+    """Chip reads to crossings, one pass at a time (spec FR-009, FR-010).
+
+    A bib's reads less than the dead time apart are one pass. A read that joins no
+    pass starts one, and that pass's crossing is made at once, at the read's time;
+    a read that joins passes merges them and makes nothing, so a crossing is never
+    moved, and one the judge deleted never comes back. Passes formed under another
+    dead time keep their shape. Reads of a chip the map does not bind wait, for
+    when it does. Times are milliseconds on the results file's scale.
+    """
+
+    def __init__(self, dead_ms: int = 5000) -> None:
+        self.dead_ms = dead_ms
+        self.chip_map = ChipMap()
+        self.passes: dict[str, list[list[int]]] = {}
+        self.pending: list[tuple[str, int]] = []
+        self.unwritten: list[str] = []
+        self.processed_lines = 0
+
+    def on_read(self, chip: str, at: int) -> list[tuple[str, int]]:
+        """Take one read; return the crossings it makes, as (bib, ms)."""
+        bib = self.chip_map.bib_of.get(chip)
+        if bib is None:
+            self.pending.append((chip, at))
+            return []
+        return [(bib, at)] if self._into_passes(bib, at) else []
+
+    def _into_passes(self, bib: str, at: int) -> bool:
+        """Put a read into the bib's passes; True when it starts a new one."""
+        passes = self.passes.setdefault(bib, [])
+        near = [p for p in passes if p[0] - self.dead_ms < at < p[1] + self.dead_ms]
+        if not near:
+            passes.append([at, at])
+            passes.sort()
+            return True
+        merged = [min(at, *(p[0] for p in near)), max(at, *(p[1] for p in near))]
+        passes[:] = sorted([p for p in passes if p not in near] + [merged])
+        return False
+
+    def to_json(self) -> dict:
+        return {
+            "version": STATE_VERSION,
+            "processed_lines": self.processed_lines,
+            "passes": self.passes,
+            "pending": [list(read) for read in self.pending],
+            "unwritten": self.unwritten,
+        }
+
+    @classmethod
+    def from_json(cls, data: dict, dead_ms: int) -> ChipTiming:
+        timing = cls(dead_ms)
+        timing.processed_lines = int(data.get("processed_lines", 0))
+        timing.passes = {
+            str(bib): [[int(a), int(b)] for a, b in spans]
+            for bib, spans in data.get("passes", {}).items()
+        }
+        timing.pending = [(str(c), int(t)) for c, t in data.get("pending", [])]
+        timing.unwritten = [str(line) for line in data.get("unwritten", [])]
+        return timing
+
+
+def load_chip_state(path: str, dead_ms: int) -> ChipTiming:
+    """The chip state saved next to a results file, or a fresh one."""
+    try:
+        data = json.loads(app_path(path).read_text(encoding="utf-8"))
+        if data.get("version") == STATE_VERSION:
+            return ChipTiming.from_json(data, dead_ms)
+    except OSError, ValueError, TypeError, AttributeError:
+        pass
+    return ChipTiming(dead_ms)
+
+
+def save_chip_state(path: str, timing: ChipTiming) -> bool:
+    """Write the chip state in one step; False when it cannot be written."""
+    try:
+        target = app_path(path)
+        temporary = target.with_name(target.name + ".tmp")
+        temporary.write_text(json.dumps(timing.to_json()), encoding="utf-8")
+        temporary.replace(target)
+        return True
+    except OSError:
+        return False

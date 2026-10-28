@@ -34,8 +34,8 @@ and replay), default settings.
 
 ## Pass
 
-`first`, `last` (milliseconds), `issued` (a crossing was made for it once). Per bib, sorted by
-`first`, never overlapping within the dead time.
+`first`, `last` (milliseconds). Per bib, sorted by `first`, never overlapping within the dead
+time. A pass is only ever made together with its crossing, so it never gets another.
 
 ## Chip state (`<results name>.chip_state.json`)
 
@@ -43,16 +43,17 @@ and replay), default settings.
 {
   "version": 1,
   "processed_lines": 1234,
-  "attributed": ["E28011700000020A", "E2801170000002AB"],
-  "passes": {"15": [[73905615, 73907702, true]]},
+  "passes": {"15": [[73905615, 73907702]]},
+  "pending": [["E2801170000002FF", 73909100]],
   "unwritten": ["22#20389 11:35:31.004#nextLap#"]
 }
 ```
 
 `unwritten`: crossings made but not yet in the results file, retried every second.
 
-`attributed`: chips whose reads have been put into passes; a chip in the map but not here is
-"newly known" and its reads in the raw file are replayed into passes (FR-010).
+`pending`: reads of chips the map did not bind when they came (unknown, or on two bibs); when a
+new map binds one, its reads go into passes in time order (FR-010). A pass is `[first, last]`:
+every pass exists because it made a crossing, so it needs no flag for that.
 
 ## Unknown chip (derived)
 

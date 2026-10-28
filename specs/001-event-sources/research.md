@@ -38,11 +38,12 @@
 
 ## 4. Passes as intervals, kept in a state file
 
-- **Decision**: per bib, a sorted list of passes `[first, last, issued]` in milliseconds of the
-  results file's time scale. A read at `t` joins every pass with `first - dead < t < last + dead`
-  (merging them), else starts a new one; a pass that was never issued gets a crossing at its first
-  read at once. The passes, the chips already attributed and the number of raw lines processed are
-  saved to `<results name>.chip_state.json` after every crossing and once a second otherwise.
+- **Decision**: per bib, a sorted list of passes `[first, last]` in milliseconds of the results
+  file's time scale. A read at `t` joins every pass with `first - dead < t < last + dead` (merging
+  them, making nothing), else starts a new one, whose crossing is made at once at `t`. Reads of
+  chips the map does not bind wait in a pending list. The passes, the pending reads, the crossings
+  waiting to be written and the number of raw lines processed are saved to
+  `<results name>.chip_state.json` after every crossing and once a second otherwise.
 - **Rationale**: intervals give FR-009's gap rule in any arrival order; a pass remembers that it
   was issued, so a crossing the judge deleted is never made again (spec, US3 and Android US6);
   passes formed under one dead time keep their shape when it changes. At start-up the state is

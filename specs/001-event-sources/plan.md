@@ -124,8 +124,8 @@ real child processes; the window only wires.
   `_write_to_finish()` but never opens a dialog; a crossing it cannot write joins the `unwritten`
   queue, retried every second -> state saved if a crossing was made, else on a 1 s timer.
 - **Retro crossings**: after the map changes (download, Reload, start-up), `ChipTiming.set_map()`
-  replays, in time order, the raw reads of chips that are in the new map but not attributed, and
-  returns the crossings to append.
+  puts the pending reads of chips the new map binds into passes, in time order, and returns the
+  crossings to append.
 - **Crossing edits**: the Crossings tab works on a parsed copy of the file; Add/Edit open a small
   dialog (number, time defaulting to now, action); Delete asks first. Each change goes through
   `rewrite_results()`; the in-memory numbers, counts, log and upload follow.
