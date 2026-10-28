@@ -84,7 +84,7 @@ def read_start_protocol(path: str) -> list[str] | None:
 
 # -- reads to crossings ------------------------------------------------------------
 
-STATE_VERSION = 1
+STATE_VERSION = 2  # 2: reads of unbound chips kept as runs
 
 
 def raw_read(line: str) -> tuple[str, int] | None:
@@ -103,14 +103,16 @@ class ChipTiming:
     a read that joins passes merges them and makes nothing, so a crossing is never
     moved, and one the judge deleted never comes back. Passes formed under another
     dead time keep their shape. Reads of a chip the map does not bind wait, for
-    when it does. Times are milliseconds on the results file's scale.
+    when it does, as runs: a chip left by the antenna for hours is one run, not
+    100 000 reads in every save. Times are milliseconds on the results file's scale.
     """
 
     def __init__(self, dead_ms: int = 5000) -> None:
         self.dead_ms = dead_ms
         self.chip_map = ChipMap()
         self.passes: dict[str, list[list[int]]] = {}
-        self.pending: list[tuple[str, int]] = []
+        # chip -> runs [first, last, count] of its reads less than the dead time apart
+        self.pending: dict[str, list[list[int]]] = {}
         self.unwritten: list[str] = []
         self.processed_lines = 0
 
@@ -118,9 +120,9 @@ class ChipTiming:
         """Take one read; return the crossings it makes, as (bib, ms)."""
         bib = self.chip_map.bib_of.get(chip)
         if bib is None:
-            self.pending.append((chip, at))
+            self._into_runs(chip, at)
             return []
-        return [(bib, at)] if self._into_passes(bib, at) else []
+        return [(bib, at)] if self._into_passes(bib, at, at) else []
 
     def set_map(self, chip_map: ChipMap) -> list[tuple[str, int]]:
         """Use a new map; the waiting reads of chips it binds become crossings.
@@ -130,13 +132,19 @@ class ChipTiming:
         crossings on the old one: only waiting reads are replayed.
         """
         self.chip_map = chip_map
-        known = sorted(
-            (at, chip) for chip, at in self.pending if chip in chip_map.bib_of
+        spans = sorted(
+            (first, last, chip)
+            for chip, runs in self.pending.items()
+            if chip in chip_map.bib_of
+            for first, last, _ in runs
         )
-        self.pending = [(c, at) for c, at in self.pending if c not in chip_map.bib_of]
+        for chip in {chip for _, _, chip in spans}:
+            del self.pending[chip]
         made: list[tuple[str, int]] = []
-        for at, chip in known:
-            made += self.on_read(chip, at)
+        for first, last, chip in spans:
+            bib = chip_map.bib_of[chip]
+            if self._into_passes(bib, first, last):
+                made.append((bib, first))
         return made
 
     def unknown(self) -> dict[str, tuple[int, int, int]]:
@@ -144,31 +152,48 @@ class ChipTiming:
 
         A chip on two bibs is not unknown: the conflicts list names it.
         """
-        found: dict[str, tuple[int, int, int]] = {}
-        for chip, at in self.pending:
-            if chip not in self.chip_map.conflicts:
-                first, last, count = found.get(chip, (at, at, 0))
-                found[chip] = (min(first, at), max(last, at), count + 1)
-        return found
+        return {
+            chip: (
+                min(run[0] for run in runs),
+                max(run[1] for run in runs),
+                sum(run[2] for run in runs),
+            )
+            for chip, runs in self.pending.items()
+            if chip not in self.chip_map.conflicts
+        }
 
-    def _into_passes(self, bib: str, at: int) -> bool:
-        """Put a read into the bib's passes; True when it starts a new one."""
+    def _into_runs(self, chip: str, at: int) -> None:
+        """Keep a read of an unbound chip in the run it is near, or start one."""
+        runs = self.pending.setdefault(chip, [])
+        for run in reversed(runs):
+            if run[0] - self.dead_ms < at < run[1] + self.dead_ms:
+                run[0], run[1], run[2] = min(run[0], at), max(run[1], at), run[2] + 1
+                return
+        runs.append([at, at, 1])
+
+    def _into_passes(self, bib: str, first: int, last: int) -> bool:
+        """Put a span of reads into the bib's passes; True when it starts a new one.
+
+        A span is one read, or a run of reads less than the dead time apart: its
+        first read decides whether it starts a pass, and the others only stretch
+        and merge passes, as each read on its own would have done.
+        """
         passes = self.passes.setdefault(bib, [])
-        near = [p for p in passes if p[0] - self.dead_ms < at < p[1] + self.dead_ms]
-        if not near:
-            passes.append([at, at])
-            passes.sort()
-            return True
-        merged = [min(at, *(p[0] for p in near)), max(at, *(p[1] for p in near))]
+        dead = self.dead_ms
+        new = not any(p[0] - dead < first < p[1] + dead for p in passes)
+        if new:
+            passes.append([first, first])
+        near = [p for p in passes if p[0] - dead < last and first < p[1] + dead]
+        merged = [min(first, *(p[0] for p in near)), max(last, *(p[1] for p in near))]
         passes[:] = sorted([p for p in passes if p not in near] + [merged])
-        return False
+        return new
 
     def to_json(self) -> dict:
         return {
             "version": STATE_VERSION,
             "processed_lines": self.processed_lines,
             "passes": self.passes,
-            "pending": [list(read) for read in self.pending],
+            "pending": self.pending,
             "unwritten": self.unwritten,
         }
 
@@ -180,7 +205,10 @@ class ChipTiming:
             str(bib): [[int(a), int(b)] for a, b in spans]
             for bib, spans in data.get("passes", {}).items()
         }
-        timing.pending = [(str(c), int(t)) for c, t in data.get("pending", [])]
+        timing.pending = {
+            str(chip): [[int(a), int(b), int(n)] for a, b, n in runs]
+            for chip, runs in data.get("pending", {}).items()
+        }
         timing.unwritten = [str(line) for line in data.get("unwritten", [])]
         return timing
 

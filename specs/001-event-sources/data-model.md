@@ -41,19 +41,23 @@ time. A pass is only ever made together with its crossing, so it never gets anot
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "processed_lines": 1234,
   "passes": {"15": [[73905615, 73907702]]},
-  "pending": [["E2801170000002FF", 73909100]],
+  "pending": {"E2801170000002FF": [[73909100, 73914350, 87]]},
   "unwritten": ["22#20389 11:35:31.004#nextLap#"]
 }
 ```
 
 `unwritten`: crossings made but not yet in the results file, retried every second.
 
-`pending`: reads of chips the map did not bind when they came (unknown, or on two bibs); when a
-new map binds one, its reads go into passes in time order (FR-010). A pass is `[first, last]`:
-every pass exists because it made a crossing, so it needs no flag for that.
+`pending`: reads of chips the map did not bind when they came (unknown, or on two bibs), per chip
+as runs `[first, last, count]` of reads less than the dead time apart, so a chip left by the
+antenna for hours is one run. When a new map binds one, its runs go into passes in time order
+(FR-010); a run's first read decides whether it starts a pass, the others only stretch and merge
+passes, as each read would have. A pass is `[first, last]`: every pass exists because it made a
+crossing, so it needs no flag for that. A state of another `version` is rebuilt from the raw
+reads file.
 
 ## Unknown chip (derived)
 
