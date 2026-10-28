@@ -46,7 +46,7 @@ from app.chips import (
 )
 from app.connector_host import ConnectorHost, builtin_command
 from app.connectors import builtin, connectors_for, find
-from app.device_files import append_record, field, side_file
+from app.device_files import append_record, side_file
 from app.http_io import (
     fetch_groups,
     fetch_start_list,
@@ -64,6 +64,7 @@ from app.models import (
     load_http_config,
     parse_time,
     read_file_lines,
+    record_field,
     save_backup,
     save_config,
     save_http_config,
@@ -662,7 +663,7 @@ class MainWindow(QMainWindow):
     def _on_beam_break(self, event: cp.Break) -> None:
         """Keep the break in the beam file first, then stamp a slot with its time."""
         stamp = self._event_time(event.time_ms)
-        record = f"{event.seq}#{stamp}#{field(event.device_time)}#"
+        record = f"{event.seq}#{stamp}#{record_field(event.device_time)}#"
         if not append_record(side_file(self._results_path(), "beam_breaks"), record):
             self._append_log(f"beam break not kept in the beam file: {record}")
         if not self._stamp_first_empty_slot(stamp, take_next=False, quiet=True):
@@ -905,8 +906,8 @@ class MainWindow(QMainWindow):
         timing = self._timing()
         rssi = "" if event.rssi is None else f"{event.rssi:g}"
         record = (
-            f"{chip}#{stamp}#{field(event.device_time)}#{field(event.antenna)}#"
-            f"{rssi}#{field(event.reader)}#"
+            f"{chip}#{stamp}#{record_field(event.device_time)}#{record_field(event.antenna)}#"
+            f"{rssi}#{record_field(event.reader)}#"
         )
         if append_record(side_file(self._results_path(), "chip_reads"), record):
             timing.processed_lines += 1
