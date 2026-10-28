@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 import uuid
 
@@ -76,6 +77,40 @@ def read_file_lines(path: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+_TIME = re.compile(r"(\d+) (\d{1,2}):(\d{1,2}):(\d{1,2})(?:\.(\d{3}))?")
+
+
+def format_time(epoch_ms: int, accuracy: int = 3, dst: bool = False) -> str:
+    """'D H:M:S[.mmm]' of a moment given in Unix milliseconds, in local standard time.
+
+    ``dst`` adds the summer hour; the caller decides it, as the summer-time option and
+    the system's daylight-saving flag say. accuracy=0 leaves out the milliseconds.
+    """
+    local = epoch_ms - time.timezone * 1000 + (3_600_000 if dst else 0)
+    days, rem = divmod(local, 86_400_000)
+    hours, rem = divmod(rem, 3_600_000)
+    minutes, rem = divmod(rem, 60_000)
+    seconds, ms = divmod(rem, 1000)
+    base = f"{days} {hours}:{minutes}:{seconds}"
+    return base + (f".{ms:03d}" if accuracy != 0 else "")
+
+
+def parse_time(text: str) -> int | None:
+    """Milliseconds of a 'D H:M:S[.mmm]' time on its own scale, or None if not one.
+
+    The inverse of format_time up to the zone: two times parsed this way can be
+    compared and subtracted, which is all the chip logic needs.
+    """
+    m = _TIME.fullmatch(text.strip())
+    if not m:
+        return None
+    days, hours, minutes, seconds = (int(g) for g in m.groups()[:4])
+    if hours > 23 or minutes > 59 or seconds > 59:
+        return None
+    ms = int(m.group(5) or 0)
+    return ((days * 24 + hours) * 60 + minutes) * 60_000 + seconds * 1000 + ms
+
+
 def get_current_time(accuracy: int = 3, summer_time: bool = False) -> str:
     """
     Return current local time as 'D H:M:S[.mmm]'.
@@ -84,19 +119,8 @@ def get_current_time(accuracy: int = 3, summer_time: bool = False) -> str:
     (C++ checkBoxUseSummerTimeShifting + _ftime dstflag check).
     Port of C++ getCurrentTime(accuracy).
     """
-    ts = time.time() - time.timezone  # UTC -> local standard time
-    if summer_time and time.localtime().tm_isdst:
-        ts += 3600
-    days = int(ts // 86400)
-    rem = ts - days * 86400
-    hours = int(rem // 3600)
-    rem -= hours * 3600
-    minutes = int(rem // 60)
-    seconds = int(rem - minutes * 60)
-    ms = int((ts - int(ts)) * 1000)
-    ms_str = str(ms).zfill(3)
-    base = f"{days} {hours}:{minutes}:{seconds}"
-    return base + (f".{ms_str}" if accuracy != 0 else "")
+    dst = summer_time and bool(time.localtime().tm_isdst)
+    return format_time(int(time.time() * 1000), accuracy, dst)
 
 
 def format_elapsed(seconds_since_start: float) -> str:

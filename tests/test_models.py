@@ -391,3 +391,44 @@ class TestReadFileLines:
 
         assert read_file_lines("") == []
         assert read_file_lines(str(tmp_path / "nope.txt")) == []
+
+
+# ---------------------------------------------------------------------------
+# format_time / parse_time: any moment, not only the current one
+# ---------------------------------------------------------------------------
+
+
+class TestFormatAndParseTime:
+    def test_formats_a_given_moment_in_local_standard_time(self, monkeypatch) -> None:
+        import time as _time
+
+        from app.models import format_time
+
+        monkeypatch.setattr(_time, "timezone", -18_000)  # UTC+5
+        assert format_time(90_000_123) == "1 6:0:0.123"
+        assert format_time(90_000_123, accuracy=0) == "1 6:0:0"
+        assert format_time(90_000_007) == "1 6:0:0.007"
+        assert format_time(90_000_000, dst=True) == "1 7:0:0.000"
+
+    def test_parses_what_it_formats(self, monkeypatch) -> None:
+        import time as _time
+
+        from app.models import format_time, parse_time
+
+        monkeypatch.setattr(_time, "timezone", 0)
+        for ms in (0, 1, 999, 90_000_123, 1_761_725_729_615):
+            assert parse_time(format_time(ms)) == ms
+        assert parse_time("20389 11:35:29") == parse_time("20389 11:35:29.000")
+
+    def test_refuses_what_is_not_a_time(self) -> None:
+        from app.models import parse_time
+
+        for text in (
+            "",
+            "11:35:29.615",
+            "1 24:0:0",
+            "1 1:60:0",
+            "1 1:1:60",
+            "1 1:1:1.5",
+        ):
+            assert parse_time(text) is None
