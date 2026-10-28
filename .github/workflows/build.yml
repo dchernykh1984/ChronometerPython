@@ -139,6 +139,19 @@ jobs:
           fi
           echo "Frozen app started cleanly."
 
+      # A connector is this same file started again with --connector. Only a run of
+      # the built file proves the pipes reach it, the windowed onefile Windows build
+      # above all (specs/001-event-sources/research.md, decision 1).
+      - name: Smoke-run a built-in connector from the frozen app
+        shell: bash
+        run: |
+          set -euo pipefail
+          exe="$ASSET"
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            exe="dist/${APP_BUNDLE_NAME}.app/Contents/MacOS/${APP_BUNDLE_NAME}"
+          fi
+          uv run python .github/scripts/connector_smoke.py "$exe"
+
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.name }}

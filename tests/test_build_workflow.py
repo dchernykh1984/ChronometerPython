@@ -9,12 +9,15 @@ file name in the dock because the two drifted apart unnoticed.
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 from app.main import _APP_NAME
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "build.yml"
+SMOKE = ROOT / ".github" / "scripts" / "connector_smoke.py"
 
 
 def _workflow_env(name: str) -> str:
@@ -51,3 +54,36 @@ def test_workflow_bundle_id_is_reverse_dns_for_this_project() -> None:
     bundle_id = _workflow_env("APP_BUNDLE_ID")
     assert re.fullmatch(r"[a-z0-9]+(\.[a-z0-9-]+)+", bundle_id), bundle_id
     assert bundle_id.rsplit(".", 1)[-1] == _project_name()
+
+
+def _smoke(*command: str) -> subprocess.CompletedProcess[bytes]:
+    return subprocess.run(  # noqa: S603 - this repo's own script
+        [sys.executable, str(SMOKE), *command],
+        cwd=ROOT,
+        capture_output=True,
+        timeout=120,
+        check=False,
+    )
+
+
+def test_every_build_runs_a_connector_from_the_frozen_app() -> None:
+    # A windowed onefile build gets its pipes only if Windows hands them over;
+    # nothing but a run of the built file shows it, so no platform is skipped.
+    text = WORKFLOW.read_text(encoding="utf-8")
+    step = re.search(
+        r"- name: Smoke-run a built-in connector.*?(?=\n      - |\Z)", text, re.DOTALL
+    )
+    assert step is not None, "the build no longer smoke-runs a connector"
+    assert "if:" not in step.group(0)
+    assert "connector_smoke.py" in step.group(0)
+
+
+def test_the_smoke_check_passes_for_the_chronometer_run_from_source() -> None:
+    done = _smoke(sys.executable, "-m", "app.main")
+    assert done.returncode == 0, done.stdout + done.stderr
+
+
+def test_the_smoke_check_fails_on_a_hello_of_another_kind() -> None:
+    hello = '{"type": "hello", "protocol": 1, "connector": "x", "kind": "chips"}'
+    done = _smoke(sys.executable, "-c", f"print({hello!r})")
+    assert done.returncode == 1
