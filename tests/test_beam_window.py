@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from app import main_window as mw
 from app.connector_protocol import Break
-from app.device_files import append_record, field, side_file
-from app.models import format_time
+from app.device_files import append_record, side_file
+from app.models import format_time, record_field
 
 T0 = 1_761_725_400_123  # a break's time on the computer's clock
 
@@ -73,7 +73,7 @@ def test_device_files_sit_next_to_the_results_file(tmp_path):
         tmp_path / "results.chip_reads.txt"
     )
     assert side_file("", "chip_reads") == ""
-    assert field("a#b\r\nc ") == "a b  c"
+    assert record_field("a#b\r\nc ") == "a b c"
     assert not append_record("", "x")
     blocker = tmp_path / "file"
     blocker.write_text("x", encoding="utf-8")

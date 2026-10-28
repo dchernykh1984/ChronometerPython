@@ -145,8 +145,18 @@ def dsq_status(reason: str = "") -> str:
     ``DSQ: <reason>``. ``#`` and newlines are stripped from the reason so they can never
     break the ``#``-delimited record; surrounding whitespace is trimmed.
     """
-    cleaned = reason.replace("#", " ").replace("\n", " ").replace("\r", " ").strip()
+    cleaned = record_field(reason)
     return f"DSQ: {cleaned}" if cleaned else "DSQ"
+
+
+def record_field(text: str) -> str:
+    """Text made safe for one field of a #-separated line.
+
+    No "#", and none of the line breaks str.splitlines() knows -- form feed and
+    U+2028 among them, not only CR and LF -- or the line would read back as two;
+    each becomes a space, and the ends are trimmed.
+    """
+    return " ".join(text.replace("#", " ").splitlines()).strip()
 
 
 # ---------------------------------------------------------------------------

@@ -22,11 +22,6 @@ def side_file(results_path: str, kind: str, extension: str = "txt") -> str:
     return f"{Path(results_path).with_suffix('')}.{kind}.{extension}"
 
 
-def field(text: str) -> str:
-    """Device text made safe for a #-separated line."""
-    return text.replace("#", " ").replace("\r", " ").replace("\n", " ").strip()
-
-
 def append_record(path: str, record: str) -> bool:
     """Append one line; False (and nothing raised) when it cannot be written."""
     if not path:

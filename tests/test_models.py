@@ -34,7 +34,9 @@ class TestDsqStatus:
         assert dsq_status("a#b") == "DSQ: a b"
 
     def test_newlines_are_stripped(self) -> None:
-        assert dsq_status("line1\nline2\r\nline3") == "DSQ: line1 line2  line3"
+        assert (
+            dsq_status("line1\nline2\r\nline3") == "DSQ: line1 line2 line3"
+        )  # a CRLF is one break
 
 
 # ---------------------------------------------------------------------------
@@ -400,3 +402,12 @@ class TestFormatAndParseTime:
             "1 1:1:1.5",
         ):
             assert parse_time(text) is None
+
+
+def test_a_field_keeps_no_line_break_python_would_split_at() -> None:
+    from app.models import dsq_status, record_field
+
+    text = "a\u2028b\x0cc\x85d#e\x1ef"
+    assert record_field(text) == "a b c d e f"
+    assert len(f"15#{record_field(text)}#".splitlines()) == 1
+    assert dsq_status("cut\u2028the course") == "DSQ: cut the course"
