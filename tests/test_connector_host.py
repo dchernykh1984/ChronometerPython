@@ -209,3 +209,36 @@ def test_a_line_without_an_end_is_dropped_before_it_fills_the_memory():
     assert events[0] == cp.Break(1, 5)
     assert not any("not JSON" in line for line in logs)  # its end went too
     host.stop(wait=True)
+
+
+def test_a_hello_of_an_unknown_kind_or_a_text_protocol_stops_it_for_good():
+    for hello, why in (
+        ('{"type": "hello", "protocol": 1, "kind": "rfid"}', "a rfid connector"),
+        ('{"type": "hello", "protocol": "1", "kind": "beam"}', "protocol '1'"),
+    ):
+        host, _, _, _ = _host()
+        host.start(_python(f"print({hello!r}, flush=True)\n{SLEEP}"), {})
+        assert _wait_until(lambda h=host: h.state.startswith("failed"))
+        assert why in host.state
+
+
+def test_events_already_sent_count_when_the_connector_is_stopped():
+    late = "\n".join(
+        [
+            "import json, sys, time",
+            HELLO % (1, "beam"),
+            "sys.stdin.readline()",
+            "time.sleep(0.2)",
+            "for seq in (1, 2, 3):",
+            "    beam = {'type': 'beam', 'seq': seq, 'time_ms': seq}",
+            "    print(json.dumps(beam), flush=True)",
+            SLEEP,
+        ]
+    )
+    host, events, states, _ = _host()
+    host.start(_python(late), {})
+    assert _wait_until(lambda: "running" in states)
+    _wait_until(lambda: False, timeout=0.05)  # the start command goes out
+    time.sleep(0.6)  # the window was busy: the events wait in the pipe
+    host.stop(wait=True)
+    assert [event.seq for event in events] == [1, 2, 3]

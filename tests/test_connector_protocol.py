@@ -46,8 +46,6 @@ def test_every_event_decodes():
         (_line(type="read", chip={"x": 1}), "text"),
         (_line(type="beam"), "seq is missing"),
         (_line(type="status", state="sleeping"), "state"),
-        (_line(type="hello", protocol=1, kind="video"), "kind"),
-        (_line(type="hello", kind="beam"), "protocol"),
         (_line(type="pong"), "id"),
     ],
 )
@@ -72,3 +70,16 @@ def test_commands_are_json_lines():
     )
     assert cp.stop() == b'{"cmd":"stop"}\n'
     assert json.loads(cp.ping(3)) == {"cmd": "ping", "id": 3}
+
+
+@pytest.mark.parametrize(
+    ("fields", "hello"),
+    [
+        ({"protocol": 1, "kind": "video"}, cp.Hello("", "video", 1)),
+        ({"kind": "beam"}, cp.Hello("", "beam", "None")),
+        ({"protocol": "1", "kind": "beam"}, cp.Hello("", "beam", "'1'")),
+        ({"protocol": True, "kind": 5}, cp.Hello("", "5", "True")),
+    ],
+)
+def test_any_hello_is_a_hello_for_the_host_to_judge(fields, hello):
+    assert cp.decode(_line(type="hello", **fields)) == hello

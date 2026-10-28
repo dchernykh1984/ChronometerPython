@@ -22,7 +22,7 @@ STATES = ("connecting", "connected", "disconnected")
 class Hello:
     connector: str
     kind: str
-    protocol: int
+    protocol: int | str  # as sent; anything but PROTOCOL stops the program for good
 
 
 @dataclass(frozen=True)
@@ -106,13 +106,18 @@ def _whole(obj: dict[str, Any], key: str) -> int | None:
 
 
 def _hello(obj: dict[str, Any]) -> Event:
+    """Any hello is one: the host checks what it names and stops a program of
+    another protocol or kind for good, instead of waiting for a hello forever."""
+    protocol = obj.get("protocol")
+    if isinstance(protocol, bool) or not isinstance(protocol, int):
+        protocol = repr(protocol)
     kind = obj.get("kind")
-    if kind not in KINDS:
-        raise ValueError(f"kind must be one of {KINDS}")
-    protocol = _whole(obj, "protocol")
-    if protocol is None:
-        raise ValueError("protocol is missing")
-    return Hello(_text(obj, "connector"), kind, protocol)
+    connector = obj.get("connector")
+    return Hello(
+        "" if connector is None else str(connector),
+        kind if isinstance(kind, str) else repr(kind),
+        protocol,
+    )
 
 
 def _read(obj: dict[str, Any]) -> Event:
