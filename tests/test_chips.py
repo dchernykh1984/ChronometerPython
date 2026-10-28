@@ -138,17 +138,35 @@ def test_the_state_survives_a_restart(tmp_path):
     assert again.on_read("A", 3000) == []  # same pass as before the restart
 
 
-def test_a_missing_or_broken_state_starts_fresh(tmp_path):
-    assert chips.load_chip_state(str(tmp_path / "none.json"), 5000).passes == {}
+def test_a_missing_or_broken_state_is_none(tmp_path):
+    assert chips.load_chip_state(str(tmp_path / "none.json"), 5000) is None
     broken = tmp_path / "broken.json"
     broken.write_text("{not json", encoding="utf-8")
-    assert chips.load_chip_state(str(broken), 5000).passes == {}
+    assert chips.load_chip_state(str(broken), 5000) is None
     old = tmp_path / "old.json"
     old.write_text('{"version": 99, "passes": {"15": [[0, 0]]}}', encoding="utf-8")
-    assert chips.load_chip_state(str(old), 5000).passes == {}
+    assert chips.load_chip_state(str(old), 5000) is None
     assert not chips.save_chip_state(
         str(tmp_path / "no" / "dir" / "s.json"), chips.ChipTiming()
     )
+
+
+def test_a_lost_state_comes_back_from_the_raw_reads_without_crossings():
+    raw = ["A#1 0:0:0.000#", "x#1 0:0:0.100#", "A#1 0:0:2.000#", "A#1 0:0:9.000#", "?"]
+    timing = chips.rebuilt_timing(raw, chips.ChipMap(bib_of={"A": "15"}), 5000)
+    day = 86_400_000
+    assert timing.passes == {"15": [[day, day + 2000], [day + 9000, day + 9000]]}
+    assert timing.pending == [("X", day + 100)]
+    assert timing.unwritten == []
+    assert timing.processed_lines == 5
+    assert timing.on_read("A", day + 3000) == []  # still the first pass
+
+
+def test_the_state_is_on_disk_before_it_replaces_the_old_one(tmp_path, monkeypatch):
+    synced: list[int] = []
+    monkeypatch.setattr(chips.os, "fsync", synced.append)
+    assert chips.save_chip_state(str(tmp_path / "s.json"), chips.ChipTiming())
+    assert len(synced) == 1
 
 
 def test_raw_reads_lines_give_chip_and_time():
