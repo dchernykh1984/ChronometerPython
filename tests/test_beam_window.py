@@ -101,12 +101,23 @@ def _two_slots_done_typing_in_slot_3(win) -> None:
     win._focused_slot = 2  # the judge went on to slot 3
 
 
-def test_a_break_never_pulls_the_focus_out_of_another_field(win):
+def test_a_break_while_the_judge_types_elsewhere_only_stamps(win, tmp_path):
     _two_slots_done_typing_in_slot_3(win)
     win._edit_dsq.setFocus()  # the judge is typing a DSQ meanwhile
     win._on_source_event(Break(1, T0))
-    assert win._number_edits[0].text() == "11"  # slot 1 was written, all moved up
+    assert win._number_edits[0].text() == "10"  # nothing written, nothing moved
+    assert win._time_edits[2].text() == f"{format_time(T0)}#nextLap"
     assert win.focusWidget() is win._edit_dsq
+    assert not (tmp_path / "results.txt").exists()
+
+
+def test_a_break_never_writes_a_slot_still_waiting_for_its_number(win, tmp_path):
+    win._focused_slot = 2  # where the judge typed last, before going elsewhere
+    win._edit_dsq.setFocus()
+    win._on_source_event(Break(1, T0))
+    assert win._time_edits[0].text() == f"{format_time(T0)}#nextLap"
+    assert win._number_edits[0].text() == ""
+    assert not (tmp_path / "results.txt").exists()
 
 
 def test_the_focus_follows_the_number_being_typed_when_a_break_shifts(win):
