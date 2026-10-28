@@ -890,9 +890,13 @@ class MainWindow(QMainWindow):
         self._save_chip_state()  # a crossing made is recorded at once
 
     def _retry_unwritten(self) -> None:
-        """Write waiting chip crossings in order; never a dialog (constitution III)."""
+        """Write waiting chip crossings in order; never a dialog (constitution III).
+
+        Only into the results file they belong to: after a switch to another file
+        they wait in their own state until that file is in use again.
+        """
         timing = self._chip_timing
-        if timing is None:
+        if timing is None or self._chip_timing_for != self._results_path():
             return
         while timing.unwritten:
             line = timing.unwritten[0]
