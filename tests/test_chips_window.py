@@ -136,3 +136,34 @@ def test_an_unknown_chip_is_listed_and_timed_once_the_map_binds_it(win, chips_on
         f"31#{format_time(T0 + 20_000)}#nextLap#",
     ]
     assert win._list_unknown.count() == 0
+
+
+def test_the_chip_report_is_written_next_to_the_results_file(
+    win, chips_on, monkeypatch
+):
+    told = []
+    monkeypatch.setattr(mw.QMessageBox, "information", lambda *a: told.append(a[2]))
+    for chip, offset in (("A", 0), ("B", 300), ("a", 2000), ("A", 9000)):
+        win._on_source_event(Read(chip, T0 + offset))
+    win._on_chip_report()
+    report = (chips_on / "results.chip_report.txt").read_text(encoding="utf-8")
+    assert "bib 15: chip A read in 2 of 2 crossings, 3 reads\n" in report
+    assert "bib 15: chip B read in 1 of 2 crossings, 1 read\n" in report
+    assert "bib 22: chip C\n" in report
+    assert told and "results.chip_report.txt" in told[0]
+
+
+def test_the_chip_report_needs_a_results_file(win, monkeypatch):
+    warned = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warned.append(a[2]))
+    win._edit_results_file.setText("")
+    win._on_chip_report()
+    assert warned == ["Choose the results file first."]
+
+
+def test_a_chip_report_that_cannot_be_written_says_so(win, chips_on, monkeypatch):
+    warned = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warned.append(a[2]))
+    (chips_on / "results.chip_report.txt").mkdir()  # a folder where the file goes
+    win._on_chip_report()
+    assert warned and warned[0].startswith("Not written:")

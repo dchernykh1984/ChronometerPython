@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from app import connector_protocol as cp
+from app.chip_report import chip_report
 from app.chips import (
     ChipMap,
     ChipTiming,
@@ -707,6 +708,9 @@ class MainWindow(QMainWindow):
         )
         self._list_unknown = QListWidget()
         layout.addWidget(self._list_unknown)
+        report_button = QPushButton("Chip report")
+        report_button.clicked.connect(self._on_chip_report)
+        layout.addWidget(report_button)
         self._chip_map = ChipMap()
         # Chip state belongs to one results file; loaded when that file is in use.
         self._chip_timing: ChipTiming | None = None
@@ -786,6 +790,24 @@ class MainWindow(QMainWindow):
             f"start protocol downloaded: {len(result)} line(s); "
             f"{self._lbl_chip_map.text()}; previous file kept as {backup.name}"
         )
+
+    def _on_chip_report(self) -> None:
+        """Write how well each chip was read next to the results file (Story 6)."""
+        results = self._results_path()
+        if not results:
+            QMessageBox.warning(self, "Chip report", "Choose the results file first.")
+            return
+        raw = read_file_lines(side_file(results, "chip_reads"))
+        reads = [read for line in raw if (read := raw_read(line)) is not None]
+        lines = chip_report(reads, self._chip_map, self._spin_dead_time.value() * 1000)
+        path = app_path(side_file(results, "chip_report"))
+        try:
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+        except OSError as exc:
+            QMessageBox.warning(self, "Chip report", f"Not written: {exc}")
+            return
+        self._append_log(f"chip report written: {path}")
+        QMessageBox.information(self, "Chip report", f"Written to {path}")
 
     def _on_dead_time(self, seconds: int) -> None:
         self._sources["dead_time_s"] = str(seconds)
