@@ -121,6 +121,35 @@ class ChipTiming:
             return []
         return [(bib, at)] if self._into_passes(bib, at) else []
 
+    def set_map(self, chip_map: ChipMap) -> list[tuple[str, int]]:
+        """Use a new map; the waiting reads of chips it binds become crossings.
+
+        They go into their bib's passes in time order, so a pass gets its crossing
+        at its first read. A chip that moved to another bib keeps its past
+        crossings on the old one: only waiting reads are replayed.
+        """
+        self.chip_map = chip_map
+        known = sorted(
+            (at, chip) for chip, at in self.pending if chip in chip_map.bib_of
+        )
+        self.pending = [(c, at) for c, at in self.pending if c not in chip_map.bib_of]
+        made: list[tuple[str, int]] = []
+        for at, chip in known:
+            made += self.on_read(chip, at)
+        return made
+
+    def unknown(self) -> dict[str, tuple[int, int, int]]:
+        """Chips no map binds, with first read, last read and number of reads.
+
+        A chip on two bibs is not unknown: the conflicts list names it.
+        """
+        found: dict[str, tuple[int, int, int]] = {}
+        for chip, at in self.pending:
+            if chip not in self.chip_map.conflicts:
+                first, last, count = found.get(chip, (at, at, 0))
+                found[chip] = (min(first, at), max(last, at), count + 1)
+        return found
+
     def _into_passes(self, bib: str, at: int) -> bool:
         """Put a read into the bib's passes; True when it starts a new one."""
         passes = self.passes.setdefault(bib, [])
