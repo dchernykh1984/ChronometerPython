@@ -573,7 +573,8 @@ class MainWindow(QMainWindow):
         self._save_sources()
         self._show_connector_settings()
 
-    def _on_connector_settings_edited(self) -> None:
+    def _on_connector_settings_edited(self) -> bool:
+        """Keep the Settings field's text; False when it is not valid JSON."""
         name, text = (
             self._connector_name(),
             self._edit_connector_settings.text().strip(),
@@ -590,14 +591,18 @@ class MainWindow(QMainWindow):
                     self, "Event source", 'Settings are JSON, e.g. {"min_s": 5}.'
                 )
                 self._show_connector_settings()
-                return
+                return False
             set_connector_settings(self._sources, name, settings)
         self._save_sources()
+        return True
 
     def _on_source_start(self) -> None:
         kind, name = self._source_kind(), self._connector_name()
         info = find(name)
         if kind == "hand" or info is None or not info.available:
+            return
+        # Clicking Start ends no editing on macOS, where a button takes no focus.
+        if not self._on_connector_settings_edited():
             return
         if not self._results_path():
             QMessageBox.warning(
@@ -692,9 +697,10 @@ class MainWindow(QMainWindow):
         browse.setFixedWidth(30)
         browse.clicked.connect(self._on_select_start_protocol)
         row.addWidget(browse)
-        reload_button = QPushButton("Reload")
-        reload_button.clicked.connect(self._reload_chip_map)
-        row.addWidget(reload_button)
+        # The path as typed: on macOS a click on a button ends no editing.
+        self._btn_reload_start = QPushButton("Reload")
+        self._btn_reload_start.clicked.connect(self._on_start_protocol_path)
+        row.addWidget(self._btn_reload_start)
         layout.addLayout(row)
         # Only on this button: nothing is ever downloaded on its own (constitution IV).
         self._btn_download_start = QPushButton("Download start protocol from the site")
@@ -774,6 +780,7 @@ class MainWindow(QMainWindow):
         self._lbl_chip_map.setText(text)
 
     def _on_download_start_protocol(self) -> None:
+        self._on_start_protocol_path()  # into the path as typed, Return or not
         site = self._http_cfg.get("site_url", "").strip()
         token = self._http_cfg.get("token", "").strip()
         if not site or not token:
