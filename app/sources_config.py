@@ -11,7 +11,9 @@ import json
 from typing import Any
 
 from app.connectors import find
+from app.models import read_file_lines
 from app.paths import app_path
+from app.results_file import write_in_one_step
 
 SOURCES_PATH = str(app_path("data", "sources.txt"))
 SOURCES = ("hand", "beam", "chips")
@@ -28,33 +30,37 @@ DEFAULTS = {
 def load_sources(path: str = SOURCES_PATH) -> dict[str, str]:
     """The saved settings over the defaults; unknown keys are kept for later writers."""
     cfg = dict(DEFAULTS)
-    p = app_path(path)
-    if p.exists():
-        for encoding in ("utf-8", "cp1251", "latin-1"):
-            try:
-                text = p.read_text(encoding=encoding)
-                break
-            except UnicodeDecodeError:
-                continue
-        for line in text.splitlines():
-            key, sep, value = line.partition("=")
-            if sep and key.strip():
-                cfg[key.strip()] = value.strip()
+    for line in read_file_lines(path):
+        key, sep, value = line.partition("=")
+        if sep and key.strip():
+            cfg[key.strip()] = value.strip()
     if cfg["source"] not in SOURCES:
         cfg["source"] = "hand"
     return cfg
 
 
 def save_sources(cfg: dict[str, str], path: str = SOURCES_PATH) -> bool:
+    """Write the settings in one step: a crash never leaves the file half written."""
     try:
         target = app_path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(
-            "".join(f"{key}={value}\n" for key, value in cfg.items()), encoding="utf-8"
+        write_in_one_step(
+            target, "".join(f"{key}={value}\n" for key, value in cfg.items())
         )
         return True
     except OSError:
         return False
+
+
+def dead_time_s(cfg: dict[str, str]) -> int:
+    """The saved dead time in seconds; the default when it is not a whole number.
+
+    The file can be edited by hand, and a typo must not keep the window shut.
+    """
+    try:
+        return int(cfg.get("dead_time_s", ""))
+    except ValueError:
+        return int(DEFAULTS["dead_time_s"])
 
 
 def connector_settings(cfg: dict[str, str], name: str) -> dict[str, Any]:

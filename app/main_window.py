@@ -79,6 +79,7 @@ from app.results_file import (
 )
 from app.sources_config import (
     connector_settings,
+    dead_time_s,
     load_sources,
     save_sources,
     set_connector_settings,
@@ -697,7 +698,7 @@ class MainWindow(QMainWindow):
         dead_row.addWidget(QLabel("Dead time, s (one pass):"))
         self._spin_dead_time = QSpinBox()
         self._spin_dead_time.setRange(1, 120)
-        self._spin_dead_time.setValue(int(self._sources.get("dead_time_s") or 5))
+        self._spin_dead_time.setValue(dead_time_s(self._sources))
         self._spin_dead_time.valueChanged.connect(self._on_dead_time)
         dead_row.addWidget(self._spin_dead_time)
         dead_row.addStretch(1)
