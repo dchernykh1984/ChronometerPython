@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 import time
 
+import shiboken6
 from PySide6.QtWidgets import QApplication
 
 from app import connector_host as ch
@@ -155,3 +156,23 @@ def test_built_in_connectors_run_from_the_chronometer_itself(monkeypatch):
         "--connector",
         "dummy-beam",
     ]
+
+
+def test_a_stopped_connector_gets_its_grace_time_after_its_host_is_freed(tmp_path):
+    closed = tmp_path / "closed"
+    # Takes its time to stop, as a reader closing its session does.
+    slow = "\n".join(
+        [
+            "import json, sys, time",
+            HELLO % (1, "beam"),
+            "sys.stdin.read()",
+            "time.sleep(0.3)",
+            f"open({str(closed)!r}, 'w').close()",
+        ]
+    )
+    host, _, states, _ = _host()
+    host.start(_python(slow), {})
+    assert _wait_until(lambda: "running" in states)
+    host.stop()
+    shiboken6.delete(host)  # what the window's deleteLater does on its next turn
+    assert _wait_until(closed.exists, timeout=5)
