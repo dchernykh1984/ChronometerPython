@@ -305,3 +305,20 @@ def test_steady_reads_do_not_put_off_the_state_save(win, chips_on):
     time.sleep(0.3)
     win._on_source_event(Read("D", T0 + 300))
     assert win._chip_state_timer.remainingTime() < 900
+
+
+def test_waiting_crossings_are_counted_on_the_source_state_line(
+    win, chips_on, monkeypatch
+):
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: pytest.fail("dialog"))
+    blocker = chips_on / "blocker"
+    blocker.write_text("x", encoding="utf-8")
+    win._edit_results_file.setText(str(blocker / "results.txt"))
+    win._on_source_state("running")
+    win._on_source_event(Read("A", T0))
+    assert win._lbl_source_state.text() == "running; 1 chip crossing(s) waiting"
+    win._edit_results_file.setText(str(chips_on / "other.txt"))
+    win._retry_unwritten()  # the timer's tick after the switch
+    assert win._lbl_source_state.text() == "running"
+    assert win._lbl_unwritten.text() == ""
+    assert win._unwritten_timer.isActive()  # for when that file is back
