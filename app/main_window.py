@@ -372,13 +372,14 @@ class MainWindow(QMainWindow):
         return [e.text() for e in self._number_edits]
 
     def _update_crosses(self) -> None:
-        log_items = [self._log.item(i).text() for i in range(self._log.count())]
+        # From the results file, not the action log: an edit or a deletion changes
+        # the file, and the counts must follow it (also after a restart).
         current_slots = self._slot_numbers()
         max_laps = self._spin_max_laps.value()
         show_finish_all = False
         for i, lbl in enumerate(self._cross_labels):
             n = self._number_edits[i].text()
-            count = get_number_of_crosses(n, log_items, current_slots)
+            count = get_number_of_crosses(n, self._result_lines, current_slots)
             lbl.setText(str(count))
             if n and count >= max_laps:
                 show_finish_all = True
@@ -414,6 +415,8 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         self._crossings = QListWidget()
+        # The results file's lines, re-read after every write; the counts use them.
+        self._result_lines: list[str] = []
         layout.addWidget(self._crossings)
         row = QHBoxLayout()
         for text, slot in (
@@ -428,8 +431,9 @@ class MainWindow(QMainWindow):
         return page
 
     def _refresh_crossings(self) -> None:
+        self._result_lines = read_results(self._results_path())
         self._crossings.clear()
-        self._crossings.addItems(read_results(self._results_path()))
+        self._crossings.addItems(self._result_lines)
         self._crossings.scrollToBottom()
 
     def _ask_crossing(

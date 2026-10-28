@@ -120,3 +120,23 @@ def test_a_saved_slot_shows_up_in_the_tab(win, results):
         win._crossings.item(win._crossings.count() - 1).text()
         == "42#1 10:5:0.000#finish#"
     )
+
+
+def test_crossing_counts_follow_the_results_file(win, results, monkeypatch):
+    win._number_edits[0].setText("15")
+    win._update_crosses()
+    assert win._cross_labels[0].text() == "2"  # the file's line and the slot
+    monkeypatch.setattr(
+        mw.QMessageBox, "question", lambda *a: mw.QMessageBox.StandardButton.Yes
+    )
+    win._crossings.setCurrentRow(0)
+    win._on_delete_crossing()
+    assert win._cross_labels[0].text() == "1"
+
+
+def test_counts_include_crossings_written_before_a_restart(win, results):
+    # The action log of a new window is empty; the file is not.
+    assert win._log.count() == 0
+    win._number_edits[1].setText("16")
+    win._update_crosses()
+    assert win._cross_labels[1].text() == "2"

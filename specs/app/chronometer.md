@@ -21,7 +21,7 @@ Five slots on the left, each a number field and a time field. The time field hol
 - **Finish mode** chooses the action: `finish` when checked, `nextLap` otherwise.
 - **Second user mode** enables a big FINISH button that stamps the first slot without a time (or
   shifts when all are stamped); a second person presses it while the judge types numbers.
-- **Crosses** shows how often each slot's number already appears in the action log and the slots;
+- **Crosses** shows how often each slot's number already appears in the results file and the slots;
   "FINISH ALL" lights up when one reaches **Max laps**. This is a hint for the judge only.
 
 ## DSQ and groups
