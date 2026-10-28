@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 from app import connector_protocol as cp
+from app.chips import ChipMap, build_chip_map, read_start_protocol
 from app.connector_host import ConnectorHost, builtin_command
 from app.connectors import builtin, connectors_for, find
 from app.device_files import append_record, field, side_file
@@ -123,6 +124,7 @@ class MainWindow(QMainWindow):
         self._sources: dict[str, str] = load_sources()
         self._host: ConnectorHost | None = None
         self._setup_ui()
+        self._reload_chip_map()  # the file used last; the site is never asked here
         self._config_path: str = _CONFIG_PATH
         self._load_config(self._config_path)
         self._apply_http_config_to_ui()
@@ -234,6 +236,7 @@ class MainWindow(QMainWindow):
         self._log = QListWidget()
         self._tabs.addTab(self._log, "Action log")
         self._tabs.addTab(self._build_crossings_tab(), "Crossings")
+        self._tabs.addTab(self._build_chips_tab(), "Chips")
         left.addWidget(self._tabs)
         root.addLayout(left)
 
@@ -618,6 +621,62 @@ class MainWindow(QMainWindow):
             self._append_log(f"source {event.state} {event.detail}".rstrip())
         elif isinstance(event, cp.Error):
             self._append_log(f"source error: {event.message}")
+
+    # ------------------------------------------------------------------
+    # chips: the start protocol file and the map from chip to bib
+    # ------------------------------------------------------------------
+
+    def _build_chips_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Start protocol:"))
+        self._edit_start_protocol = QLineEdit(self._sources["start_protocol"])
+        self._edit_start_protocol.editingFinished.connect(self._on_start_protocol_path)
+        row.addWidget(self._edit_start_protocol)
+        browse = QPushButton("...")
+        browse.setFixedWidth(30)
+        browse.clicked.connect(self._on_select_start_protocol)
+        row.addWidget(browse)
+        reload_button = QPushButton("Reload")
+        reload_button.clicked.connect(self._reload_chip_map)
+        row.addWidget(reload_button)
+        layout.addLayout(row)
+        self._lbl_chip_map = QLabel()
+        layout.addWidget(self._lbl_chip_map)
+        layout.addWidget(QLabel("Chips on two bibs (bound to neither):"))
+        self._list_conflicts = QListWidget()
+        layout.addWidget(self._list_conflicts)
+        self._chip_map = ChipMap()
+        return page
+
+    def _on_start_protocol_path(self) -> None:
+        self._sources["start_protocol"] = self._edit_start_protocol.text().strip()
+        self._save_sources()
+        self._reload_chip_map()
+
+    def _on_select_start_protocol(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "Start protocol file")
+        if path:
+            self._edit_start_protocol.setText(path)
+            self._on_start_protocol_path()
+
+    def _reload_chip_map(self) -> None:
+        """Build the chip map from the start protocol file as it is now."""
+        path = self._sources["start_protocol"]
+        lines = read_start_protocol(path)
+        self._chip_map = build_chip_map(lines or [])
+        self._list_conflicts.clear()
+        for chip, bibs in sorted(self._chip_map.conflicts.items()):
+            self._list_conflicts.addItem(f"{chip}: bibs {', '.join(bibs)}")
+        if lines is None:
+            text = f"No start protocol file: {path or '(none chosen)'}"
+        else:
+            text = (
+                f"{len(self._chip_map.bib_of)} chips of {self._chip_map.bibs} bibs "
+                f"from {path}; {len(self._chip_map.conflicts)} on two bibs"
+            )
+        self._lbl_chip_map.setText(text)
 
     # ------------------------------------------------------------------
     # crossings: the results file, corrected by hand
