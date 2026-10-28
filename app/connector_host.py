@@ -3,8 +3,9 @@
 A connector that exits, fails to start, sends a fatal error, says nothing within
 the hello timeout or stops answering pings is started again after a pause that
 doubles from 1 s to 30 s while it keeps failing, and is back to 1 s after it ran
-for 30 s without failing. A program that speaks another protocol is stopped for
-good. Everything happens through QProcess signals, so the window never waits.
+for 30 s from its hello without failing. A program that speaks another protocol
+is stopped for good. Everything happens through QProcess signals, so the window
+never waits.
 """
 
 from __future__ import annotations
@@ -91,9 +92,10 @@ class ConnectorHost(QObject):
         self._settings: dict[str, Any] = {}
         self._process: QProcess | None = None
         self._buffer = b""
+        self._overlong = False  # dropping a line too long to keep, up to its end
         self._wanted = False
         self._pause_ms: int | None = None
-        self._started_at = 0.0
+        self._hello_at: float | None = None  # a steady run counts from the hello
         self._ping_id = 0
         self._last_pong = 0.0
         self.state = "stopped"
@@ -145,8 +147,8 @@ class ConnectorHost(QObject):
         process.readyReadStandardError.connect(lambda p=process: self._on_stderr(p))
         process.finished.connect(lambda *_, p=process: self._on_ended(p, "exited"))
         process.errorOccurred.connect(lambda error, p=process: self._on_error(p, error))
-        self._process, self._buffer = process, b""
-        self._started_at = time.monotonic()
+        self._process, self._buffer, self._overlong = process, b"", False
+        self._hello_at = None
         self._set_state("starting")
         self._hello_timer.start(self._hello_timeout_ms)
         process.start(self._program[0], self._program[1:])
@@ -162,7 +164,11 @@ class ConnectorHost(QObject):
         _dispose(process)
         for timer in (self._hello_timer, self._ping_timer):
             timer.stop()
-        ran_ms = round((time.monotonic() - self._started_at) * 1000)
+        ran_ms = (
+            0
+            if self._hello_at is None
+            else round((time.monotonic() - self._hello_at) * 1000)
+        )
         self._pause_ms = next_pause(self._pause_ms, ran_ms)
         pause = round(self._pause_ms * self._pause_scale)
         self.log.emit(
@@ -197,6 +203,15 @@ class ConnectorHost(QObject):
             return
         self._buffer += bytes(process.readAllStandardOutput().data())
         *lines, self._buffer = self._buffer.split(b"\n")
+        if self._overlong and lines:  # the end of a line already dropped
+            lines.pop(0)
+            self._overlong = False
+        if len(self._buffer) > cp.MAX_LINE:  # never kept whole, however long it gets
+            if not self._overlong:
+                self.log.emit(
+                    f"connector line ignored: longer than {cp.MAX_LINE} bytes"
+                )
+            self._buffer, self._overlong = b"", True
         for line in lines:
             if line.strip() and self._process is process:
                 self._handle(cp.decode(line))
@@ -231,7 +246,7 @@ class ConnectorHost(QObject):
         if self._process is None:
             return
         self._process.write(cp.start(self._settings))
-        self._last_pong = time.monotonic()
+        self._last_pong = self._hello_at = time.monotonic()
         self._ping_timer.start()
         self._set_state("running")
 

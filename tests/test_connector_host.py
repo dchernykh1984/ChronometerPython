@@ -176,3 +176,36 @@ def test_a_stopped_connector_gets_its_grace_time_after_its_host_is_freed(tmp_pat
     host.stop()
     shiboken6.delete(host)  # what the window's deleteLater does on its next turn
     assert _wait_until(closed.exists, timeout=5)
+
+
+def test_the_pause_grows_for_a_connector_that_never_says_hello(monkeypatch):
+    # The hello wait is as long as a steady run; time without a hello is no run.
+    monkeypatch.setattr(ch, "STEADY_MS", 200)
+    host, _, states, _ = _host(hello_timeout_ms=300)
+    host.start(_python(SLEEP), {})
+    assert _wait_until(lambda: "restarting in 2 s" in states)
+    host.stop(wait=True)
+
+
+def test_a_line_without_an_end_is_dropped_before_it_fills_the_memory():
+    flood = "\n".join(
+        [
+            "import json, sys",
+            HELLO % (1, "beam"),
+            "sys.stdin.readline()",
+            "sys.stdout.write('x' * 200000)",
+            "sys.stdout.flush()",
+            "sys.stdin.readline()",  # the first ping, 2 s later
+            "print()",
+            "print(json.dumps({'type': 'beam', 'seq': 1, 'time_ms': 5}), flush=True)",
+            SLEEP,
+        ]
+    )
+    host, events, _, logs = _host(ping_ms=2000)
+    host.start(_python(flood), {})
+    assert _wait_until(lambda: any("longer than" in line for line in logs), 1.5)
+    assert len(host._buffer) <= cp.MAX_LINE
+    assert _wait_until(lambda: events)
+    assert events[0] == cp.Break(1, 5)
+    assert not any("not JSON" in line for line in logs)  # its end went too
+    host.stop(wait=True)
