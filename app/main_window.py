@@ -1025,14 +1025,29 @@ class MainWindow(QMainWindow):
             return -1
         return row
 
+    def _still_holding(self, row: int, line: str) -> list[str] | None:
+        """The results file read again after a dialog, if line is still its row-th.
+
+        A device appends crossings while a dialog waits, so a change is made to the
+        file as it is then, never to a copy read before the dialog.
+        """
+        lines = read_results(self._results_path())
+        if row < len(lines) and lines[row] == line:
+            return lines
+        QMessageBox.warning(
+            self, "Crossings", "The results file changed meanwhile; try again."
+        )
+        self._refresh_crossings()
+        return None
+
     def _on_add_crossing(self) -> None:
-        lines = self._crossing_lines()
-        if lines is None:
+        if self._crossing_lines() is None:
             return
         now = get_current_time(summer_time=self._chk_summer_time.isChecked())
         got = self._ask_crossing("", now, self._action())
         if got is not None:
             line = crossing_line(*got)
+            lines = read_results(self._results_path())  # as it is after the dialog
             self._change_results([*lines, line], f"added {line}")
 
     def _on_edit_crossing(self) -> None:
@@ -1040,22 +1055,28 @@ class MainWindow(QMainWindow):
         row = -1 if lines is None else self._selected_crossing(lines)
         if lines is None or row < 0:
             return
-        number, time_str, action = ([*lines[row].split("#"), "", ""])[:3]
+        old = lines[row]
+        number, time_str, action = ([*old.split("#"), "", ""])[:3]
         got = self._ask_crossing(number, time_str, action)
-        if got is not None:
+        lines = None if got is None else self._still_holding(row, old)
+        if got is not None and lines is not None:
             new = crossing_line(*got)
             changed = [*lines[:row], new, *lines[row + 1 :]]
-            self._change_results(changed, f"changed {lines[row]} to {new}")
+            self._change_results(changed, f"changed {old} to {new}")
 
     def _on_delete_crossing(self) -> None:
         lines = self._crossing_lines()
         row = -1 if lines is None else self._selected_crossing(lines)
         if lines is None or row < 0:
             return
-        reply = QMessageBox.question(self, "Crossings", f"Delete {lines[row]}?")
-        if reply == QMessageBox.StandardButton.Yes:
+        old = lines[row]
+        reply = QMessageBox.question(self, "Crossings", f"Delete {old}?")
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        lines = self._still_holding(row, old)
+        if lines is not None:
             changed = [*lines[:row], *lines[row + 1 :]]
-            self._change_results(changed, f"deleted {lines[row]}")
+            self._change_results(changed, f"deleted {old}")
 
     def _change_results(self, lines: list[str], what: str) -> None:
         """Rewrite the results file after its backup, then log, show and upload it."""

@@ -140,3 +140,54 @@ def test_counts_include_crossings_written_before_a_restart(win, results):
     win._number_edits[1].setText("16")
     win._update_crosses()
     assert win._cross_labels[1].text() == "2"
+
+
+DEVICE = "22#1 10:0:5.000#nextLap#"
+
+
+def _a_device_writes(results) -> None:
+    """A chip crossing appended while a dialog of the tab is open."""
+    with results.open("a", encoding="utf-8") as f:
+        f.write(DEVICE + "\n")
+
+
+@pytest.mark.parametrize("change", ["add", "edit"])
+def test_a_crossing_written_while_the_dialog_is_open_is_kept(
+    win, results, monkeypatch, change
+):
+    def ask(*a):
+        _a_device_writes(results)
+        return ("51", "1 10:0:0.000", "nextLap")
+
+    monkeypatch.setattr(win, "_ask_crossing", ask)
+    win._crossings.setCurrentRow(0)
+    getattr(win, f"_on_{change}_crossing")()
+    lines = results.read_text(encoding="utf-8").splitlines()
+    assert DEVICE in lines
+    assert "51#1 10:0:0.000#nextLap#" in lines
+
+
+def test_a_crossing_written_while_a_delete_is_asked_is_kept(win, results, monkeypatch):
+    def yes(*a):
+        _a_device_writes(results)
+        return mw.QMessageBox.StandardButton.Yes
+
+    monkeypatch.setattr(mw.QMessageBox, "question", yes)
+    win._crossings.setCurrentRow(1)
+    win._on_delete_crossing()
+    assert results.read_text(encoding="utf-8").splitlines() == [LINES[0], DEVICE]
+
+
+def test_a_line_gone_while_the_dialog_is_open_is_not_edited(win, results, monkeypatch):
+    warnings = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warnings.append(a[2]))
+
+    def ask(*a):
+        results.write_text(LINES[1] + "\n", encoding="utf-8")
+        return ("51", "1 10:0:0.000", "nextLap")
+
+    monkeypatch.setattr(win, "_ask_crossing", ask)
+    win._crossings.setCurrentRow(0)
+    win._on_edit_crossing()
+    assert results.read_text(encoding="utf-8").splitlines() == [LINES[1]]
+    assert "changed meanwhile" in warnings[0]
