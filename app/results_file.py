@@ -12,7 +12,7 @@ import os
 import time
 from pathlib import Path
 
-from app.models import parse_time, read_file_lines
+from app.models import parse_time
 from app.paths import app_path
 
 ACTIONS = ("nextLap", "finish", "nextStage")
@@ -20,11 +20,6 @@ ACTIONS = ("nextLap", "finish", "nextStage")
 # reading it, an editor, an antivirus scan) makes os.replace fail for a moment.
 _REPLACE_PATIENCE_S = 2.0
 _REPLACE_PAUSE_S = 0.05
-
-
-def read_results(path: str) -> list[str]:
-    """The lines of the results file, without empty ones; [] if there is none."""
-    return read_file_lines(path)
 
 
 def crossing_line(number: str, time_str: str, action: str) -> str:
@@ -73,7 +68,8 @@ def write_in_one_step(target: Path, text: str) -> None:
     untouched, when it cannot be done.
     """
     temporary = target.with_name(target.name + ".tmp")
-    with temporary.open("w", encoding="utf-8", newline="\n") as f:
+    # The platform's line end, as every append to the results file writes it.
+    with temporary.open("w", encoding="utf-8") as f:
         f.write(text)
         f.flush()
         os.fsync(f.fileno())
