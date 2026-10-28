@@ -10,7 +10,8 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
   padding. -- `refactor(time): format any moment, not only the current one`
 - [ ] T002 `app/results_file.py`: `read_results()`, `validate_crossing()`, `rewrite_results()`
   (backup to `temp/results<time>_<n>.txt`, refuse without it, temporary file, fsync,
-  `os.replace`). Unit tests: backup content, refusal, atomicity on a failing write, validation.
+  `os.replace`, retried for up to 2 s on a permission error). Unit tests: backup content, refusal,
+  atomicity on a failing write, a replace that fails twice and then succeeds, validation.
   -- `feat(results): rewrite the results file only after a backup of it`
 - [ ] T003 [US3] "Crossings" tab: the results file as a list; Add (number, time defaulting to now,
   action), Edit, Delete with confirmation; each change through `rewrite_results()`, logged and
@@ -35,31 +36,38 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
   -- `feat(connectors): start, watch and restart connector processes`
 - [ ] T009 [US5] `app/sources_config.py` (`data/sources.txt`); "Event source" group: source,
   connector (stubs disabled and marked "not available yet"), settings, Start/Stop, state line,
-  test-data warning; `closeEvent` stops connectors. Qt tests.
+  test-data warning; `closeEvent` stops connectors. Qt tests, including that a window opened with a
+  saved source starts no connector until Start.
   -- `feat(sources): choose the event source and its connector`
 
 ## Phase 3: beam (US4)
 
-- [ ] T010 [US4] `_stamp_first_empty_slot(time_str)` shared by the second-user button and beam
-  breaks; every break appended to `<results name>.beam_breaks.txt` first. Qt tests with the test
-  beam. -- `feat(beam): stamp the first empty slot with each beam break and keep every break`
+- [ ] T010 [US4] `_stamp_first_empty_slot(time_str, take_next, quiet)` shared by the second-user
+  button and beam breaks; a break never takes the Next field and never opens a dialog; every break
+  appended to `<results name>.beam_breaks.txt` first. Qt tests with the test beam, including a full
+  set of slots and an unwritable results file.
+  -- `feat(beam): stamp the first empty slot with each beam break and keep every break`
 
 ## Phase 4: chips (US1, US2)
 
 - [ ] T011 [US2] `app/chips.py`: `normalise_chip()`, `build_chip_map()` with conflicts and the lines
-  that bind nothing; "Chips" tab with the start protocol file, Reload, counts and conflicts. Unit
-  and Qt tests. -- `feat(chips): map chips to bibs from the start protocol file`
+  that bind nothing; "Chips" tab with the start protocol file, Reload, counts and conflicts; the
+  file named in `data/sources.txt` is read at start-up. Unit and Qt tests.
+  -- `feat(chips): map chips to bibs from the start protocol file`
 - [ ] T012 [US1] Pass tracker, `ChipTiming.on_read()`, chip state file with replay of unprocessed raw
   lines, dead time setting; reads appended to `<results name>.chip_reads.txt` before processing;
-  crossings through `_write_to_finish()`. Tests: every case of `contracts/chip-pass-vectors.json`,
-  state round trip, crash between raw line and state. Qt test with the test chips.
+  crossings through `_append_source_crossing()` with the `unwritten` retry queue. Tests: every case
+  of `contracts/chip-pass-vectors.json`, state round trip, crash between raw line and state, an
+  unwritable results file that becomes writable, a burst of 10,000 reads from the replay connector
+  handled in order. Qt test with the test chips.
   -- `feat(chips): turn chip reads into crossings with a dead time`
 - [ ] T013 [US2] Unknown chips (first, last, count) in the Chips tab; `ChipTiming.set_map()` times
   newly known chips from their raw reads. Tests from the vectors and a Qt test.
   -- `feat(chips): list unknown chips and time them once the start protocol knows them`
 - [ ] T014 [US2] `fetch_start_list()` in `app/http_io.py`; "Download start protocol" on the worker
   thread; backup to `temp/start<time>_<n>.txt`, atomic write, map rebuilt, summary logged; failures
-  (network, HTTP, invalid, empty) change nothing. Unit tests with a fake `urlopen`, Qt tests.
+  (network, HTTP, invalid, empty) change nothing. Unit tests with a fake `urlopen`; Qt tests,
+  including that opening the window and starting a connector make no request (SC-005).
   -- `feat(site): download the start protocol into its file by a button`
 
 ## Phase 5: report (US6)
