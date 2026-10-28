@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 from app import connector_protocol as cp
 from app.connector_host import ConnectorHost, builtin_command
 from app.connectors import builtin, connectors_for, find
+from app.device_files import append_record, field, side_file
 from app.http_io import (
     fetch_groups,
     upload_finish_times,
@@ -43,6 +44,7 @@ from app.models import (
     append_to_finish_file,
     append_to_group_file,
     dsq_status,
+    format_time,
     get_current_time,
     get_number_of_crosses,
     load_config,
@@ -400,7 +402,7 @@ class MainWindow(QMainWindow):
                 show_finish_all = True
         self._lbl_finish_all.setVisible(show_finish_all)
 
-    def _write_to_finish(self, number: str, time_str: str) -> bool:
+    def _write_to_finish(self, number: str, time_str: str, quiet: bool = False) -> bool:
         if not number and not time_str:
             return False
         result_line = f"{number}#{time_str}#"
@@ -412,9 +414,12 @@ class MainWindow(QMainWindow):
                 if not path
                 else f"Cannot open results file:\n{path}"
             )
-            QTimer.singleShot(
-                0, lambda m=msg: QMessageBox.warning(self, "File error", m)
-            )
+            if quiet:  # a device caused it: no dialog in the middle of a race
+                self._append_log(f"not written: {result_line} ({msg})")
+            else:
+                QTimer.singleShot(
+                    0, lambda m=msg: QMessageBox.warning(self, "File error", m)
+                )
             return False
         self._log.addItem(result_line)
         self._log.scrollToBottom()
@@ -590,8 +595,26 @@ class MainWindow(QMainWindow):
         self._lbl_source_state.setText("stopped")
         self._lbl_test_data.setVisible(False)
 
+    def _event_time(self, time_ms: int | None) -> str:
+        """A device event's time as the results file writes it, summer time included."""
+        ms = round(time.time() * 1000) if time_ms is None else time_ms
+        summer = (
+            self._chk_summer_time.isChecked() and time.localtime(ms / 1000).tm_isdst
+        )
+        return format_time(ms, dst=bool(summer))
+
+    def _on_beam_break(self, event: cp.Break) -> None:
+        """Keep the break in the beam file first, then stamp a slot with its time."""
+        stamp = self._event_time(event.time_ms)
+        record = f"{event.seq}#{stamp}#{field(event.device_time)}#"
+        if not append_record(side_file(self._results_path(), "beam_breaks"), record):
+            self._append_log(f"beam break not kept in the beam file: {record}")
+        self._stamp_first_empty_slot(stamp, take_next=False, quiet=True)
+
     def _on_source_event(self, event: object) -> None:
-        if isinstance(event, cp.Status):
+        if isinstance(event, cp.Break):
+            self._on_beam_break(event)
+        elif isinstance(event, cp.Status):
             self._append_log(f"source {event.state} {event.detail}".rstrip())
         elif isinstance(event, cp.Error):
             self._append_log(f"source error: {event.message}")
@@ -1025,24 +1048,38 @@ class MainWindow(QMainWindow):
 
     def _on_finish_second_user(self) -> None:
         current = get_current_time(summer_time=self._chk_summer_time.isChecked())
-        action = self._action()
-        filled = False
+        self._stamp_first_empty_slot(current, take_next=True)
+
+    def _stamp_first_empty_slot(
+        self, time_str: str, take_next: bool, quiet: bool = False
+    ) -> None:
+        """Put time_str into the first slot without a time, shifting when all have one.
+
+        A beam break comes here with take_next False -- the Next field is the judge's
+        typing, never a machine's to take -- and quiet, so a write it causes reports
+        in the action log rather than in a dialog.
+        """
         for i in range(_N_SLOTS):
             if not self._time_edits[i].text():
-                self._time_edits[i].setText(current + "#" + action)
-                filled = True
+                self._time_edits[i].setText(time_str + "#" + self._action())
                 break
-        if not filled:
-            self._shift_fields_up(get_next_competitor=True)
-        self._check_possibility_to_empty_upper()
+        else:
+            self._shift_fields_up(
+                get_next_competitor=take_next,
+                stamp=None if take_next else time_str,
+                quiet=quiet,
+            )
+        self._check_possibility_to_empty_upper(quiet)
         self._save_backup_if_enabled()
         self._update_crosses()
 
-    def _shift_fields_up(self, get_next_competitor: bool) -> bool:
+    def _shift_fields_up(
+        self, get_next_competitor: bool, stamp: str | None = None, quiet: bool = False
+    ) -> bool:
         number_0 = self._number_edits[0].text()
         time_0 = self._time_edits[0].text()
         if number_0 or time_0:
-            ok = self._write_to_finish(number_0, time_0)
+            ok = self._write_to_finish(number_0, time_0, quiet)
             if not ok:
                 return False
 
@@ -1056,6 +1093,9 @@ class MainWindow(QMainWindow):
             self._time_edits[_N_SLOTS - 1].setText(t + "#" + self._action())
             self._next_number.clear()
             self._next_number.setFocus()
+        elif stamp is not None:
+            self._number_edits[_N_SLOTS - 1].clear()
+            self._time_edits[_N_SLOTS - 1].setText(stamp + "#" + self._action())
         else:
             self._number_edits[_N_SLOTS - 1].clear()
             self._time_edits[_N_SLOTS - 1].clear()
@@ -1063,9 +1103,9 @@ class MainWindow(QMainWindow):
         self._update_crosses()
         return True
 
-    def _check_possibility_to_empty_upper(self) -> None:
+    def _check_possibility_to_empty_upper(self, quiet: bool = False) -> None:
         if self._focused_slot != 0 and self._time_edits[0].text():
-            shifted = self._shift_fields_up(get_next_competitor=False)
+            shifted = self._shift_fields_up(get_next_competitor=False, quiet=quiet)
             if shifted:
                 self._focused_slot = max(0, self._focused_slot - 1)
                 self._number_edits[self._focused_slot].setFocus()
