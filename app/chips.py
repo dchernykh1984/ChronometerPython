@@ -11,12 +11,12 @@ N-th bind nothing; any other line binds every chip to its bib.
 from __future__ import annotations
 
 import json
-import os
 import re
 from dataclasses import dataclass, field
 
 from app.models import parse_time, read_file_lines
 from app.paths import app_path
+from app.results_file import write_in_one_step
 
 CHIPS_FIELD = 11
 NOT_PAID = "NOT_PAID"
@@ -219,13 +219,7 @@ def save_chip_state(path: str, timing: ChipTiming) -> bool:
     file where the passes were.
     """
     try:
-        target = app_path(path)
-        temporary = target.with_name(target.name + ".tmp")
-        with temporary.open("w", encoding="utf-8") as f:
-            f.write(json.dumps(timing.to_json()))
-            f.flush()
-            os.fsync(f.fileno())
-        temporary.replace(target)
+        write_in_one_step(app_path(path), json.dumps(timing.to_json()))
         return True
     except OSError:
         return False

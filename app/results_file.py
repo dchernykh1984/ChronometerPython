@@ -61,13 +61,23 @@ def rewrite_results(
     folder.mkdir(parents=True, exist_ok=True)
     backup = _free_name(folder, f"{stem}{int(time.time())}")
     backup.write_bytes(target.read_bytes() if target.exists() else b"")
+    write_in_one_step(target, "".join(line + "\n" for line in lines))
+    return backup
+
+
+def write_in_one_step(target: Path, text: str) -> None:
+    """Put text in target through a temporary file flushed to disk.
+
+    A crash leaves the old content or the new one, never a mix, and a replace that
+    Windows holds up for a moment is retried. Raises OSError, with target
+    untouched, when it cannot be done.
+    """
     temporary = target.with_name(target.name + ".tmp")
     with temporary.open("w", encoding="utf-8", newline="\n") as f:
-        f.writelines(line + "\n" for line in lines)
+        f.write(text)
         f.flush()
         os.fsync(f.fileno())
     _replace(temporary, target)
-    return backup
 
 
 def _free_name(folder: Path, stem: str) -> Path:

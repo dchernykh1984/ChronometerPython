@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
 
 from app import chips
+from app import results_file as rf
 
 # The cases ChronometerAndroid runs too: one rule on both platforms.
 VECTORS = json.loads(
@@ -164,9 +166,24 @@ def test_a_lost_state_comes_back_from_the_raw_reads_without_crossings():
 
 def test_the_state_is_on_disk_before_it_replaces_the_old_one(tmp_path, monkeypatch):
     synced: list[int] = []
-    monkeypatch.setattr(chips.os, "fsync", synced.append)
+    monkeypatch.setattr(rf.os, "fsync", synced.append)
     assert chips.save_chip_state(str(tmp_path / "s.json"), chips.ChipTiming())
     assert len(synced) == 1
+
+
+def test_a_state_save_held_up_by_a_reader_is_retried(tmp_path, monkeypatch):
+    real, calls = os.replace, []
+
+    def busy_once(source, target):
+        calls.append(source)
+        if len(calls) < 2:
+            raise PermissionError("sharing violation")
+        real(source, target)
+
+    monkeypatch.setattr(rf.os, "replace", busy_once)
+    monkeypatch.setattr(rf.time, "sleep", lambda s: None)
+    assert chips.save_chip_state(str(tmp_path / "s.json"), chips.ChipTiming())
+    assert len(calls) == 2
 
 
 def test_raw_reads_lines_give_chip_and_time():

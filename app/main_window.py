@@ -845,25 +845,42 @@ class MainWindow(QMainWindow):
         dead_ms = self._spin_dead_time.value() * 1000
         raw = read_file_lines(side_file(path, "chip_reads")) if path else []
         timing = load_chip_state(side_file(path, "chip_state", "json"), dead_ms)
-        if timing is None:
+        # More reads processed than the raw file holds: a state left from another
+        # race, whose waiting crossings must not go into this results file.
+        stale = timing is not None and timing.processed_lines > len(raw)
+        if timing is None or stale:
             timing = rebuilt_timing(raw, self._chip_map, dead_ms)
-            if raw:
+            if raw or stale:
+                why = "belongs to another raw reads file" if stale else "lost"
                 self._append_log(
-                    f"chip state lost: rebuilt from {len(raw)} raw read(s) without "
+                    f"chip state {why}: rebuilt from {len(raw)} raw read(s) without "
                     "writing their crossings again; check the results file"
                 )
                 self._chip_state_dirty = True
         self._chip_timing, self._chip_timing_for = timing, path
         # The map may have changed while the program was closed.
-        self._write_chip_crossings(timing.set_map(self._chip_map))
+        made = timing.set_map(self._chip_map)
         for line in raw[timing.processed_lines :]:
             read = raw_read(line)
             if read is not None:
-                self._write_chip_crossings(timing.on_read(*read))
+                made += timing.on_read(*read)
         if len(raw) > timing.processed_lines:
             timing.processed_lines = len(raw)
             self._chip_state_dirty = True
+        # A crash between writing a crossing and saving the state leaves it in the
+        # results file, still waiting or made again here: never written twice.
+        done = {tuple(line.split("#")[:2]) for line in read_results(path)}
+        waiting = [
+            line for line in timing.unwritten if tuple(line.split("#")[:2]) not in done
+        ]
+        if len(waiting) < len(timing.unwritten):
+            timing.unwritten = waiting
+            self._chip_state_dirty = True
+        self._write_chip_crossings(
+            [(bib, at) for bib, at in made if (bib, scale_time(at)) not in done]
+        )
         self._retry_unwritten()
+        self._save_chip_state()  # whatever loading changed, unless nothing did
         return timing
 
     def _on_chip_read(self, event: cp.Read) -> None:
@@ -963,7 +980,9 @@ class MainWindow(QMainWindow):
         if self._chip_timing is not None and self._chip_timing_for:
             path = side_file(self._chip_timing_for, "chip_state", "json")
             if not save_chip_state(path, self._chip_timing):
-                self._append_log("chip state not saved")
+                self._append_log("chip state not saved; trying again in 5 s")
+                self._chip_state_dirty = True
+                self._chip_state_timer.start(5000)
 
     # ------------------------------------------------------------------
     # crossings: the results file, corrected by hand
