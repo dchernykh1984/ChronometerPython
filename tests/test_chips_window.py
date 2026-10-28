@@ -201,7 +201,7 @@ def test_a_lost_chip_state_writes_no_crossing_twice(win, chips_on):
     ]
     assert _results(chips_on) == written
     log = [win._log.item(i).text() for i in range(win._log.count())]
-    assert any(line.startswith("chip state lost") for line in log)
+    assert any(line.startswith("chip state lost:") for line in log)
     win._on_source_event(Read("B", T0 + 10_000))  # still the 9 s pass
     assert _results(chips_on) == written
 
@@ -236,3 +236,64 @@ def test_a_crossing_written_on_a_retry_leaves_the_saved_state_at_once(
     win._retry_unwritten()  # the 1 s timer's tick, with no read after it
     state = json.loads((blocker / "results.chip_state.json").read_text("utf-8"))
     assert state["unwritten"] == []
+
+
+def test_a_chip_state_left_from_another_race_is_not_used(win, chips_on):
+    stale = {
+        "version": 1,
+        "processed_lines": 500,
+        "passes": {"15": [[0, 0]]},
+        "pending": [],
+        "unwritten": ["15#1 10:0:0.000#nextLap#"],
+    }
+    (chips_on / "results.chip_state.json").write_text(json.dumps(stale), "utf-8")
+    win._chip_timing = None  # a start, with only the state left of the last race
+    win._timing()
+    assert _results(chips_on) == []
+    log = [win._log.item(i).text() for i in range(win._log.count())]
+    assert any(line.startswith("chip state belongs to another") for line in log)
+    win._on_source_event(Read("A", T0))
+    assert _results(chips_on) == [f"15#{format_time(T0)}#nextLap#"]
+
+
+def test_a_crossing_written_just_before_a_crash_is_not_written_again(win, chips_on):
+    win._on_source_event(Read("A", T0))
+    # The next read was kept and its crossing written, and the program died before
+    # it saved the chip state.
+    with (chips_on / "results.chip_reads.txt").open("a", encoding="utf-8") as f:
+        f.write(f"A#{format_time(T0 + 9000)}#####\n")
+    with (chips_on / "results.txt").open("a", encoding="utf-8") as f:
+        f.write(f"15#{format_time(T0 + 9000)}#finish#\n")  # the mode changed since
+    win._chip_timing = None
+    win._timing()
+    assert _results(chips_on) == [
+        f"15#{format_time(T0)}#nextLap#",
+        f"15#{format_time(T0 + 9000)}#finish#",
+    ]
+
+
+def test_a_waiting_crossing_already_in_the_results_file_is_dropped(win, chips_on):
+    line = f"15#{format_time(T0)}#nextLap#"
+    saved = {"version": 1, "processed_lines": 0, "passes": {}, "pending": []}
+    state = chips_on / "results.chip_state.json"
+    state.write_text(json.dumps({**saved, "unwritten": [line]}), "utf-8")
+    (chips_on / "results.txt").write_text(line + "\n", "utf-8")  # then the crash
+    win._chip_timing = None
+    win._timing()
+    assert _results(chips_on) == [line]
+    assert json.loads(state.read_text("utf-8"))["unwritten"] == []
+
+
+def test_a_chip_state_that_could_not_be_saved_is_saved_later(
+    win, chips_on, monkeypatch
+):
+    win._on_source_event(Read("A", T0))
+    real, fail = mw.save_chip_state, [True]
+    monkeypatch.setattr(mw, "save_chip_state", lambda *a: not fail[0] and real(*a))
+    win._chip_state_dirty = True  # a change waiting for the save timer
+    win._save_chip_state()  # its tick, while the disk refuses
+    assert win._chip_state_dirty
+    assert win._chip_state_timer.isActive()
+    fail[0] = False
+    win._save_chip_state()
+    assert not win._chip_state_dirty
