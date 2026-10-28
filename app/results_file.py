@@ -45,16 +45,21 @@ def crossing_problem(number: str, time_str: str, action: str) -> str | None:
 
 
 def rewrite_results(
-    path: str, lines: list[str], backup_dir: Path | None = None
+    path: str,
+    lines: list[str],
+    backup_dir: Path | None = None,
+    stem: str = "results",
 ) -> Path:
-    """Replace the results file with lines after copying it aside; return the copy.
+    """Replace a file with lines after copying it aside; return the copy.
 
+    The results file by default; the start protocol file too (stem "start").
     Raises OSError, with the file untouched, when the backup or the write fails.
     """
     target = app_path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
     folder = backup_dir or app_path("temp")
     folder.mkdir(parents=True, exist_ok=True)
-    backup = _free_name(folder, f"results{int(time.time())}")
+    backup = _free_name(folder, f"{stem}{int(time.time())}")
     backup.write_bytes(target.read_bytes() if target.exists() else b"")
     temporary = target.with_name(target.name + ".tmp")
     with temporary.open("w", encoding="utf-8", newline="\n") as f:

@@ -47,6 +47,7 @@ from app.connectors import builtin, connectors_for, find
 from app.device_files import append_record, field, side_file
 from app.http_io import (
     fetch_groups,
+    fetch_start_list,
     upload_finish_times,
     upload_group_times,
     upload_remote_points,
@@ -105,6 +106,23 @@ class _UploadWorker(QThread):
             self.log.emit(f"  site: uploaded {count} item(s)")
         except Exception as exc:  # network errors must not crash timing
             self.log.emit(f"  site upload error: {exc}")
+
+
+class _FetchWorker(QThread):
+    """Runs one download off the UI thread; ``done`` carries the result or the error."""
+
+    done = Signal(object)
+
+    def __init__(self, func, *args) -> None:
+        super().__init__()
+        self._func = func
+        self._args = args
+
+    def run(self) -> None:
+        try:
+            self.done.emit(self._func(*self._args))
+        except Exception as exc:  # a network error must not reach the UI as one
+            self.done.emit(exc)
 
 
 class MainWindow(QMainWindow):
@@ -662,6 +680,11 @@ class MainWindow(QMainWindow):
         reload_button.clicked.connect(self._reload_chip_map)
         row.addWidget(reload_button)
         layout.addLayout(row)
+        # Only on this button: nothing is ever downloaded on its own (constitution IV).
+        self._btn_download_start = QPushButton("Download start protocol from the site")
+        self._btn_download_start.clicked.connect(self._on_download_start_protocol)
+        layout.addWidget(self._btn_download_start)
+        self._fetch_worker: _FetchWorker | None = None
         self._lbl_chip_map = QLabel()
         layout.addWidget(self._lbl_chip_map)
         dead_row = QHBoxLayout()
@@ -727,6 +750,42 @@ class MainWindow(QMainWindow):
                 f"from {path}; {len(self._chip_map.conflicts)} on two bibs"
             )
         self._lbl_chip_map.setText(text)
+
+    def _on_download_start_protocol(self) -> None:
+        site = self._http_cfg.get("site_url", "").strip()
+        token = self._http_cfg.get("token", "").strip()
+        if not site or not token:
+            QMessageBox.warning(
+                self, "Start protocol", "Site URL and Token must be set first."
+            )
+            return
+        worker = _FetchWorker(fetch_start_list, site, token)
+        worker.done.connect(self._on_start_list)
+        self._fetch_worker = worker
+        self._btn_download_start.setEnabled(False)
+        worker.start()
+
+    def _on_start_list(self, result: object) -> None:
+        """Keep the previous file, write the new one in one step, rebuild the map."""
+        if self._fetch_worker is not None:
+            self._fetch_worker.wait()
+            self._fetch_worker = None
+        self._btn_download_start.setEnabled(True)
+        if not isinstance(result, list):  # the error the download ended with
+            QMessageBox.warning(self, "Start protocol", f"Nothing changed: {result}")
+            return
+        try:
+            backup = rewrite_results(
+                self._sources["start_protocol"], result, stem="start"
+            )
+        except OSError as exc:
+            QMessageBox.warning(self, "Start protocol", f"Nothing changed: {exc}")
+            return
+        self._reload_chip_map()
+        self._append_log(
+            f"start protocol downloaded: {len(result)} line(s); "
+            f"{self._lbl_chip_map.text()}; previous file kept as {backup.name}"
+        )
 
     def _on_dead_time(self, seconds: int) -> None:
         self._sources["dead_time_s"] = str(seconds)
@@ -1411,6 +1470,9 @@ class MainWindow(QMainWindow):
                     pass
                 worker.wait()
             self._upload_workers.clear()
+            if self._fetch_worker is not None:  # a download also ends within 10 s
+                self._fetch_worker.done.disconnect()
+                self._fetch_worker.wait()
             event.accept()
         else:
             event.ignore()
