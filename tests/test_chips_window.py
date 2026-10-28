@@ -221,3 +221,18 @@ def test_a_read_with_no_results_file_is_logged_not_timed(win, chips_on):
     last = win._log.item(win._log.count() - 1).text()
     assert last == f"chip read A {format_time(T0)} not timed: no results file"
     assert win._chip_timing is None or not win._chip_timing.unwritten
+
+
+def test_a_crossing_written_on_a_retry_leaves_the_saved_state_at_once(
+    win, chips_on, monkeypatch
+):
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: pytest.fail("dialog"))
+    blocker = chips_on / "blocker"
+    blocker.write_text("x", encoding="utf-8")
+    win._edit_results_file.setText(str(blocker / "results.txt"))
+    win._on_source_event(Read("A", T0))
+    blocker.unlink()
+    blocker.mkdir()
+    win._retry_unwritten()  # the 1 s timer's tick, with no read after it
+    state = json.loads((blocker / "results.chip_state.json").read_text("utf-8"))
+    assert state["unwritten"] == []

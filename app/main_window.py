@@ -927,6 +927,7 @@ class MainWindow(QMainWindow):
         timing = self._chip_timing
         if timing is None or self._chip_timing_for != self._results_path():
             return
+        written = False
         while timing.unwritten:
             line = timing.unwritten[0]
             number, _, rest = line.partition("#")
@@ -939,11 +940,14 @@ class MainWindow(QMainWindow):
                 break
             timing.unwritten.pop(0)
             self._chip_state_dirty = True
+            written = True
             self._log.addItem(line)
             self._log.scrollToBottom()
             self._schedule_finish_upload()
             self._note_written(line)
+        if written:
             self._update_crosses()
+            self._save_chip_state()  # a restart must not write them a second time
         if not timing.unwritten:
             self._unwritten_timer.stop()
         waiting = len(timing.unwritten)
