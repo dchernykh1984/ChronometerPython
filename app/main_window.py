@@ -650,7 +650,11 @@ class MainWindow(QMainWindow):
         record = f"{event.seq}#{stamp}#{field(event.device_time)}#"
         if not append_record(side_file(self._results_path(), "beam_breaks"), record):
             self._append_log(f"beam break not kept in the beam file: {record}")
-        self._stamp_first_empty_slot(stamp, take_next=False, quiet=True)
+        if not self._stamp_first_empty_slot(stamp, take_next=False, quiet=True):
+            self._append_log(
+                f"beam break {stamp} not stamped: slot 1 could not be written, "
+                "so no slot was free; the break is in the beam file"
+            )
 
     def _on_source_event(self, event: object) -> None:
         if isinstance(event, cp.Read):
@@ -1406,19 +1410,21 @@ class MainWindow(QMainWindow):
 
     def _stamp_first_empty_slot(
         self, time_str: str, take_next: bool, quiet: bool = False
-    ) -> None:
+    ) -> bool:
         """Put time_str into the first slot without a time, shifting when all have one.
 
         A beam break comes here with take_next False -- the Next field is the judge's
         typing, never a machine's to take -- and quiet, so a write it causes reports
-        in the action log rather than in a dialog.
+        in the action log rather than in a dialog. False when every slot had a time
+        and slot 1 could not be written, so time_str is in no slot.
         """
+        stamped = True
         for i in range(_N_SLOTS):
             if not self._time_edits[i].text():
                 self._time_edits[i].setText(time_str + "#" + self._action())
                 break
         else:
-            self._shift_fields_up(
+            stamped = self._shift_fields_up(
                 get_next_competitor=take_next,
                 stamp=None if take_next else time_str,
                 quiet=quiet,
@@ -1426,6 +1432,7 @@ class MainWindow(QMainWindow):
         self._check_possibility_to_empty_upper(quiet)
         self._save_backup_if_enabled()
         self._update_crosses()
+        return stamped
 
     def _shift_fields_up(
         self, get_next_competitor: bool, stamp: str | None = None, quiet: bool = False
@@ -1462,7 +1469,10 @@ class MainWindow(QMainWindow):
             shifted = self._shift_fields_up(get_next_competitor=False, quiet=quiet)
             if shifted:
                 self._focused_slot = max(0, self._focused_slot - 1)
-                self._number_edits[self._focused_slot].setFocus()
+                # The number being typed moved up a slot and the focus follows it;
+                # a device never pulls the focus out of another field, though.
+                if not quiet or self.focusWidget() in self._number_edits:
+                    self._number_edits[self._focused_slot].setFocus()
 
     def _on_select_results_file(self) -> None:
         if self._chk_freeze.isChecked():

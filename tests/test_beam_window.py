@@ -78,3 +78,41 @@ def test_device_files_sit_next_to_the_results_file(tmp_path):
     blocker = tmp_path / "file"
     blocker.write_text("x", encoding="utf-8")
     assert not append_record(str(blocker / "beam.txt"), "x")
+
+
+def test_a_break_that_finds_no_slot_says_so(win, tmp_path):
+    (tmp_path / "results.txt").mkdir()  # held by another program, say
+    for i in range(5):
+        win._number_edits[i].setText(str(10 + i))
+        win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")
+    win._on_source_event(Break(6, T0))
+    log = [win._log.item(i).text() for i in range(win._log.count())]
+    assert any(
+        line.startswith(f"beam break {format_time(T0)} not stamped") for line in log
+    )
+    beam = tmp_path / "results.beam_breaks.txt"
+    assert beam.read_text(encoding="utf-8") == f"6#{format_time(T0)}##\n"
+
+
+def _two_slots_done_typing_in_slot_3(win) -> None:
+    for i in range(2):
+        win._number_edits[i].setText(str(10 + i))
+        win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")
+    win._focused_slot = 2  # the judge went on to slot 3
+
+
+def test_a_break_never_pulls_the_focus_out_of_another_field(win):
+    _two_slots_done_typing_in_slot_3(win)
+    win._edit_dsq.setFocus()  # the judge is typing a DSQ meanwhile
+    win._on_source_event(Break(1, T0))
+    assert win._number_edits[0].text() == "11"  # slot 1 was written, all moved up
+    assert win.focusWidget() is win._edit_dsq
+
+
+def test_the_focus_follows_the_number_being_typed_when_a_break_shifts(win):
+    _two_slots_done_typing_in_slot_3(win)
+    win._number_edits[2].setText("4")
+    win._number_edits[2].setFocus()
+    win._on_source_event(Break(1, T0))
+    assert win._number_edits[1].text() == "4"
+    assert win.focusWidget() is win._number_edits[1]
