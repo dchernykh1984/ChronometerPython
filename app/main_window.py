@@ -483,6 +483,7 @@ class MainWindow(QMainWindow):
         self._btn_source_start = QPushButton("Start")
         self._btn_source_stop = QPushButton("Stop")
         self._lbl_source_state = QLabel("stopped")
+        self._source_state = "stopped"
         self._lbl_test_data = QLabel("TEST CONNECTOR: its crossings are test data")
         self._lbl_test_data.setStyleSheet("color: red; font-weight: bold;")
         self._lbl_test_data.setVisible(False)
@@ -627,7 +628,7 @@ class MainWindow(QMainWindow):
         self._stop_source()
         host = ConnectorHost(kind, self)
         host.received.connect(self._on_source_event)
-        host.state_changed.connect(self._lbl_source_state.setText)
+        host.state_changed.connect(self._on_source_state)
         host.log.connect(self._append_log)
         self._host = host
         self._lbl_test_data.setVisible(info.test)
@@ -641,7 +642,7 @@ class MainWindow(QMainWindow):
         if host is not None:
             host.stop(wait)
             host.deleteLater()
-        self._lbl_source_state.setText("stopped")
+        self._on_source_state("stopped")
         self._lbl_test_data.setVisible(False)
 
     def _event_time(self, time_ms: int | None) -> str:
@@ -943,10 +944,11 @@ class MainWindow(QMainWindow):
         they wait in their own state until that file is in use again.
         """
         timing = self._chip_timing
-        if timing is None or self._chip_timing_for != self._results_path():
+        if timing is None:
             return
+        own = self._chip_timing_for == self._results_path()
         written = False
-        while timing.unwritten:
+        while own and timing.unwritten:
             line = timing.unwritten[0]
             number, _, rest = line.partition("#")
             if not append_to_finish_file(self._results_path(), number, rest[:-1]):
@@ -966,12 +968,30 @@ class MainWindow(QMainWindow):
         if written:
             self._update_crosses()
             self._save_chip_state()  # a restart must not write them a second time
-        if not timing.unwritten:
-            self._unwritten_timer.stop()
-        waiting = len(timing.unwritten)
+        if own and not timing.unwritten:
+            self._unwritten_timer.stop()  # kept ticking for a file left meanwhile
+        waiting = self._waiting_crossings()
         self._lbl_unwritten.setText(
             f"{waiting} chip crossing(s) wait for the results file" if waiting else ""
         )
+        self._show_source_state()
+
+    def _waiting_crossings(self) -> int:
+        """Chip crossings waiting for the results file in use."""
+        timing = self._chip_timing
+        if timing is None or self._chip_timing_for != self._results_path():
+            return 0
+        return len(timing.unwritten)
+
+    def _on_source_state(self, state: str) -> None:
+        self._source_state = state
+        self._show_source_state()
+
+    def _show_source_state(self) -> None:
+        """The source's state, and the chip crossings waiting (spec FR-011)."""
+        waiting = self._waiting_crossings()
+        suffix = f"; {waiting} chip crossing(s) waiting" if waiting else ""
+        self._lbl_source_state.setText(self._source_state + suffix)
 
     def _save_chip_state(self) -> None:
         self._chip_state_timer.stop()
