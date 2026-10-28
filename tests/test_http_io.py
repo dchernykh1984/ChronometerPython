@@ -179,3 +179,59 @@ def test_fetch_groups_invalid_json_raises(monkeypatch) -> None:
     )
     with pytest.raises(ValueError, match="Invalid response"):
         http_io.fetch_groups("https://s", "tok")
+
+
+# -- fetch_start_list --------------------------------------------------------------
+
+
+class _Body(io.BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def _answering(payload, seen: list | None = None):
+    def _open(url, timeout=10):
+        if seen is not None:
+            seen.append(url)
+        return _Body(json.dumps(payload).encode())
+
+    return _open
+
+
+def test_fetch_start_list_merges_every_devices_lines(monkeypatch) -> None:
+    seen: list = []
+    payload = {"devices": [{"items": ["15#A#"]}, {"items": ["16#B#", "17#C#"]}]}
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering(payload, seen))
+    assert http_io.fetch_start_list("https://s/", "tok") == ["15#A#", "16#B#", "17#C#"]
+    assert seen == ["https://s/api/v1/start-list/?competition_token=tok"]
+
+
+@pytest.mark.parametrize(
+    ("payload", "reason"),
+    [
+        ({"devices": []}, "no start list"),
+        ({"devices": [{"items": []}]}, "no start list"),
+        ({"devices": [{"items": "15#A#"}]}, "no start list"),
+        ([1, 2], "not a JSON object"),
+    ],
+)
+def test_fetch_start_list_refuses_an_empty_or_strange_answer(
+    monkeypatch, payload, reason
+):
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering(payload))
+    with pytest.raises(ValueError, match=reason):
+        http_io.fetch_start_list("https://s", "tok")
+
+
+def test_fetch_start_list_reports_a_network_error(monkeypatch) -> None:
+    import urllib.error
+
+    def _boom(url, timeout=10):
+        raise urllib.error.URLError("offline")
+
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", _boom)
+    with pytest.raises(ValueError, match="Connection error"):
+        http_io.fetch_start_list("https://s", "tok")

@@ -51,6 +51,45 @@ def fetch_groups(site_url: str, token: str) -> list[str]:
     return groups
 
 
+def fetch_start_list(site_url: str, token: str) -> list[str]:
+    """Every device's uploaded start protocol lines for a competition, merged.
+
+    The request FinishProtocolGenerator makes: StartProtocolMaker uploads its list
+    under its device id, and the site returns them all. An empty list is an error
+    here ("nothing uploaded yet"), so a press before the upload cannot wipe a good
+    start protocol file.
+
+    Raises:
+        ValueError: on HTTP error, network/timeout error, an invalid response, or a
+            start list with no lines.
+    """
+    url = (
+        site_url.rstrip("/")
+        + "/api/v1/start-list/?"
+        + urllib.parse.urlencode({"competition_token": token})
+    )
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:  # noqa: S310
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raise ValueError(f"HTTP {exc.code}: {exc.reason}") from exc
+    except urllib.error.URLError as exc:
+        raise ValueError(f"Connection error: {exc.reason}") from exc
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise ValueError(f"Invalid response: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError("Invalid response: not a JSON object")
+    lines = [
+        str(line)
+        for device in data.get("devices", [])
+        if isinstance(device, dict) and isinstance(device.get("items"), list)
+        for line in device["items"]
+    ]
+    if not lines:
+        raise ValueError("the site has no start list for this competition yet")
+    return lines
+
+
 def _post(url: str, payload: dict) -> int:
     body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(  # noqa: S310
