@@ -66,7 +66,8 @@ sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libxcb-cursor0
 
 ### Where to keep it
 
-The program reads and writes its files (`data/groupsList.txt` and `data/http_config.txt`) **next to itself**, so give
+The program reads and writes its files (`data/groupsList.txt`, `data/http_config.txt`,
+`data/sources.txt` and the start protocol `data/start.txt`) **next to itself**, so give
 it a folder of its own rather than a shared downloads directory. On macOS the
 files land next to the `.app` bundle, in the folder that contains it.
 
@@ -74,6 +75,27 @@ This is also how you run several events side by side: copy the folder per event,
 and each copy keeps its own data. A symlink or a Finder alias will not work for
 that - it resolves back to the original, so every "copy" would end up sharing one
 set of files. Use real copies.
+
+### Light beam and timing chips
+
+Crossings are typed by hand by default. The **Event source** group switches to a
+light beam or to timing chips, through a small program the chronometer starts on
+**Start** and stops on **Stop** or on exit. This release has test devices only
+("Test beam", "Test chips", replaying a chip reads file, or a command of your
+own); real readers and beams are listed as not available yet.
+
+- A beam break stamps the first empty slot, as the FINISH button does; you type
+  the number.
+- A chip read becomes a crossing of the bib the start protocol gives that chip
+  (its chips field, filled in by StartProtocolMaker). Reads of one bib less than the
+  dead time apart (5 s, on the **Chips** tab) are one crossing, timed at the
+  first read.
+- **Download start protocol from the site** on the **Chips** tab replaces the
+  start protocol file with the site's; nothing is downloaded otherwise.
+- The **Crossings** tab adds, changes and deletes crossings; the file before
+  each change is kept in `temp/`.
+- Every read and break is also kept in a raw file next to the results file, and
+  **Chip report** writes which chips were read how well.
 
 
 ## Setup
