@@ -124,6 +124,11 @@ class ConnectorHost(QObject):
         self._wanted = False
         for timer in (self._hello_timer, self._ping_timer, self._restart_timer):
             timer.stop()
+        running = QProcess.ProcessState.NotRunning
+        if self._process is not None and self._process.state() != running:
+            # What it sent before the stop still counts: every read reaches its file.
+            self._process.waitForReadyRead(0)
+            self._on_output(self._process)
         process, self._process = self._process, None
         if process is not None and process.state() != QProcess.ProcessState.NotRunning:
             process.write(cp.stop())
