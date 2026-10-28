@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 from pathlib import Path
 
 import pytest
@@ -118,7 +119,7 @@ def test_reads_become_crossings_as_the_shared_cases_say(case):
 def test_a_read_of_an_unknown_chip_waits():
     timing = chips.ChipTiming()
     assert timing.on_read("X", 0) == []
-    assert timing.pending == [("X", 0)]
+    assert timing.pending == {"X": [[0, 0, 1]]}
 
 
 def test_the_state_survives_a_restart(tmp_path):
@@ -133,7 +134,7 @@ def test_the_state_survives_a_restart(tmp_path):
     again = chips.load_chip_state(path, 7000)
     assert again.dead_ms == 7000
     assert again.passes == {"15": [[0, 0]]}
-    assert again.pending == [("X", 1)]
+    assert again.pending == {"X": [[1, 1, 1]]}
     assert again.unwritten == ["15#1 0:0:0.000#nextLap#"]
     assert again.processed_lines == 2
     again.chip_map = chips.ChipMap(bib_of={"A": "15"})
@@ -158,7 +159,7 @@ def test_a_lost_state_comes_back_from_the_raw_reads_without_crossings():
     timing = chips.rebuilt_timing(raw, chips.ChipMap(bib_of={"A": "15"}), 5000)
     day = 86_400_000
     assert timing.passes == {"15": [[day, day + 2000], [day + 9000, day + 9000]]}
-    assert timing.pending == [("X", day + 100)]
+    assert timing.pending == {"X": [[day + 100, day + 100, 1]]}
     assert timing.unwritten == []
     assert timing.processed_lines == 5
     assert timing.on_read("A", day + 3000) == []  # still the first pass
@@ -205,4 +206,44 @@ def test_unknown_chips_are_listed_with_first_and_last_read_and_count():
     )
     assert made == [("22", 1)]
     assert timing.unknown() == {}
-    assert timing.pending == [("Y", 6)]
+    assert timing.pending == {"Y": [[6, 6, 1]]}
+
+
+def test_a_chip_left_by_the_antenna_is_one_run_not_every_read():
+    timing = chips.ChipTiming(5000)
+    for at in range(0, 3_600_000, 20):  # an hour, 50 reads a second
+        timing.on_read("X", at)
+    assert timing.pending == {"X": [[0, 3_599_980, 180_000]]}
+    assert timing.unknown() == {"X": (0, 3_599_980, 180_000)}
+
+
+def _read_by_read(passes: list[list[int]], dead: int, reads: list[int]) -> list[int]:
+    """The pass rule applied to each read in time order: what runs must equal."""
+    made = []
+    for at in sorted(reads):
+        near = [p for p in passes if p[0] - dead < at < p[1] + dead]
+        if near:
+            merged = [min(at, *(p[0] for p in near)), max(at, *(p[1] for p in near))]
+            passes[:] = [p for p in passes if p not in near] + [merged]
+        else:
+            passes.append([at, at])
+            made.append(at)
+        passes.sort()
+    return made
+
+
+def test_runs_bind_to_the_crossings_and_passes_their_reads_would_make():
+    rnd = random.Random(49)  # noqa: S311 - test data, not security
+    for _ in range(500):
+        timing = chips.ChipTiming(5000)
+        timing.chip_map = chips.ChipMap(bib_of={"A": "15"})
+        for at in sorted(rnd.sample(range(0, 120_000, 500), rnd.randrange(0, 8))):
+            timing.on_read("A", at)
+        before = [list(p) for p in timing.passes.get("15", [])]
+        late = [rnd.randrange(0, 120_000, 250) for _ in range(rnd.randrange(1, 25))]
+        for at in late:  # in the order they came, not in time order
+            timing.on_read("X", at)
+        made = timing.set_map(chips.ChipMap(bib_of={"A": "15", "X": "15"}))
+        expected = _read_by_read(before, 5000, late)
+        assert made == [("15", at) for at in expected]
+        assert timing.passes["15"] == before

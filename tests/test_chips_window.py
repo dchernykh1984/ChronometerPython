@@ -241,10 +241,10 @@ def test_a_crossing_written_on_a_retry_leaves_the_saved_state_at_once(
 
 def test_a_chip_state_left_from_another_race_is_not_used(win, chips_on):
     stale = {
-        "version": 1,
+        "version": 2,
         "processed_lines": 500,
         "passes": {"15": [[0, 0]]},
-        "pending": [],
+        "pending": {},
         "unwritten": ["15#1 10:0:0.000#nextLap#"],
     }
     (chips_on / "results.chip_state.json").write_text(json.dumps(stale), "utf-8")
@@ -275,7 +275,7 @@ def test_a_crossing_written_just_before_a_crash_is_not_written_again(win, chips_
 
 def test_a_waiting_crossing_already_in_the_results_file_is_dropped(win, chips_on):
     line = f"15#{format_time(T0)}#nextLap#"
-    saved = {"version": 1, "processed_lines": 0, "passes": {}, "pending": []}
+    saved = {"version": 2, "processed_lines": 0, "passes": {}, "pending": {}}
     state = chips_on / "results.chip_state.json"
     state.write_text(json.dumps({**saved, "unwritten": [line]}), "utf-8")
     (chips_on / "results.txt").write_text(line + "\n", "utf-8")  # then the crash
