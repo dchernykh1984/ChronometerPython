@@ -3,16 +3,23 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication
-
-from app.main_window import MainWindow
-
 _APP_NAME = "Chronometer"
 _ICON = str(Path(__file__).parent / "app.ico")
 
 
 def main() -> None:
+    # The same program runs a built-in connector as a child process of itself;
+    # it needs no window, so Qt is not even imported for it.
+    if len(sys.argv) >= 3 and sys.argv[1] == "--connector":
+        from app.connectors.runtime import run
+
+        sys.exit(run(sys.argv[2]))
+
+    from PySide6.QtGui import QIcon
+    from PySide6.QtWidgets import QApplication
+
+    from app.main_window import MainWindow
+
     # Must run before QApplication -- Qt reads the process name on init.
     _macos_set_process_name(_APP_NAME)
     _windows_set_app_id(_APP_NAME)
