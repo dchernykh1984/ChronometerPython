@@ -2,7 +2,20 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+import pytest
+
 from app import chips
+
+# The cases ChronometerAndroid runs too: one rule on both platforms.
+VECTORS = json.loads(
+    (
+        Path(__file__).parents[1]
+        / "specs/001-event-sources/contracts/chip-pass-vectors.json"
+    ).read_text(encoding="utf-8")
+)
 
 
 def _line(bib: str, chip_field: str, stages: str = "1") -> str:
@@ -76,3 +89,73 @@ def test_without_a_start_protocol_file_the_tab_says_so(win, tmp_path):
     win._on_start_protocol_path()
     assert win._chip_map.bib_of == {}
     assert win._lbl_chip_map.text().startswith("No start protocol file")
+
+
+# -- reads to crossings: the shared cases --------------------------------------------
+
+
+def run_case(case: dict) -> list[list]:
+    timing = chips.ChipTiming(case.get("dead_time_ms", VECTORS["default_dead_time_ms"]))
+    timing.chip_map = chips.ChipMap(bib_of=dict(case["map"]))
+    made: list[tuple[str, int]] = []
+    for event in case["events"]:
+        if "read" in event:
+            made += timing.on_read(*event["read"])
+        elif "dead_time_ms" in event:
+            timing.dead_ms = event["dead_time_ms"]
+    return [[bib, at] for bib, at in made]
+
+
+@pytest.mark.parametrize(
+    "case",
+    [c for c in VECTORS["cases"] if not any("map" in e for e in c["events"])],
+    ids=lambda c: c["name"],
+)
+def test_reads_become_crossings_as_the_shared_cases_say(case):
+    assert run_case(case) == case["crossings"]
+
+
+def test_a_read_of_an_unknown_chip_waits():
+    timing = chips.ChipTiming()
+    assert timing.on_read("X", 0) == []
+    assert timing.pending == [("X", 0)]
+
+
+def test_the_state_survives_a_restart(tmp_path):
+    timing = chips.ChipTiming()
+    timing.chip_map = chips.ChipMap(bib_of={"A": "15"})
+    timing.on_read("A", 0)
+    timing.on_read("X", 1)
+    timing.unwritten.append("15#1 0:0:0.000#nextLap#")
+    timing.processed_lines = 2
+    path = str(tmp_path / "results.chip_state.json")
+    assert chips.save_chip_state(path, timing)
+    again = chips.load_chip_state(path, 7000)
+    assert again.dead_ms == 7000
+    assert again.passes == {"15": [[0, 0]]}
+    assert again.pending == [("X", 1)]
+    assert again.unwritten == ["15#1 0:0:0.000#nextLap#"]
+    assert again.processed_lines == 2
+    again.chip_map = chips.ChipMap(bib_of={"A": "15"})
+    assert again.on_read("A", 3000) == []  # same pass as before the restart
+
+
+def test_a_missing_or_broken_state_starts_fresh(tmp_path):
+    assert chips.load_chip_state(str(tmp_path / "none.json"), 5000).passes == {}
+    broken = tmp_path / "broken.json"
+    broken.write_text("{not json", encoding="utf-8")
+    assert chips.load_chip_state(str(broken), 5000).passes == {}
+    old = tmp_path / "old.json"
+    old.write_text('{"version": 99, "passes": {"15": [[0, 0]]}}', encoding="utf-8")
+    assert chips.load_chip_state(str(old), 5000).passes == {}
+    assert not chips.save_chip_state(
+        str(tmp_path / "no" / "dir" / "s.json"), chips.ChipTiming()
+    )
+
+
+def test_raw_reads_lines_give_chip_and_time():
+    assert chips.raw_read("e280#1 0:0:1.500#dev#1#-60#r#") == ("E280", 86_401_500)
+    assert chips.raw_read("A#1 0:0:1.500##") == ("A", 86_401_500)
+    assert chips.raw_read("A#not a time#") is None
+    assert chips.raw_read("#1 0:0:1.500#") is None
+    assert chips.raw_read("") is None

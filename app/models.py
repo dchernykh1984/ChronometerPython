@@ -86,8 +86,14 @@ def format_time(epoch_ms: int, accuracy: int = 3, dst: bool = False) -> str:
     ``dst`` adds the summer hour; the caller decides it, as the summer-time option and
     the system's daylight-saving flag say. accuracy=0 leaves out the milliseconds.
     """
-    local = epoch_ms - time.timezone * 1000 + (3_600_000 if dst else 0)
-    days, rem = divmod(local, 86_400_000)
+    return scale_time(
+        epoch_ms - time.timezone * 1000 + (3_600_000 if dst else 0), accuracy
+    )
+
+
+def scale_time(ms: int, accuracy: int = 3) -> str:
+    """'D H:M:S[.mmm]' of milliseconds on the results file's scale (parse_time's)."""
+    days, rem = divmod(ms, 86_400_000)
     hours, rem = divmod(rem, 3_600_000)
     minutes, rem = divmod(rem, 60_000)
     seconds, ms = divmod(rem, 1000)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import time
+from collections import Counter
 from pathlib import Path
 
 from PySide6.QtCore import QProcess, Qt, QThread, QTimer, Signal
@@ -31,7 +32,16 @@ from PySide6.QtWidgets import (
 )
 
 from app import connector_protocol as cp
-from app.chips import ChipMap, build_chip_map, read_start_protocol
+from app.chips import (
+    ChipMap,
+    ChipTiming,
+    build_chip_map,
+    load_chip_state,
+    normalise_chip,
+    raw_read,
+    read_start_protocol,
+    save_chip_state,
+)
 from app.connector_host import ConnectorHost, builtin_command
 from app.connectors import builtin, connectors_for, find
 from app.device_files import append_record, field, side_file
@@ -47,13 +57,14 @@ from app.models import (
     dsq_status,
     format_time,
     get_current_time,
-    get_number_of_crosses,
     load_config,
     load_http_config,
+    parse_time,
     read_file_lines,
     save_backup,
     save_config,
     save_http_config,
+    scale_time,
 )
 from app.paths import app_path
 from app.results_file import (
@@ -128,6 +139,8 @@ class MainWindow(QMainWindow):
         self._config_path: str = _CONFIG_PATH
         self._load_config(self._config_path)
         self._apply_http_config_to_ui()
+        if self._results_path():
+            self._timing()  # replays reads a crash left, retries waiting crossings
         self._start_timer()
 
     # ------------------------------------------------------------------
@@ -399,7 +412,7 @@ class MainWindow(QMainWindow):
         show_finish_all = False
         for i, lbl in enumerate(self._cross_labels):
             n = self._number_edits[i].text()
-            count = get_number_of_crosses(n, self._result_lines, current_slots)
+            count = (self._result_counts[n] + current_slots.count(n)) if n else 0
             lbl.setText(str(count))
             if n and count >= max_laps:
                 show_finish_all = True
@@ -427,7 +440,7 @@ class MainWindow(QMainWindow):
         self._log.addItem(result_line)
         self._log.scrollToBottom()
         self._schedule_finish_upload()
-        self._refresh_crossings()
+        self._note_written(result_line)
         return True
 
     # ------------------------------------------------------------------
@@ -576,6 +589,11 @@ class MainWindow(QMainWindow):
                 builtin_command(name),
                 connector_settings(self._sources, name),
             )
+            if name == "dummy-chips" and "riders" not in settings:
+                riders: dict[str, list[str]] = {}
+                for chip, bib in self._chip_map.bib_of.items():
+                    riders.setdefault(bib, []).append(chip)
+                settings["riders"] = list(riders.values())
         else:
             return
         self._stop_source()
@@ -615,7 +633,9 @@ class MainWindow(QMainWindow):
         self._stamp_first_empty_slot(stamp, take_next=False, quiet=True)
 
     def _on_source_event(self, event: object) -> None:
-        if isinstance(event, cp.Break):
+        if isinstance(event, cp.Read):
+            self._on_chip_read(event)
+        elif isinstance(event, cp.Break):
             self._on_beam_break(event)
         elif isinstance(event, cp.Status):
             self._append_log(f"source {event.state} {event.detail}".rstrip())
@@ -644,10 +664,32 @@ class MainWindow(QMainWindow):
         layout.addLayout(row)
         self._lbl_chip_map = QLabel()
         layout.addWidget(self._lbl_chip_map)
+        dead_row = QHBoxLayout()
+        dead_row.addWidget(QLabel("Dead time, s (one pass):"))
+        self._spin_dead_time = QSpinBox()
+        self._spin_dead_time.setRange(1, 120)
+        self._spin_dead_time.setValue(int(self._sources.get("dead_time_s") or 5))
+        self._spin_dead_time.valueChanged.connect(self._on_dead_time)
+        dead_row.addWidget(self._spin_dead_time)
+        dead_row.addStretch(1)
+        layout.addLayout(dead_row)
+        self._lbl_unwritten = QLabel()
+        self._lbl_unwritten.setStyleSheet("color: red; font-weight: bold;")
+        layout.addWidget(self._lbl_unwritten)
         layout.addWidget(QLabel("Chips on two bibs (bound to neither):"))
         self._list_conflicts = QListWidget()
         layout.addWidget(self._list_conflicts)
         self._chip_map = ChipMap()
+        # Chip state belongs to one results file; loaded when that file is in use.
+        self._chip_timing: ChipTiming | None = None
+        self._chip_timing_for = ""
+        self._chip_state_dirty = False  # never write a state nothing changed
+        self._chip_state_timer = QTimer(self)
+        self._chip_state_timer.setSingleShot(True)
+        self._chip_state_timer.timeout.connect(self._save_chip_state)
+        self._unwritten_timer = QTimer(self)
+        self._unwritten_timer.setInterval(1000)
+        self._unwritten_timer.timeout.connect(self._retry_unwritten)
         return page
 
     def _on_start_protocol_path(self) -> None:
@@ -666,6 +708,8 @@ class MainWindow(QMainWindow):
         path = self._sources["start_protocol"]
         lines = read_start_protocol(path)
         self._chip_map = build_chip_map(lines or [])
+        if self._chip_timing is not None:
+            self._chip_timing.chip_map = self._chip_map
         self._list_conflicts.clear()
         for chip, bibs in sorted(self._chip_map.conflicts.items()):
             self._list_conflicts.addItem(f"{chip}: bibs {', '.join(bibs)}")
@@ -678,6 +722,112 @@ class MainWindow(QMainWindow):
             )
         self._lbl_chip_map.setText(text)
 
+    def _on_dead_time(self, seconds: int) -> None:
+        self._sources["dead_time_s"] = str(seconds)
+        self._save_sources()
+        if self._chip_timing is not None:
+            self._chip_timing.dead_ms = seconds * 1000  # for reads from now on
+
+    def _timing(self) -> ChipTiming:
+        """The chip state of the results file in use; loaded, or switched, here.
+
+        On loading, raw reads appended after the state was last saved -- a crash in
+        between -- are replayed, and crossings still waiting are written.
+        """
+        path = self._results_path()
+        if self._chip_timing is not None and self._chip_timing_for == path:
+            return self._chip_timing
+        if self._chip_timing is not None:
+            self._save_chip_state()
+        timing = load_chip_state(
+            side_file(path, "chip_state", "json"), self._spin_dead_time.value() * 1000
+        )
+        timing.chip_map = self._chip_map
+        self._chip_timing, self._chip_timing_for = timing, path
+        raw = read_file_lines(side_file(path, "chip_reads")) if path else []
+        for line in raw[timing.processed_lines :]:
+            read = raw_read(line)
+            if read is not None:
+                self._write_chip_crossings(timing.on_read(*read))
+        if len(raw) > timing.processed_lines:
+            timing.processed_lines = len(raw)
+            self._chip_state_dirty = True
+        self._retry_unwritten()
+        return timing
+
+    def _on_chip_read(self, event: cp.Read) -> None:
+        """Keep the read in the raw file first, then turn it into crossings."""
+        chip = normalise_chip(event.chip)
+        if not chip:
+            self._append_log(f"chip read without a usable id: {event.chip!r}")
+            return
+        timing = self._timing()
+        stamp = self._event_time(event.time_ms)
+        rssi = "" if event.rssi is None else f"{event.rssi:g}"
+        record = (
+            f"{chip}#{stamp}#{field(event.device_time)}#{field(event.antenna)}#"
+            f"{rssi}#{field(event.reader)}#"
+        )
+        if append_record(side_file(self._results_path(), "chip_reads"), record):
+            timing.processed_lines += 1
+        else:
+            self._append_log(f"chip read not kept in the raw file: {record}")
+        at = parse_time(stamp)
+        if at is not None:
+            self._write_chip_crossings(timing.on_read(chip, at))
+        self._chip_state_dirty = True
+        self._chip_state_timer.start(1000)
+
+    def _write_chip_crossings(self, made: list[tuple[str, int]]) -> None:
+        if not made or self._chip_timing is None:
+            return
+        for bib, at in made:
+            self._chip_timing.unwritten.append(
+                f"{bib}#{scale_time(at)}#{self._action()}#"
+            )
+        self._chip_state_dirty = True
+        self._retry_unwritten()
+        self._save_chip_state()  # a crossing made is recorded at once
+
+    def _retry_unwritten(self) -> None:
+        """Write waiting chip crossings in order; never a dialog (constitution III)."""
+        timing = self._chip_timing
+        if timing is None:
+            return
+        while timing.unwritten:
+            line = timing.unwritten[0]
+            number, _, rest = line.partition("#")
+            if not append_to_finish_file(self._results_path(), number, rest[:-1]):
+                if not self._unwritten_timer.isActive():
+                    self._append_log(
+                        f"chip crossing waits: results file not writable ({line})"
+                    )
+                    self._unwritten_timer.start()
+                break
+            timing.unwritten.pop(0)
+            self._chip_state_dirty = True
+            self._log.addItem(line)
+            self._log.scrollToBottom()
+            self._schedule_finish_upload()
+            self._note_written(line)
+            self._update_crosses()
+        if not timing.unwritten:
+            self._unwritten_timer.stop()
+        waiting = len(timing.unwritten)
+        self._lbl_unwritten.setText(
+            f"{waiting} chip crossing(s) wait for the results file" if waiting else ""
+        )
+
+    def _save_chip_state(self) -> None:
+        self._chip_state_timer.stop()
+        if not self._chip_state_dirty:
+            return
+        self._chip_state_dirty = False
+        if self._chip_timing is not None and self._chip_timing_for:
+            path = side_file(self._chip_timing_for, "chip_state", "json")
+            if not save_chip_state(path, self._chip_timing):
+                self._append_log("chip state not saved")
+
     # ------------------------------------------------------------------
     # crossings: the results file, corrected by hand
     # ------------------------------------------------------------------
@@ -686,8 +836,10 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         self._crossings = QListWidget()
-        # The results file's lines, re-read after every write; the counts use them.
+        # The results file's lines and how often each number crossed: re-read after a
+        # rewrite or a path change, kept up to date as lines are appended.
         self._result_lines: list[str] = []
+        self._result_counts: Counter[str] = Counter()
         layout.addWidget(self._crossings)
         row = QHBoxLayout()
         for text, slot in (
@@ -702,9 +854,19 @@ class MainWindow(QMainWindow):
         return page
 
     def _refresh_crossings(self) -> None:
+        """Re-read the results file: after a rewrite or a change of its path."""
         self._result_lines = read_results(self._results_path())
+        self._result_counts = Counter(line.split("#")[0] for line in self._result_lines)
         self._crossings.clear()
         self._crossings.addItems(self._result_lines)
+        self._crossings.scrollToBottom()
+
+    def _note_written(self, line: str) -> None:
+        """A line appended to the results file: shown and counted without a re-read,
+        which a mass finish of chip crossings would pay for once per crossing."""
+        self._result_lines.append(line)
+        self._result_counts[line.split("#")[0]] += 1
+        self._crossings.addItem(line)
         self._crossings.scrollToBottom()
 
     def _ask_crossing(
@@ -1214,6 +1376,7 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.question(self, "Warning", "Are you sure to exit?")
         if reply == QMessageBox.StandardButton.Yes:
             self._stop_source(wait=True)
+            self._save_chip_state()
             self._finish_upload_timer.stop()
             if self._http_save_timer.isActive():
                 self._http_save_timer.stop()

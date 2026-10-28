@@ -12,11 +12,14 @@ from pathlib import Path
 from app.paths import app_path
 
 
-def side_file(results_path: str, kind: str) -> str:
-    """``results.txt`` -> ``results.<kind>.txt``, in the same folder; "" without one."""
+def side_file(results_path: str, kind: str, extension: str = "txt") -> str:
+    """``results.txt`` -> ``results.<kind>.<extension>``, in the same folder.
+
+    "" when there is no results file to sit next to.
+    """
     if not results_path:
         return ""
-    return f"{Path(results_path).with_suffix('')}.{kind}.txt"
+    return f"{Path(results_path).with_suffix('')}.{kind}.{extension}"
 
 
 def field(text: str) -> str:
