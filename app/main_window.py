@@ -1017,6 +1017,7 @@ class MainWindow(QMainWindow):
         self._crossings.clear()
         self._crossings.addItems(self._result_lines)
         self._crossings.scrollToBottom()
+        self._update_crosses()  # the counts beside the slots follow the file in use
 
     def _note_written(self, line: str) -> None:
         """A line appended to the results file: shown and counted without a re-read,
@@ -1146,7 +1147,6 @@ class MainWindow(QMainWindow):
         self._log.scrollToBottom()
         self._refresh_crossings()
         self._schedule_finish_upload()
-        self._update_crosses()
 
     def _save_backup_if_enabled(self) -> None:
         if self._chk_disable_backup.isChecked():
