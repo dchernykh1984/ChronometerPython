@@ -714,6 +714,9 @@ class MainWindow(QMainWindow):
         )
         self._list_unknown = QListWidget()
         layout.addWidget(self._list_unknown)
+        self._unknown_timer = QTimer(self)
+        self._unknown_timer.setSingleShot(True)
+        self._unknown_timer.timeout.connect(self._show_unknown)
         report_button = QPushButton("Chip report")
         report_button.clicked.connect(self._on_chip_report)
         layout.addWidget(report_button)
@@ -876,8 +879,11 @@ class MainWindow(QMainWindow):
         at = parse_time(stamp)
         if at is not None:
             self._write_chip_crossings(timing.on_read(chip, at))
-            if chip not in timing.chip_map.bib_of:
-                self._show_unknown()
+            if (
+                chip not in timing.chip_map.bib_of
+                and not self._unknown_timer.isActive()
+            ):
+                self._unknown_timer.start(500)  # a burst refreshes the list once
         self._chip_state_dirty = True
         self._chip_state_timer.start(1000)
 

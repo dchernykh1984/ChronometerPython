@@ -125,6 +125,8 @@ def test_a_burst_of_reads_is_handled_in_order(win, chips_on):
 def test_an_unknown_chip_is_listed_and_timed_once_the_map_binds_it(win, chips_on):
     win._on_source_event(Read("D", T0))
     win._on_source_event(Read("D", T0 + 20_000))
+    assert win._unknown_timer.isActive()
+    win._show_unknown()  # what the timer does half a second later
     assert win._list_unknown.count() == 1
     assert win._list_unknown.item(0).text().startswith("D: 2 read(s)")
     assert _results(chips_on) == []
@@ -202,3 +204,12 @@ def test_a_lost_chip_state_writes_no_crossing_twice(win, chips_on):
     assert any(line.startswith("chip state lost") for line in log)
     win._on_source_event(Read("B", T0 + 10_000))  # still the 9 s pass
     assert _results(chips_on) == written
+
+
+def test_a_burst_of_unknown_reads_refreshes_the_list_once(win, chips_on):
+    for i in range(300):
+        win._on_source_event(Read("D", T0 + i))
+    assert win._list_unknown.count() == 0  # not rebuilt read by read
+    assert win._unknown_timer.isActive()
+    win._show_unknown()
+    assert win._list_unknown.item(0).text().startswith("D: 300 read(s)")
