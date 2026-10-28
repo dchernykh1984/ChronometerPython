@@ -116,3 +116,13 @@ def test_a_source_event_is_logged(win):
     win._on_source_event(mw.cp.Error("lost"))
     log = [win._log.item(i).text() for i in range(win._log.count())]
     assert "source connected COM3" in log and "source error: lost" in log
+
+
+def test_a_source_needs_a_results_file_to_start(win, monkeypatch):
+    warnings = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warnings.append(a[2]))
+    win._edit_results_file.setText("")
+    _choose(win, "beam")
+    win._on_source_start()
+    assert win._host is None
+    assert warnings[0].startswith("Choose the results file first")

@@ -597,6 +597,13 @@ class MainWindow(QMainWindow):
         info = find(name)
         if kind == "hand" or info is None or not info.available:
             return
+        if not self._results_path():
+            QMessageBox.warning(
+                self,
+                "Event source",
+                "Choose the results file first: the device's files go next to it.",
+            )
+            return
         if name == "custom":
             program = QProcess.splitCommand(self._sources.get("custom_command", ""))
             if not program:
@@ -865,8 +872,11 @@ class MainWindow(QMainWindow):
         if not chip:
             self._append_log(f"chip read without a usable id: {event.chip!r}")
             return
-        timing = self._timing()
         stamp = self._event_time(event.time_ms)
+        if not self._results_path():  # cleared while the source runs
+            self._append_log(f"chip read {chip} {stamp} not timed: no results file")
+            return
+        timing = self._timing()
         rssi = "" if event.rssi is None else f"{event.rssi:g}"
         record = (
             f"{chip}#{stamp}#{field(event.device_time)}#{field(event.antenna)}#"

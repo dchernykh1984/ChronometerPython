@@ -213,3 +213,11 @@ def test_a_burst_of_unknown_reads_refreshes_the_list_once(win, chips_on):
     assert win._unknown_timer.isActive()
     win._show_unknown()
     assert win._list_unknown.item(0).text().startswith("D: 300 read(s)")
+
+
+def test_a_read_with_no_results_file_is_logged_not_timed(win, chips_on):
+    win._edit_results_file.setText("")
+    win._on_source_event(Read("A", T0))
+    last = win._log.item(win._log.count() - 1).text()
+    assert last == f"chip read A {format_time(T0)} not timed: no results file"
+    assert win._chip_timing is None or not win._chip_timing.unwritten
