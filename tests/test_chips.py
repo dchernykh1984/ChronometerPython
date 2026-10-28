@@ -103,14 +103,12 @@ def run_case(case: dict) -> list[list]:
             made += timing.on_read(*event["read"])
         elif "dead_time_ms" in event:
             timing.dead_ms = event["dead_time_ms"]
+        elif "map" in event:
+            made += timing.set_map(chips.ChipMap(bib_of=dict(event["map"])))
     return [[bib, at] for bib, at in made]
 
 
-@pytest.mark.parametrize(
-    "case",
-    [c for c in VECTORS["cases"] if not any("map" in e for e in c["events"])],
-    ids=lambda c: c["name"],
-)
+@pytest.mark.parametrize("case", VECTORS["cases"], ids=lambda c: c["name"])
 def test_reads_become_crossings_as_the_shared_cases_say(case):
     assert run_case(case) == case["crossings"]
 
@@ -159,3 +157,17 @@ def test_raw_reads_lines_give_chip_and_time():
     assert chips.raw_read("A#not a time#") is None
     assert chips.raw_read("#1 0:0:1.500#") is None
     assert chips.raw_read("") is None
+
+
+def test_unknown_chips_are_listed_with_first_and_last_read_and_count():
+    timing = chips.ChipTiming()
+    timing.chip_map = chips.ChipMap(conflicts={"Y": ["15", "16"]})
+    for chip, at in (("X", 5), ("Y", 6), ("X", 1), ("X", 9)):
+        timing.on_read(chip, at)
+    assert timing.unknown() == {"X": (1, 9, 3)}
+    made = timing.set_map(
+        chips.ChipMap(bib_of={"X": "22"}, conflicts={"Y": ["15", "16"]})
+    )
+    assert made == [("22", 1)]
+    assert timing.unknown() == {}
+    assert timing.pending == [("Y", 6)]

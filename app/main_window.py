@@ -679,6 +679,11 @@ class MainWindow(QMainWindow):
         layout.addWidget(QLabel("Chips on two bibs (bound to neither):"))
         self._list_conflicts = QListWidget()
         layout.addWidget(self._list_conflicts)
+        layout.addWidget(
+            QLabel("Unknown chips (timed once the start protocol has them):")
+        )
+        self._list_unknown = QListWidget()
+        layout.addWidget(self._list_unknown)
         self._chip_map = ChipMap()
         # Chip state belongs to one results file; loaded when that file is in use.
         self._chip_timing: ChipTiming | None = None
@@ -709,7 +714,8 @@ class MainWindow(QMainWindow):
         lines = read_start_protocol(path)
         self._chip_map = build_chip_map(lines or [])
         if self._chip_timing is not None:
-            self._chip_timing.chip_map = self._chip_map
+            self._write_chip_crossings(self._chip_timing.set_map(self._chip_map))
+            self._show_unknown()
         self._list_conflicts.clear()
         for chip, bibs in sorted(self._chip_map.conflicts.items()):
             self._list_conflicts.addItem(f"{chip}: bibs {', '.join(bibs)}")
@@ -742,8 +748,9 @@ class MainWindow(QMainWindow):
         timing = load_chip_state(
             side_file(path, "chip_state", "json"), self._spin_dead_time.value() * 1000
         )
-        timing.chip_map = self._chip_map
         self._chip_timing, self._chip_timing_for = timing, path
+        # The map may have changed while the program was closed.
+        self._write_chip_crossings(timing.set_map(self._chip_map))
         raw = read_file_lines(side_file(path, "chip_reads")) if path else []
         for line in raw[timing.processed_lines :]:
             read = raw_read(line)
@@ -775,8 +782,20 @@ class MainWindow(QMainWindow):
         at = parse_time(stamp)
         if at is not None:
             self._write_chip_crossings(timing.on_read(chip, at))
+            if chip not in timing.chip_map.bib_of:
+                self._show_unknown()
         self._chip_state_dirty = True
         self._chip_state_timer.start(1000)
+
+    def _show_unknown(self) -> None:
+        self._list_unknown.clear()
+        if self._chip_timing is None:
+            return
+        for chip, (first, last, count) in sorted(self._chip_timing.unknown().items()):
+            self._list_unknown.addItem(
+                f"{chip}: {count} read(s), first {scale_time(first)}, "
+                f"last {scale_time(last)}"
+            )
 
     def _write_chip_crossings(self, made: list[tuple[str, int]]) -> None:
         if not made or self._chip_timing is None:

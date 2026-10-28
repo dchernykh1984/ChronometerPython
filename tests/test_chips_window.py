@@ -120,3 +120,19 @@ def test_a_burst_of_reads_is_handled_in_order(win, chips_on):
     assert len(lines) == 2 * 34  # bibs 15 and 22, one crossing per 10 s pass
     times = [parse_time(line.split("#")[1]) for line in lines]
     assert times == sorted(times)
+
+
+def test_an_unknown_chip_is_listed_and_timed_once_the_map_binds_it(win, chips_on):
+    win._on_source_event(Read("D", T0))
+    win._on_source_event(Read("D", T0 + 20_000))
+    assert win._list_unknown.count() == 1
+    assert win._list_unknown.item(0).text().startswith("D: 2 read(s)")
+    assert _results(chips_on) == []
+    with (chips_on / "start.txt").open("a", encoding="utf-8") as f:
+        f.write("31#Late#M40#3#1#1992#T#C##0 00:00:00.000#r3#D#\n")
+    win._reload_chip_map()
+    assert _results(chips_on) == [
+        f"31#{format_time(T0)}#nextLap#",
+        f"31#{format_time(T0 + 20_000)}#nextLap#",
+    ]
+    assert win._list_unknown.count() == 0
