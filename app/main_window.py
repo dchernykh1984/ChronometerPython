@@ -10,7 +10,10 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QFileDialog,
+    QFormLayout,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -21,6 +24,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSpinBox,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -45,6 +49,13 @@ from app.models import (
     save_http_config,
 )
 from app.paths import app_path
+from app.results_file import (
+    ACTIONS,
+    crossing_line,
+    crossing_problem,
+    read_results,
+    rewrite_results,
+)
 
 _CONFIG_PATH = str(app_path("data", "groupsList.txt"))
 _N_SLOTS = 5
@@ -202,9 +213,12 @@ class MainWindow(QMainWindow):
 
         left = QVBoxLayout()
         left.addWidget(slots_box)
-        left.addWidget(QLabel("Action log:"))
+        # The action log stays as it was, as the first tab; the others show files.
+        self._tabs = QTabWidget()
         self._log = QListWidget()
-        left.addWidget(self._log)
+        self._tabs.addTab(self._log, "Action log")
+        self._tabs.addTab(self._build_crossings_tab(), "Crossings")
+        left.addWidget(self._tabs)
         root.addLayout(left)
 
         # ---- RIGHT panel ----
@@ -276,6 +290,7 @@ class MainWindow(QMainWindow):
         file_layout = QGridLayout(file_box)
         file_layout.addWidget(QLabel("Results:"), 0, 0)
         self._edit_results_file = QLineEdit()
+        self._edit_results_file.textChanged.connect(self._refresh_crossings)
         file_layout.addWidget(self._edit_results_file, 0, 1)
         btn_results = QPushButton("...")
         btn_results.setFixedWidth(30)
@@ -388,7 +403,135 @@ class MainWindow(QMainWindow):
         self._log.addItem(result_line)
         self._log.scrollToBottom()
         self._schedule_finish_upload()
+        self._refresh_crossings()
         return True
+
+    # ------------------------------------------------------------------
+    # crossings: the results file, corrected by hand
+    # ------------------------------------------------------------------
+
+    def _build_crossings_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        self._crossings = QListWidget()
+        layout.addWidget(self._crossings)
+        row = QHBoxLayout()
+        for text, slot in (
+            ("Add", self._on_add_crossing),
+            ("Edit", self._on_edit_crossing),
+            ("Delete", self._on_delete_crossing),
+        ):
+            button = QPushButton(text)
+            button.clicked.connect(slot)
+            row.addWidget(button)
+        layout.addLayout(row)
+        return page
+
+    def _refresh_crossings(self) -> None:
+        self._crossings.clear()
+        self._crossings.addItems(read_results(self._results_path()))
+        self._crossings.scrollToBottom()
+
+    def _ask_crossing(
+        self, number: str, time_str: str, action: str
+    ) -> tuple[str, str, str] | None:
+        """Ask for a crossing until it is valid or the judge cancels."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Crossing")
+        form = QFormLayout(dialog)
+        edit_number, edit_time = QLineEdit(number), QLineEdit(time_str)
+        combo = QComboBox()
+        combo.setEditable(True)  # a DSQ line keeps its own "DSQ: reason"
+        combo.addItems(ACTIONS)
+        combo.setCurrentText(action)
+        form.addRow("Number:", edit_number)
+        form.addRow("Time:", edit_time)
+        form.addRow("Action:", combo)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form.addRow(buttons)
+        while dialog.exec() == QDialog.DialogCode.Accepted:
+            got = (
+                edit_number.text().strip(),
+                edit_time.text().strip(),
+                combo.currentText(),
+            )
+            problem = crossing_problem(*got)
+            if problem is None:
+                return got
+            QMessageBox.warning(self, "Crossing", problem)
+        return None
+
+    def _crossing_lines(self) -> list[str] | None:
+        """The results file now, or None (with a message) when there is no path."""
+        if not self._results_path():
+            QMessageBox.warning(
+                self, "Crossings", "Results file path is not configured."
+            )
+            return None
+        return read_results(self._results_path())
+
+    def _selected_crossing(self, lines: list[str]) -> int:
+        """The selected line's place in the file as it is now, or -1 (said aloud)."""
+        row = self._crossings.currentRow()
+        item = self._crossings.currentItem()
+        if row < 0 or item is None:
+            return -1
+        if row >= len(lines) or lines[row] != item.text():
+            QMessageBox.warning(
+                self, "Crossings", "The results file changed meanwhile; try again."
+            )
+            self._refresh_crossings()
+            return -1
+        return row
+
+    def _on_add_crossing(self) -> None:
+        lines = self._crossing_lines()
+        if lines is None:
+            return
+        now = get_current_time(summer_time=self._chk_summer_time.isChecked())
+        got = self._ask_crossing("", now, self._action())
+        if got is not None:
+            line = crossing_line(*got)
+            self._change_results([*lines, line], f"added {line}")
+
+    def _on_edit_crossing(self) -> None:
+        lines = self._crossing_lines()
+        row = -1 if lines is None else self._selected_crossing(lines)
+        if lines is None or row < 0:
+            return
+        number, time_str, action = ([*lines[row].split("#"), "", ""])[:3]
+        got = self._ask_crossing(number, time_str, action)
+        if got is not None:
+            new = crossing_line(*got)
+            changed = [*lines[:row], new, *lines[row + 1 :]]
+            self._change_results(changed, f"changed {lines[row]} to {new}")
+
+    def _on_delete_crossing(self) -> None:
+        lines = self._crossing_lines()
+        row = -1 if lines is None else self._selected_crossing(lines)
+        if lines is None or row < 0:
+            return
+        reply = QMessageBox.question(self, "Crossings", f"Delete {lines[row]}?")
+        if reply == QMessageBox.StandardButton.Yes:
+            changed = [*lines[:row], *lines[row + 1 :]]
+            self._change_results(changed, f"deleted {lines[row]}")
+
+    def _change_results(self, lines: list[str], what: str) -> None:
+        """Rewrite the results file after its backup, then log, show and upload it."""
+        try:
+            backup = rewrite_results(self._results_path(), lines)
+        except OSError as exc:
+            QMessageBox.warning(self, "Crossings", f"Nothing changed: {exc}")
+            return
+        self._log.addItem(f"{what} (previous file kept as {backup.name})")
+        self._log.scrollToBottom()
+        self._refresh_crossings()
+        self._schedule_finish_upload()
+        self._update_crosses()
 
     def _save_backup_if_enabled(self) -> None:
         if self._chk_disable_backup.isChecked():
