@@ -403,6 +403,7 @@ class MainWindow(QMainWindow):
         http_layout.addWidget(self._spin_point, 3, 2)
         self._btn_get_groups = QPushButton("Get groups")
         self._btn_get_groups.clicked.connect(self._on_get_groups)
+        self._groups_worker: _FetchWorker | None = None
         http_layout.addWidget(self._btn_get_groups, 4, 0, 1, 3)
         right.addWidget(http_box)
 
@@ -1198,23 +1199,34 @@ class MainWindow(QMainWindow):
             self._edit_groups_file.setText(group_start_file)
 
     def _on_get_groups(self) -> None:
-        """Fetch the group list from the site and replace the Group start dropdown.
-
-        Only a failure (missing URL/token, offline/timeout, or a bad response) leaves
-        the dropdown unchanged. A successful response is applied as-is -- including an
-        empty list, which clears the dropdown so a start with no groups does not keep
-        showing a previous start's groups.
-        """
+        """Fetch the group list from the site off the UI thread, so timing goes on."""
         site = self._http_cfg.get("site_url", "").strip()
         token = self._http_cfg.get("token", "").strip()
         if not site or not token:
             QMessageBox.warning(self, "Get groups", "Site URL and Token must be set.")
             return
-        try:
-            groups = fetch_groups(site, token)
-        except ValueError as exc:
-            QMessageBox.warning(self, "Get groups", f"Could not load groups:\n{exc}")
+        worker = _FetchWorker(fetch_groups, site, token)
+        worker.done.connect(self._on_groups)
+        self._groups_worker = worker
+        self._btn_get_groups.setEnabled(False)
+        worker.start()
+
+    def _on_groups(self, result: object) -> None:
+        """Replace the Group start dropdown with the groups the site sent.
+
+        Only a failure (offline/timeout, or a bad response) leaves the dropdown
+        unchanged. A successful response is applied as-is -- including an empty
+        list, which clears the dropdown so a start with no groups does not keep
+        showing a previous start's groups.
+        """
+        if self._groups_worker is not None:
+            self._groups_worker.wait()
+            self._groups_worker = None
+        self._btn_get_groups.setEnabled(True)
+        if not isinstance(result, list):  # the error the download ended with
+            QMessageBox.warning(self, "Get groups", f"Could not load groups:\n{result}")
             return
+        groups = result
         current = self._combo_group.currentText()
         self._combo_group.clear()
         for group in groups:
@@ -1609,9 +1621,10 @@ class MainWindow(QMainWindow):
                     pass
                 worker.wait()
             self._upload_workers.clear()
-            if self._fetch_worker is not None:  # a download also ends within 10 s
-                self._fetch_worker.done.disconnect()
-                self._fetch_worker.wait()
+            for fetch in (self._fetch_worker, self._groups_worker):
+                if fetch is not None:  # a download also ends within 10 s
+                    fetch.done.disconnect()
+                    fetch.wait()
             event.accept()
         else:
             event.ignore()

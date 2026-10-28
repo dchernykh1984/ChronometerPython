@@ -8,8 +8,11 @@ otherwise go unnoticed.
 
 from __future__ import annotations
 
+import threading
 import time
 from unittest.mock import Mock
+
+from PySide6.QtWidgets import QApplication
 
 from app import main_window as mw
 
@@ -158,12 +161,38 @@ def test_close_waits_for_running_upload(win, monkeypatch):
 # -- Get groups (fetch group list into the dropdown) -----------------------
 
 
+def _get_groups(win) -> None:
+    """Press Get groups and wait for the download, which runs off the UI thread."""
+    win._on_get_groups()
+    deadline = time.monotonic() + 10
+    while win._groups_worker is not None and time.monotonic() < deadline:
+        QApplication.processEvents()
+        time.sleep(0.01)
+    assert win._groups_worker is None
+
+
+def test_get_groups_leaves_the_window_free_while_the_site_answers(win, monkeypatch):
+    answer = threading.Event()
+    monkeypatch.setattr(mw, "fetch_groups", lambda *a: answer.wait(10) and ["G1"])
+    monkeypatch.setattr(mw.QMessageBox, "information", lambda *a, **k: None)
+    win._on_get_groups()  # returns at once
+    assert win._groups_worker is not None
+    assert not win._btn_get_groups.isEnabled()
+    answer.set()
+    deadline = time.monotonic() + 10
+    while win._groups_worker is not None and time.monotonic() < deadline:
+        QApplication.processEvents()
+        time.sleep(0.01)
+    assert win._combo_group.itemText(0) == "G1"
+    assert win._btn_get_groups.isEnabled()
+
+
 def test_get_groups_replaces_dropdown(win, monkeypatch):
     win._combo_group.clear()
     win._combo_group.addItem("Old")
     monkeypatch.setattr(mw, "fetch_groups", lambda site, token: ["G1", "G2"])
     monkeypatch.setattr(mw.QMessageBox, "information", lambda *a, **k: None)
-    win._on_get_groups()
+    _get_groups(win)
     items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
     assert items == ["G1", "G2"]
 
@@ -178,7 +207,7 @@ def test_get_groups_offline_leaves_dropdown_unchanged(win, monkeypatch):
 
     monkeypatch.setattr(mw, "fetch_groups", _boom)
     monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a, **k: warned.append(a))
-    win._on_get_groups()
+    _get_groups(win)
     items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
     assert items == ["Keep"]  # unchanged
     assert warned  # a popup was shown
@@ -193,7 +222,7 @@ def test_get_groups_empty_result_clears_dropdown(win, monkeypatch):
     monkeypatch.setattr(mw, "fetch_groups", lambda site, token: [])
     monkeypatch.setattr(mw.QMessageBox, "information", lambda *a, **k: None)
     monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a, **k: warned.append(a))
-    win._on_get_groups()
+    _get_groups(win)
     items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
     assert items == []
     assert not warned  # empty is a success, so no warning popup
@@ -206,7 +235,7 @@ def test_get_groups_missing_credentials_warns(win, monkeypatch):
     called: list = []
     monkeypatch.setattr(mw, "fetch_groups", lambda s, t: called.append(True) or [])
     monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a, **k: None)
-    win._on_get_groups()
+    _get_groups(win)
     assert not called  # never hit the network without a URL/token
     items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
     assert items == ["Keep"]
@@ -219,7 +248,7 @@ def test_get_groups_saves_config(win, monkeypatch):
     monkeypatch.setattr(mw.QMessageBox, "information", lambda *a, **k: None)
     win._edit_results_file.setText("data/results.txt")
     win._edit_groups_file.setText("data/groups.txt")
-    win._on_get_groups()
+    _get_groups(win)
     groups, results, group_start = load_config(win._config_path)
     assert groups == ["G1", "G2"]
     assert results == "data/results.txt"
