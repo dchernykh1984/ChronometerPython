@@ -124,11 +124,7 @@ class ConnectorHost(QObject):
         self._wanted = False
         for timer in (self._hello_timer, self._ping_timer, self._restart_timer):
             timer.stop()
-        running = QProcess.ProcessState.NotRunning
-        if self._process is not None and self._process.state() != running:
-            # What it sent before the stop still counts: every read reaches its file.
-            self._process.waitForReadyRead(0)
-            self._on_output(self._process)
+        self._drain()
         process, self._process = self._process, None
         if process is not None and process.state() != QProcess.ProcessState.NotRunning:
             process.write(cp.stop())
@@ -182,17 +178,35 @@ class ConnectorHost(QObject):
         self._set_state(f"restarting in {self._pause_ms / 1000:g} s")
         self._restart_timer.start(pause)
 
+    def _drain(self) -> None:
+        """Handle what the connector already sent before it is cut off: a stop or a
+        restart must not lose a read waiting in the pipe."""
+        process = self._process
+        if process is None:
+            return
+        if process.state() != QProcess.ProcessState.NotRunning:
+            process.waitForReadyRead(0)
+        self._on_output(process)
+
     def _kill_and_restart(self, why: str) -> None:
+        self._drain()
         if self._process is not None:
             self._on_ended(self._process, why)
 
     def _on_hello_timeout(self) -> None:
-        self._kill_and_restart("said no hello")
+        self._drain()  # a hello waiting in the pipe still counts
+        if self.state == "starting":
+            self._kill_and_restart("said no hello")
+
+    def _silent(self) -> bool:
+        return time.monotonic() - self._last_pong > self._pong_timeout_ms / 1000
 
     def _on_ping(self) -> None:
-        if time.monotonic() - self._last_pong > self._pong_timeout_ms / 1000:
-            self._kill_and_restart("stopped answering")
-            return
+        if self._silent():
+            self._drain()  # a pong waiting in the pipe still counts
+            if self._silent():
+                self._kill_and_restart("stopped answering")
+                return
         self._ping_id += 1
         if self._process is not None:
             self._process.write(cp.ping(self._ping_id))
@@ -217,11 +231,15 @@ class ConnectorHost(QObject):
                     f"connector line ignored: longer than {cp.MAX_LINE} bytes"
                 )
             self._buffer, self._overlong = b"", True
+        gave_up = ""
         for line in lines:
             if line.strip() and self._process is process:
-                self._handle(cp.decode(line))
+                gave_up = self._handle(cp.decode(line)) or gave_up
+        if gave_up and self._process is process:  # after every line it sent with it
+            self._kill_and_restart(f"gave up: {gave_up}")
 
-    def _handle(self, message: cp.Event) -> None:
+    def _handle(self, message: cp.Event) -> str:
+        """Act on one message; the reason a fatal error gives, else ""."""
         if isinstance(message, cp.Hello):
             self._on_hello(message)
         elif isinstance(message, cp.Pong):
@@ -231,9 +249,12 @@ class ConnectorHost(QObject):
         else:
             self.received.emit(message)
             if isinstance(message, cp.Error) and message.fatal:
-                self._kill_and_restart(f"gave up: {message.message}")
+                return message.message
+        return ""
 
     def _on_hello(self, hello: cp.Hello) -> None:
+        if not self._wanted:
+            return  # read while stopping: it starts nothing any more
         self._hello_timer.stop()
         problem = (
             f"speaks protocol {hello.protocol}, not {cp.PROTOCOL}"

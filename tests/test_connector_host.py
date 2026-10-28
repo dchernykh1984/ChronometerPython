@@ -242,3 +242,62 @@ def test_events_already_sent_count_when_the_connector_is_stopped():
     time.sleep(0.6)  # the window was busy: the events wait in the pipe
     host.stop(wait=True)
     assert [event.seq for event in events] == [1, 2, 3]
+
+
+def test_a_hello_read_while_stopping_starts_nothing():
+    host, _, states, _ = _host()
+    host.start(_python("import json\n" + HELLO % (1, "beam") + "\n" + SLEEP), {})
+    assert _wait_until(lambda: host._process.state().name == "Running", 5)
+    time.sleep(0.5)  # its hello waits in the pipe: the window was busy
+    host.stop(wait=True)
+    assert "running" not in states
+    assert host.state == "stopped"
+    assert not host._ping_timer.isActive()
+
+
+def _beams_then(*tail: str) -> str:
+    """A beam connector that, once started, writes tail's lines in one go."""
+    return "\n".join(
+        [
+            "import json, sys, time",
+            HELLO % (1, "beam"),
+            "sys.stdin.readline()",
+            *tail,
+            SLEEP,
+        ]
+    )
+
+
+def test_lines_sent_with_a_fatal_error_all_count():
+    events_and_error = (
+        "out = [{'type': 'beam', 'seq': 1}, {'type': 'error', 'message': 'lost',"
+        " 'fatal': True}, {'type': 'beam', 'seq': 2}]"
+    )
+    code = _beams_then(
+        events_and_error,
+        "sys.stdout.write(''.join(json.dumps(x) + '\\n' for x in out))",
+        "sys.stdout.flush()",
+    )
+    host, events, _, logs = _host()
+    host.start(_python(code), {})
+    assert _wait_until(lambda: any("gave up: lost" in line for line in logs))
+    assert [type(e).__name__ for e in events] == ["Break", "Error", "Break"]
+    host.stop(wait=True)
+
+
+def test_reads_waiting_when_the_pongs_stop_still_count():
+    code = _beams_then(
+        "time.sleep(0.2)",
+        "for seq in (1, 2):",
+        "    print(json.dumps({'type': 'beam', 'seq': seq}), flush=True)",
+    )
+    host, events, states, logs = _host()
+    host.start(_python(code), {})
+    assert _wait_until(lambda: "running" in states)
+    _wait_until(lambda: False, timeout=0.05)  # the start command goes out
+    time.sleep(0.6)  # the window was busy: the events wait in the pipe
+    host._last_pong = 0.0  # and the pong timeout has passed
+    host._on_ping()
+    assert [e.seq for e in events] == [1, 2]
+    assert any("stopped answering" in line for line in logs)
+    host.stop(wait=True)
