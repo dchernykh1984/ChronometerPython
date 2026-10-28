@@ -101,3 +101,21 @@ def test_closing_waits_for_a_running_download(win, start_file, monkeypatch):
     assert not worker.isRunning()
     event.accept.assert_called_once()
     assert start_file.read_text(encoding="utf-8") == "old#line#\n"  # closed first
+
+
+def test_download_goes_into_the_path_as_typed(win, start_file, tmp_path, monkeypatch):
+    typed = tmp_path / "typed.txt"
+    win._edit_start_protocol.setText(str(typed))  # no Return pressed
+    monkeypatch.setattr(mw, "fetch_start_list", lambda *a: LINES)
+    win._on_download_start_protocol()
+    assert _wait_until(lambda: win._fetch_worker is None)
+    assert typed.read_text(encoding="utf-8") == LINES[0] + "\n"
+    assert start_file.read_text(encoding="utf-8") == "old#line#\n"
+
+
+def test_reload_reads_the_path_as_typed(win, start_file, tmp_path):
+    typed = tmp_path / "typed.txt"
+    typed.write_text(LINES[0] + "\n", encoding="utf-8")
+    win._edit_start_protocol.setText(str(typed))
+    win._btn_reload_start.click()
+    assert win._chip_map.bib_of == {"A": "15"}

@@ -126,3 +126,26 @@ def test_a_source_needs_a_results_file_to_start(win, monkeypatch):
     win._on_source_start()
     assert win._host is None
     assert warnings[0].startswith("Choose the results file first")
+
+
+def test_start_uses_the_settings_typed_without_pressing_return(win, monkeypatch):
+    warnings = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warnings.append(a[2]))
+    _choose(win, "beam", "custom")
+    win._edit_connector_settings.setText("my-beam --port 3")  # no editingFinished
+    started = []
+    monkeypatch.setattr(mw.ConnectorHost, "start", lambda self, *a: started.append(a))
+    win._on_source_start()
+    assert warnings == []
+    assert started[0][0] == ["my-beam", "--port", "3"]
+    assert win._sources["custom_command"] == "my-beam --port 3"
+
+
+def test_start_refuses_settings_typed_that_are_not_json(win, monkeypatch):
+    warnings = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warnings.append(a[2]))
+    _choose(win, "beam", "dummy-beam")
+    win._edit_connector_settings.setText("{min_s: 5")
+    win._on_source_start()
+    assert win._host is None
+    assert "JSON" in warnings[0]
