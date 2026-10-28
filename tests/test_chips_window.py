@@ -167,3 +167,21 @@ def test_a_chip_report_that_cannot_be_written_says_so(win, chips_on, monkeypatch
     (chips_on / "results.chip_report.txt").mkdir()  # a folder where the file goes
     win._on_chip_report()
     assert warned and warned[0].startswith("Not written:")
+
+
+def test_waiting_crossings_stay_out_of_another_results_file(win, chips_on, monkeypatch):
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: pytest.fail("dialog"))
+    blocker = chips_on / "blocker"
+    blocker.write_text("x", encoding="utf-8")
+    first = blocker / "results.txt"
+    win._edit_results_file.setText(str(first))
+    win._on_source_event(Read("A", T0))
+    win._edit_results_file.setText(str(chips_on / "other.txt"))
+    win._retry_unwritten()  # the timer's tick, or a reload of the start protocol
+    win._reload_chip_map()
+    assert not (chips_on / "other.txt").exists()
+    blocker.unlink()
+    blocker.mkdir()
+    win._edit_results_file.setText(str(first))
+    win._retry_unwritten()
+    assert first.read_text(encoding="utf-8") == f"15#{format_time(T0)}#nextLap#\n"
