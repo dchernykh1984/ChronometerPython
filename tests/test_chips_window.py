@@ -185,3 +185,20 @@ def test_waiting_crossings_stay_out_of_another_results_file(win, chips_on, monke
     win._edit_results_file.setText(str(first))
     win._retry_unwritten()
     assert first.read_text(encoding="utf-8") == f"15#{format_time(T0)}#nextLap#\n"
+
+
+def test_a_lost_chip_state_writes_no_crossing_twice(win, chips_on):
+    for offset in (0, 9000):
+        win._on_source_event(Read("A", T0 + offset))
+    (chips_on / "results.chip_state.json").unlink()
+    win._chip_timing = None  # as at a start after the state was lost
+    win._timing()
+    written = [
+        f"15#{format_time(T0)}#nextLap#",
+        f"15#{format_time(T0 + 9000)}#nextLap#",
+    ]
+    assert _results(chips_on) == written
+    log = [win._log.item(i).text() for i in range(win._log.count())]
+    assert any(line.startswith("chip state lost") for line in log)
+    win._on_source_event(Read("B", T0 + 10_000))  # still the 9 s pass
+    assert _results(chips_on) == written

@@ -41,6 +41,7 @@ from app.chips import (
     normalise_chip,
     raw_read,
     read_start_protocol,
+    rebuilt_timing,
     save_chip_state,
 )
 from app.connector_host import ConnectorHost, builtin_command
@@ -826,13 +827,20 @@ class MainWindow(QMainWindow):
             return self._chip_timing
         if self._chip_timing is not None:
             self._save_chip_state()
-        timing = load_chip_state(
-            side_file(path, "chip_state", "json"), self._spin_dead_time.value() * 1000
-        )
+        dead_ms = self._spin_dead_time.value() * 1000
+        raw = read_file_lines(side_file(path, "chip_reads")) if path else []
+        timing = load_chip_state(side_file(path, "chip_state", "json"), dead_ms)
+        if timing is None:
+            timing = rebuilt_timing(raw, self._chip_map, dead_ms)
+            if raw:
+                self._append_log(
+                    f"chip state lost: rebuilt from {len(raw)} raw read(s) without "
+                    "writing their crossings again; check the results file"
+                )
+                self._chip_state_dirty = True
         self._chip_timing, self._chip_timing_for = timing, path
         # The map may have changed while the program was closed.
         self._write_chip_crossings(timing.set_map(self._chip_map))
-        raw = read_file_lines(side_file(path, "chip_reads")) if path else []
         for line in raw[timing.processed_lines :]:
             read = raw_read(line)
             if read is not None:

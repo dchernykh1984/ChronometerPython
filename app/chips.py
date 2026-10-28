@@ -11,6 +11,7 @@ N-th bind nothing; any other line binds every chip to its bib.
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import dataclass, field
 
@@ -184,23 +185,46 @@ class ChipTiming:
         return timing
 
 
-def load_chip_state(path: str, dead_ms: int) -> ChipTiming:
-    """The chip state saved next to a results file, or a fresh one."""
+def load_chip_state(path: str, dead_ms: int) -> ChipTiming | None:
+    """The chip state saved next to a results file; None when missing or unreadable."""
     try:
         data = json.loads(app_path(path).read_text(encoding="utf-8"))
         if data.get("version") == STATE_VERSION:
             return ChipTiming.from_json(data, dead_ms)
     except OSError, ValueError, TypeError, AttributeError:
         pass
-    return ChipTiming(dead_ms)
+    return None
+
+
+def rebuilt_timing(raw: list[str], chip_map: ChipMap, dead_ms: int) -> ChipTiming:
+    """A chip state made again from the raw reads file when the saved one is lost.
+
+    The passes come back, so a rider's next read still joins the pass it belongs
+    to. Their crossings do not: they were written when the reads came in, and one
+    the judge deleted must stay deleted. Reads of unbound chips wait as before.
+    """
+    timing = ChipTiming(dead_ms)
+    timing.set_map(chip_map)
+    for line in raw:
+        if (read := raw_read(line)) is not None:
+            timing.on_read(*read)
+    timing.processed_lines = len(raw)
+    return timing
 
 
 def save_chip_state(path: str, timing: ChipTiming) -> bool:
-    """Write the chip state in one step; False when it cannot be written."""
+    """Write the chip state in one step; False when it cannot be written.
+
+    On disk before it replaces the old state: a power cut must not leave an empty
+    file where the passes were.
+    """
     try:
         target = app_path(path)
         temporary = target.with_name(target.name + ".tmp")
-        temporary.write_text(json.dumps(timing.to_json()), encoding="utf-8")
+        with temporary.open("w", encoding="utf-8") as f:
+            f.write(json.dumps(timing.to_json()))
+            f.flush()
+            os.fsync(f.fileno())
         temporary.replace(target)
         return True
     except OSError:
