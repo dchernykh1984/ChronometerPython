@@ -235,3 +235,17 @@ def test_fetch_start_list_reports_a_network_error(monkeypatch) -> None:
     monkeypatch.setattr(http_io.urllib.request, "urlopen", _boom)
     with pytest.raises(ValueError, match="Connection error"):
         http_io.fetch_start_list("https://s", "tok")
+
+
+class _TimesOut(_Body):
+    def read(self, *a):
+        raise TimeoutError("timed out")
+
+
+@pytest.mark.parametrize("fetch", [http_io.fetch_groups, http_io.fetch_start_list])
+def test_a_timeout_while_reading_the_answer_is_a_connection_error(monkeypatch, fetch):
+    monkeypatch.setattr(
+        http_io.urllib.request, "urlopen", lambda url, timeout=10: _TimesOut()
+    )
+    with pytest.raises(ValueError, match="Connection error: timed out"):
+        fetch("https://s", "tok")
