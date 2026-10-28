@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QThread, QTimer, Signal
+from PySide6.QtCore import QProcess, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -29,6 +30,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app import connector_protocol as cp
+from app.connector_host import ConnectorHost, builtin_command
+from app.connectors import builtin, connectors_for, find
 from app.http_io import (
     fetch_groups,
     upload_finish_times,
@@ -55,6 +59,12 @@ from app.results_file import (
     crossing_problem,
     read_results,
     rewrite_results,
+)
+from app.sources_config import (
+    connector_settings,
+    load_sources,
+    save_sources,
+    set_connector_settings,
 )
 
 _CONFIG_PATH = str(app_path("data", "groupsList.txt"))
@@ -106,6 +116,10 @@ class MainWindow(QMainWindow):
         self._http_save_timer = QTimer(self)
         self._http_save_timer.setSingleShot(True)
         self._http_save_timer.timeout.connect(self._flush_http_config)
+        # The event source: by hand, or a connector process for a beam or chips.
+        # A connector starts only on Start, also after a restart of the program.
+        self._sources: dict[str, str] = load_sources()
+        self._host: ConnectorHost | None = None
         self._setup_ui()
         self._config_path: str = _CONFIG_PATH
         self._load_config(self._config_path)
@@ -223,6 +237,7 @@ class MainWindow(QMainWindow):
 
         # ---- RIGHT panel ----
         right = QVBoxLayout()
+        right.addWidget(self._build_source_box())
 
         # Group start section
         grp_box = QGroupBox("Group start")
@@ -406,6 +421,180 @@ class MainWindow(QMainWindow):
         self._schedule_finish_upload()
         self._refresh_crossings()
         return True
+
+    # ------------------------------------------------------------------
+    # event source: by hand, light beam or chips through a connector
+    # ------------------------------------------------------------------
+
+    def _build_source_box(self) -> QGroupBox:
+        box = QGroupBox("Event source")
+        grid = QGridLayout(box)
+        self._combo_source = QComboBox()
+        for key, label in (
+            ("hand", "By hand"),
+            ("beam", "Light beam"),
+            ("chips", "Timing chips"),
+        ):
+            self._combo_source.addItem(label, key)
+        self._combo_connector = QComboBox()
+        self._edit_connector_settings = QLineEdit()
+        self._btn_source_start = QPushButton("Start")
+        self._btn_source_stop = QPushButton("Stop")
+        self._lbl_source_state = QLabel("stopped")
+        self._lbl_test_data = QLabel("TEST CONNECTOR: its crossings are test data")
+        self._lbl_test_data.setStyleSheet("color: red; font-weight: bold;")
+        self._lbl_test_data.setVisible(False)
+        grid.addWidget(QLabel("Source:"), 0, 0)
+        grid.addWidget(self._combo_source, 0, 1, 1, 2)
+        grid.addWidget(QLabel("Device:"), 1, 0)
+        grid.addWidget(self._combo_connector, 1, 1, 1, 2)
+        grid.addWidget(QLabel("Settings:"), 2, 0)
+        grid.addWidget(self._edit_connector_settings, 2, 1, 1, 2)
+        grid.addWidget(self._btn_source_start, 3, 1)
+        grid.addWidget(self._btn_source_stop, 3, 2)
+        grid.addWidget(self._lbl_source_state, 4, 0, 1, 3)
+        grid.addWidget(self._lbl_test_data, 5, 0, 1, 3)
+        index = self._combo_source.findData(self._sources["source"])
+        self._combo_source.setCurrentIndex(max(index, 0))
+        self._fill_connectors()
+        self._combo_source.currentIndexChanged.connect(self._on_source_changed)
+        self._combo_connector.currentIndexChanged.connect(self._on_connector_changed)
+        self._edit_connector_settings.editingFinished.connect(
+            self._on_connector_settings_edited
+        )
+        self._btn_source_start.clicked.connect(self._on_source_start)
+        self._btn_source_stop.clicked.connect(self._on_source_stop)
+        return box
+
+    def _source_kind(self) -> str:
+        return str(self._combo_source.currentData())
+
+    def _connector_name(self) -> str:
+        return str(self._combo_connector.currentData() or "")
+
+    def _fill_connectors(self) -> None:
+        """List the source's connectors; a stub is shown but cannot be chosen."""
+        kind = self._source_kind()
+        self._combo_connector.blockSignals(True)
+        self._combo_connector.clear()
+        if kind != "hand":
+            for info in connectors_for(kind):
+                suffix = "" if info.available else " (not available yet)"
+                self._combo_connector.addItem(info.label + suffix, info.name)
+                if not info.available:
+                    item = self._combo_connector.model().item(  # type: ignore[attr-defined]
+                        self._combo_connector.count() - 1
+                    )
+                    item.setEnabled(False)
+            index = self._combo_connector.findData(
+                self._sources.get(f"{kind}_connector")
+            )
+            self._combo_connector.setCurrentIndex(max(index, 0))
+        self._combo_connector.blockSignals(False)
+        for widget in (
+            self._combo_connector,
+            self._edit_connector_settings,
+            self._btn_source_start,
+        ):
+            widget.setEnabled(kind != "hand")
+        self._show_connector_settings()
+
+    def _show_connector_settings(self) -> None:
+        name = self._connector_name()
+        if name == "custom":
+            self._edit_connector_settings.setText(
+                self._sources.get("custom_command", "")
+            )
+            self._edit_connector_settings.setPlaceholderText(
+                "command line of a program that speaks the connector protocol"
+            )
+        else:
+            settings = connector_settings(self._sources, name) if name else {}
+            self._edit_connector_settings.setText(json.dumps(settings) if name else "")
+            self._edit_connector_settings.setPlaceholderText("")
+
+    def _save_sources(self) -> None:
+        if not save_sources(self._sources):
+            self._append_log("event source settings could not be saved")
+
+    def _on_source_changed(self) -> None:
+        self._stop_source()
+        self._sources["source"] = self._source_kind()
+        self._save_sources()
+        self._fill_connectors()
+
+    def _on_connector_changed(self) -> None:
+        self._stop_source()
+        self._sources[f"{self._source_kind()}_connector"] = self._connector_name()
+        self._save_sources()
+        self._show_connector_settings()
+
+    def _on_connector_settings_edited(self) -> None:
+        name, text = (
+            self._connector_name(),
+            self._edit_connector_settings.text().strip(),
+        )
+        if name == "custom":
+            self._sources["custom_command"] = text
+        elif name:
+            try:
+                settings = json.loads(text or "{}")
+                if not isinstance(settings, dict):
+                    raise ValueError("not an object")
+            except ValueError:
+                QMessageBox.warning(
+                    self, "Event source", 'Settings are JSON, e.g. {"min_s": 5}.'
+                )
+                self._show_connector_settings()
+                return
+            set_connector_settings(self._sources, name, settings)
+        self._save_sources()
+
+    def _on_source_start(self) -> None:
+        kind, name = self._source_kind(), self._connector_name()
+        info = find(name)
+        if kind == "hand" or info is None or not info.available:
+            return
+        if name == "custom":
+            program = QProcess.splitCommand(self._sources.get("custom_command", ""))
+            if not program:
+                QMessageBox.warning(
+                    self, "Event source", "Type the command line first."
+                )
+                return
+            settings: dict = {}
+        elif builtin(name) is not None:
+            program, settings = (
+                builtin_command(name),
+                connector_settings(self._sources, name),
+            )
+        else:
+            return
+        self._stop_source()
+        host = ConnectorHost(kind, self)
+        host.received.connect(self._on_source_event)
+        host.state_changed.connect(self._lbl_source_state.setText)
+        host.log.connect(self._append_log)
+        self._host = host
+        self._lbl_test_data.setVisible(info.test)
+        host.start(program, settings)
+
+    def _on_source_stop(self) -> None:
+        self._stop_source()
+
+    def _stop_source(self, wait: bool = False) -> None:
+        host, self._host = self._host, None
+        if host is not None:
+            host.stop(wait)
+            host.deleteLater()
+        self._lbl_source_state.setText("stopped")
+        self._lbl_test_data.setVisible(False)
+
+    def _on_source_event(self, event: object) -> None:
+        if isinstance(event, cp.Status):
+            self._append_log(f"source {event.state} {event.detail}".rstrip())
+        elif isinstance(event, cp.Error):
+            self._append_log(f"source error: {event.message}")
 
     # ------------------------------------------------------------------
     # crossings: the results file, corrected by hand
@@ -925,6 +1114,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:  # noqa: N802
         reply = QMessageBox.question(self, "Warning", "Are you sure to exit?")
         if reply == QMessageBox.StandardButton.Yes:
+            self._stop_source(wait=True)
             self._finish_upload_timer.stop()
             if self._http_save_timer.isActive():
                 self._http_save_timer.stop()

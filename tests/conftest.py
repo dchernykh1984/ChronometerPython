@@ -15,6 +15,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication
 
 from app import main_window as mw
+from app import sources_config as sources
 
 _app = QApplication.instance() or QApplication([])
 
@@ -32,10 +33,14 @@ def win(monkeypatch, tmp_path):
     }
     monkeypatch.setattr(mw, "load_http_config", lambda *a, **k: dict(cfg))
     monkeypatch.setattr(mw, "save_http_config", lambda *a, **k: True)
+    # Event source settings stay in memory: data/sources.txt is the developer's.
+    monkeypatch.setattr(mw, "load_sources", lambda *a, **k: dict(sources.DEFAULTS))
+    monkeypatch.setattr(mw, "save_sources", lambda *a, **k: True)
     w = mw.MainWindow()
     w._chk_disable_backup.setChecked(True)  # don't write backup files during tests
     w._config_path = str(tmp_path / "groupsList.txt")  # keep config writes out of repo
     w._edit_results_file.setText(str(tmp_path / "results.txt"))
     w._edit_groups_file.setText(str(tmp_path / "groups.txt"))
     yield w
+    w._stop_source(wait=True)  # no connector process outlives its test
     w.deleteLater()
