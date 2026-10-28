@@ -30,10 +30,17 @@ def fetch_groups(site_url: str, token: str) -> list[str]:
         ValueError: on HTTP error, network/timeout error, or an invalid JSON response.
     """
     data = _get_json(site_url, "/api/v1/participants/", token)
+    if not isinstance(data, dict):
+        raise ValueError("Invalid response: not a JSON object")
+    categories = data.get("categories", [])
+    if not isinstance(categories, list):
+        raise ValueError("Invalid response: categories is not a list")
     groups: list[str] = []
     seen: set[str] = set()
-    for cat in data.get("categories", []):
-        name = (cat.get("name") or "").strip()
+    for cat in categories:
+        if not isinstance(cat, dict):
+            continue
+        name = str(cat.get("name") or "").strip()
         if name and name not in seen:
             seen.add(name)
             groups.append(name)
@@ -55,12 +62,19 @@ def fetch_start_list(site_url: str, token: str) -> list[str]:
     data = _get_json(site_url, "/api/v1/start-list/", token)
     if not isinstance(data, dict):
         raise ValueError("Invalid response: not a JSON object")
-    lines = [
-        str(line)
-        for device in data.get("devices", [])
-        if isinstance(device, dict) and isinstance(device.get("items"), list)
-        for line in device["items"]
-    ]
+    devices = data.get("devices", [])
+    if not isinstance(devices, list):
+        raise ValueError("Invalid response: devices is not a list")
+    lines: list[str] = []
+    for device in devices:
+        items = device.get("items") if isinstance(device, dict) else None
+        for line in items if isinstance(items, list) else []:
+            # Written as they come: anything but one line of text would replace a
+            # good start protocol with junk.
+            if not isinstance(line, str) or line.splitlines() not in ([line], []):
+                raise ValueError("Invalid response: a line is not one line of text")
+            if line.strip():  # a blank line is no rider
+                lines.append(line)
     if not lines:
         raise ValueError("the site has no start list for this competition yet")
     return lines

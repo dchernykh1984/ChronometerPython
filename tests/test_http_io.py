@@ -214,6 +214,7 @@ def test_fetch_start_list_merges_every_devices_lines(monkeypatch) -> None:
     [
         ({"devices": []}, "no start list"),
         ({"devices": [{"items": []}]}, "no start list"),
+        ({"devices": [{"items": ["", "  "]}]}, "no start list"),
         ({"devices": [{"items": "15#A#"}]}, "no start list"),
         ([1, 2], "not a JSON object"),
     ],
@@ -249,3 +250,40 @@ def test_a_timeout_while_reading_the_answer_is_a_connection_error(monkeypatch, f
     )
     with pytest.raises(ValueError, match="Connection error: timed out"):
         fetch("https://s", "tok")
+
+
+def test_fetch_groups_refuses_an_answer_that_is_not_an_object(monkeypatch) -> None:
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering([1, 2]))
+    with pytest.raises(ValueError, match="not a JSON object"):
+        http_io.fetch_groups("https://s", "tok")
+
+
+def test_fetch_groups_skips_a_category_that_is_not_an_object(monkeypatch) -> None:
+    payload = {"categories": ["Elite", {"name": "Junior"}]}
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering(payload))
+    assert http_io.fetch_groups("https://s", "tok") == ["Junior"]
+
+
+@pytest.mark.parametrize("categories", [None, 5, "Elite"])
+def test_fetch_groups_refuses_categories_that_are_not_a_list(monkeypatch, categories):
+    payload = {"categories": categories}
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering(payload))
+    with pytest.raises(ValueError, match="categories is not a list"):
+        http_io.fetch_groups("https://s", "tok")
+
+
+@pytest.mark.parametrize(
+    ("payload", "reason"),
+    [
+        ({"devices": None}, "devices is not a list"),
+        ({"devices": [{"items": [{"bib": 15}]}]}, "not one line of text"),
+        ({"devices": [{"items": [None]}]}, "not one line of text"),
+        ({"devices": [{"items": ["15#A#\n16#B#"]}]}, "not one line of text"),
+        ({"devices": [{"items": ["15#Ann\u2028Lee#"]}]}, "not one line of text"),
+        ({"devices": [{"items": ["15#A#\x0c"]}]}, "not one line of text"),
+    ],
+)
+def test_fetch_start_list_refuses_lines_that_are_not_text(monkeypatch, payload, reason):
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering(payload))
+    with pytest.raises(ValueError, match=reason):
+        http_io.fetch_start_list("https://s", "tok")
