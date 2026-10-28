@@ -70,7 +70,9 @@ Python is pinned to 3.14.
 
 - **ASCII only.** A pre-commit hook rejects non-ASCII in `.py`, `.md`, `.yml`,
   `.toml`, `.json` and shell files (`CHANGELOG.md` and `uv.lock` are exempt).
-  No typographic dashes, no quotes-as-glyphs, no Cyrillic in files.
+  No typographic dashes, no quotes-as-glyphs, no Cyrillic in files. Spec Kit's
+  generated files (`.specify/` but the constitution, the `speckit-*` skills) are
+  out of every hook: `specify` keeps a file it finds edited instead of updating it.
 - **LF line endings** everywhere, enforced by `.gitattributes` and pre-commit.
 - **ruff** with a broad rule set (line length 88, bugbear, bandit, pathlib,
   pyupgrade, mccabe max-complexity 10) and **mypy**. Run them via pre-commit.

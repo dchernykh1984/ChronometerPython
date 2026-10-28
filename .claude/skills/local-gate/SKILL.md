@@ -26,7 +26,9 @@ uv run pytest tests/test_models.py -q --no-cov -n0
 
 **`no-non-ascii`** rejects any non-ASCII byte in `.py`, `.md`, `.yml`,
 `.toml`, `.json` and shell files, including everything under `.claude/`.
-`CHANGELOG.md` (generated from Russian commit text) and `uv.lock` are exempt.
+`CHANGELOG.md` (generated from Russian commit text) and `uv.lock` are exempt,
+and so are Spec Kit's generated files (`.specify/` but the constitution, the
+`speckit-*` skills), which no hook touches so that `specify` can update them.
 A typographic dash or a Russian word in a docstring fails the commit. There is
 a PostToolUse hook that warns as soon as one lands in a file.
 
