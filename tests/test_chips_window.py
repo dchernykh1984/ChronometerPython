@@ -60,6 +60,8 @@ def test_a_read_without_a_usable_id_is_logged_and_dropped(win, chips_on):
 
 def test_the_chip_state_is_saved_next_to_the_results_file(win, chips_on):
     win._on_source_event(Read("A", T0))
+    assert win._chip_state_timer.isActive()  # within a second
+    win._save_chip_state()  # the timer's tick
     state = json.loads(
         (chips_on / "results.chip_state.json").read_text(encoding="utf-8")
     )
@@ -90,6 +92,7 @@ def test_a_crossing_waits_while_the_results_file_cannot_be_written(
 
 def test_reads_a_crash_left_unprocessed_are_replayed(win, chips_on):
     win._on_source_event(Read("A", T0))
+    win._save_chip_state()  # within its second
     # The raw file got two more reads, and the program died before handling them.
     with (chips_on / "results.chip_reads.txt").open("a", encoding="utf-8") as f:
         f.write(f"A#{format_time(T0 + 1000)}#####\n")
@@ -193,6 +196,7 @@ def test_waiting_crossings_stay_out_of_another_results_file(win, chips_on, monke
 def test_a_lost_chip_state_writes_no_crossing_twice(win, chips_on):
     for offset in (0, 9000):
         win._on_source_event(Read("A", T0 + offset))
+    win._save_chip_state()
     (chips_on / "results.chip_state.json").unlink()
     win._chip_timing = None  # as at a start after the state was lost
     win._timing()
@@ -224,7 +228,7 @@ def test_a_read_with_no_results_file_is_logged_not_timed(win, chips_on):
     assert win._chip_timing is None or not win._chip_timing.unwritten
 
 
-def test_a_crossing_written_on_a_retry_leaves_the_saved_state_at_once(
+def test_a_crossing_written_on_a_retry_is_saved_within_a_second(
     win, chips_on, monkeypatch
 ):
     monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: pytest.fail("dialog"))
@@ -235,6 +239,8 @@ def test_a_crossing_written_on_a_retry_leaves_the_saved_state_at_once(
     blocker.unlink()
     blocker.mkdir()
     win._retry_unwritten()  # the 1 s timer's tick, with no read after it
+    assert win._chip_state_timer.isActive()
+    win._save_chip_state()
     state = json.loads((blocker / "results.chip_state.json").read_text("utf-8"))
     assert state["unwritten"] == []
 
@@ -259,6 +265,7 @@ def test_a_chip_state_left_from_another_race_is_not_used(win, chips_on):
 
 def test_a_crossing_written_just_before_a_crash_is_not_written_again(win, chips_on):
     win._on_source_event(Read("A", T0))
+    win._save_chip_state()  # within its second
     # The next read was kept and its crossing written, and the program died before
     # it saved the chip state.
     with (chips_on / "results.chip_reads.txt").open("a", encoding="utf-8") as f:
@@ -322,3 +329,15 @@ def test_waiting_crossings_are_counted_on_the_source_state_line(
     assert win._lbl_source_state.text() == "running"
     assert win._lbl_unwritten.text() == ""
     assert win._unwritten_timer.isActive()  # for when that file is back
+
+
+def test_a_burst_of_crossings_saves_the_state_once(win, chips_on, monkeypatch):
+    saved = []
+    real = mw.save_chip_state
+    monkeypatch.setattr(mw, "save_chip_state", lambda *a: saved.append(1) or real(*a))
+    for offset in range(0, 60_000, 6000):  # ten passes, ten crossings
+        win._on_source_event(Read("A", T0 + offset))
+    assert len(_results(chips_on)) == 10
+    assert saved == []  # none on the window's thread meanwhile
+    win._save_chip_state()  # the timer's one tick
+    assert saved == [1]

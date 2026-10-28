@@ -921,6 +921,15 @@ class MainWindow(QMainWindow):
                 and not self._unknown_timer.isActive()
             ):
                 self._unknown_timer.start(500)  # a burst refreshes the list once
+        self._schedule_chip_state_save()
+
+    def _schedule_chip_state_save(self) -> None:
+        """Save the chip state within a second, once for a whole burst of reads.
+
+        Never once per crossing on the window's thread, where a hand stamp waits:
+        a crash before the save is safe, as loading replays the raw reads made
+        since and skips the crossings already in the results file.
+        """
         self._chip_state_dirty = True
         if not self._chip_state_timer.isActive():  # steady reads never put it off
             self._chip_state_timer.start(1000)
@@ -942,9 +951,8 @@ class MainWindow(QMainWindow):
             self._chip_timing.unwritten.append(
                 f"{bib}#{scale_time(at)}#{self._action()}#"
             )
-        self._chip_state_dirty = True
+        self._schedule_chip_state_save()
         self._retry_unwritten()
-        self._save_chip_state()  # a crossing made is recorded at once
 
     def _retry_unwritten(self) -> None:
         """Write waiting chip crossings in order; never a dialog (constitution III).
@@ -976,7 +984,7 @@ class MainWindow(QMainWindow):
             self._note_written(line)
         if written:
             self._update_crosses()
-            self._save_chip_state()  # a restart must not write them a second time
+            self._schedule_chip_state_save()
         if own and not timing.unwritten:
             self._unwritten_timer.stop()  # kept ticking for a file left meanwhile
         waiting = self._waiting_crossings()
