@@ -144,3 +144,37 @@ def test_the_chronometer_runs_a_test_beam_as_a_process_of_its_own():
     process.stdin.write(b'{"cmd":"stop"}\n')
     process.stdin.close()
     assert process.wait(timeout=10) == 0
+
+
+def test_replay_plays_a_reads_file_at_its_own_pace(tmp_path):
+    from app.connectors import replay
+
+    reads = tmp_path / "results.chip_reads.txt"
+    reads.write_text(
+        "A#1 10:0:0.000#dev1#1#-58.5#r1#\n"
+        "B#1 10:0:0.300##2##r1#\n"
+        "not a read\n"
+        "A#1 10:0:2.000##1#-60#r1#\n"
+        "A#1 10:0:9.000#####\n",
+        encoding="utf-8",
+    )
+    played = list(replay.events({"path": str(reads)}))
+    assert [round(p, 3) for p, _ in played] == [0, 0.3, 1.7, 7.0]
+    assert played[0][1] == {
+        "type": "read",
+        "chip": "A",
+        "device_time": "dev1",
+        "antenna": "1",
+        "rssi": -58.5,
+        "reader": "r1",
+    }
+    assert played[3][1] == {"type": "read", "chip": "A"}
+    fast = [p for p, _ in replay.events({"path": str(reads), "speed": 10})]
+    assert [round(p, 3) for p in fast] == [0, 0.03, 0.17, 0.7]
+
+
+def test_replay_of_a_missing_file_plays_nothing(tmp_path):
+    from app.connectors import replay
+
+    assert list(replay.events({"path": str(tmp_path / "none.txt")})) == []
+    assert connectors.find("replay").test

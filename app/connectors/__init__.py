@@ -32,6 +32,13 @@ CONNECTORS = (
     ConnectorInfo(
         "dummy-beam", "beam", "Test beam", test=True, settings={"min_s": 5, "max_s": 20}
     ),
+    ConnectorInfo(
+        "replay",
+        "chips",
+        "Replay a chip reads file",
+        test=True,
+        settings={"path": "", "speed": 1},
+    ),
     ConnectorInfo("custom", None, "Custom command"),
     ConnectorInfo("llrp", "chips", "LLRP reader (Impinj, Zebra)", available=False),
     ConnectorInfo("raceresult", "chips", "RaceResult decoder", available=False),
@@ -52,10 +59,11 @@ def find(name: str) -> ConnectorInfo | None:
 
 def builtin(name: str) -> tuple[str, Callable[[dict[str, Any]], Events]] | None:
     """The kind and event source of a connector the chronometer runs itself."""
-    from app.connectors import dummy_beam, dummy_chips
+    from app.connectors import dummy_beam, dummy_chips, replay
 
     sources: dict[str, tuple[str, Callable[[dict[str, Any]], Events]]] = {
         "dummy-chips": ("chips", dummy_chips.events),
         "dummy-beam": ("beam", dummy_beam.events),
+        "replay": ("chips", replay.events),
     }
     return sources.get(name)
