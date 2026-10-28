@@ -105,6 +105,17 @@ def _whole(obj: dict[str, Any], key: str) -> int | None:
     return value
 
 
+# An event's moment: from 1970 up to 2100, the times the window can format.
+LATEST_MS = 4_102_444_800_000
+
+
+def _moment(obj: dict[str, Any]) -> int | None:
+    value = _whole(obj, "time_ms")
+    if value is not None and not 0 <= value < LATEST_MS:
+        raise ValueError("time_ms is out of range")
+    return value
+
+
 def _hello(obj: dict[str, Any]) -> Event:
     """Any hello is one: the host checks what it names and stops a program of
     another protocol or kind for good, instead of waiting for a hello forever."""
@@ -133,7 +144,7 @@ def _read(obj: dict[str, Any]) -> Event:
         raise TypeError("rssi must be a number")
     return Read(
         chip,
-        _whole(obj, "time_ms"),
+        _moment(obj),
         _text(obj, "device_time"),
         _text(obj, "antenna"),
         None if rssi is None else float(rssi),
@@ -145,7 +156,7 @@ def _break(obj: dict[str, Any]) -> Event:
     seq = _whole(obj, "seq")
     if seq is None:
         raise ValueError("seq is missing")
-    return Break(seq, _whole(obj, "time_ms"), _text(obj, "device_time"))
+    return Break(seq, _moment(obj), _text(obj, "device_time"))
 
 
 def _status(obj: dict[str, Any]) -> Event:

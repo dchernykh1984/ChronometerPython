@@ -42,6 +42,8 @@ def test_every_event_decodes():
         (_line(type="read", chip="  "), "chip is empty"),
         (_line(type="read", chip="A1", time_ms="5"), "whole number"),
         (_line(type="read", chip="A1", time_ms=True), "whole number"),
+        (_line(type="read", chip="A1", time_ms=10**17), "out of range"),
+        (_line(type="beam", seq=1, time_ms=-1), "out of range"),
         (_line(type="read", chip="A1", rssi="loud"), "rssi"),
         (_line(type="read", chip={"x": 1}), "text"),
         (_line(type="beam"), "seq is missing"),
