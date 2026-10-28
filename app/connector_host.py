@@ -246,10 +246,21 @@ class ConnectorHost(QObject):
             self._last_pong = time.monotonic()
         elif isinstance(message, cp.Ignored):
             self.log.emit(f"connector line ignored: {message.reason}")
+        elif other := self._of_another_kind(message):
+            # The kind was checked on hello; a chip read on a beam source is not timed.
+            self.log.emit(f"connector line ignored: a {other} on a {self._kind} source")
         else:
             self.received.emit(message)
             if isinstance(message, cp.Error) and message.fatal:
                 return message.message
+        return ""
+
+    def _of_another_kind(self, message: cp.Event) -> str:
+        """The event's name when it belongs to the other kind of source, else ""."""
+        if isinstance(message, cp.Read) and self._kind != "chips":
+            return "read"
+        if isinstance(message, cp.Break) and self._kind != "beam":
+            return "beam"
         return ""
 
     def _on_hello(self, hello: cp.Hello) -> None:

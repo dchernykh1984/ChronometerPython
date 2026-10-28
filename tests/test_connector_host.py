@@ -301,3 +301,16 @@ def test_reads_waiting_when_the_pongs_stop_still_count():
     assert [e.seq for e in events] == [1, 2]
     assert any("stopped answering" in line for line in logs)
     host.stop(wait=True)
+
+
+def test_an_event_of_the_other_kind_is_logged_not_passed_on():
+    code = _beams_then(
+        "print(json.dumps({'type': 'read', 'chip': 'A1'}), flush=True)",
+        "print(json.dumps({'type': 'beam', 'seq': 1}), flush=True)",
+    )
+    host, events, _, logs = _host()
+    host.start(_python(code), {})
+    assert _wait_until(lambda: events)
+    assert events == [cp.Break(1, None)]
+    assert any("a read on a beam source" in line for line in logs)
+    host.stop(wait=True)
