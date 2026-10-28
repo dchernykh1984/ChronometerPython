@@ -127,3 +127,17 @@ def test_the_focus_follows_the_number_being_typed_when_a_break_shifts(win):
     win._on_source_event(Break(1, T0))
     assert win._number_edits[1].text() == "4"
     assert win.focusWidget() is win._number_edits[1]
+
+
+def test_a_break_with_every_slot_stamped_moves_them_once(win, tmp_path):
+    for i in range(5):
+        win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")
+    win._focused_slot = 2
+    win._number_edits[2].setText("4")  # the judge is typing slot 3's number
+    win._number_edits[2].setFocus()
+    win._on_source_event(Break(6, T0))
+    results = (tmp_path / "results.txt").read_text(encoding="utf-8")
+    assert results == "#1 10:0:0.000#nextLap#\n"  # one break, one slot out
+    assert win._number_edits[1].text() == "4"
+    assert win.focusWidget() is win._number_edits[1]
+    assert win._time_edits[4].text() == f"{format_time(T0)}#nextLap"
