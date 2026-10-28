@@ -113,13 +113,16 @@ real child processes; the window only wires.
   dead time, conflicts, unknown chips, Chip report) are the other tabs. An "Event source" group
   above them holds the source choice, the connector choice and its settings, Start/Stop and the
   state line, plus the test-data warning.
-- **Beam**: `_on_finish_second_user()` becomes `_stamp_first_empty_slot(time_str)`, used by the
-  button with the current time and by a beam break with the break's time; the shift path stamps
-  slot 5 with the given time too.
+- **Beam**: `_on_finish_second_user()` becomes `_stamp_first_empty_slot(time_str, take_next,
+  quiet)`, used by the button with the current time, the Next number and dialogs as today, and by a
+  beam break with the break's time, no number and `quiet`: a write the shift makes then reports a
+  failure in the action log instead of a dialog (FR-011); the shift path stamps slot 5 with the
+  given time.
 - **Chip pipeline** (window thread, per output chunk): decode events -> for each read: normalise,
-  format the time, append the raw line -> `ChipTiming.on_read()` returns new crossings -> each is
-  written through `_write_to_finish()` (log, upload debounce) -> state saved if a crossing was made,
-  else on a 1 s timer.
+  format the time, append the raw line -> `ChipTiming.on_read()` returns new crossings -> each goes
+  to `_append_source_crossing()`, which appends, logs and schedules the upload like
+  `_write_to_finish()` but never opens a dialog; a crossing it cannot write joins the `unwritten`
+  queue, retried every second -> state saved if a crossing was made, else on a 1 s timer.
 - **Retro crossings**: after the map changes (download, Reload, start-up), `ChipTiming.set_map()`
   replays, in time order, the raw reads of chips that are in the new map but not attributed, and
   returns the crossings to append.
