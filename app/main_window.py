@@ -1462,6 +1462,7 @@ class MainWindow(QMainWindow):
         for i in range(_N_SLOTS):
             if not self._time_edits[i].text():
                 self._time_edits[i].setText(time_str + "#" + self._action())
+                self._check_possibility_to_empty_upper(quiet)
                 break
         else:
             stamped = self._shift_fields_up(
@@ -1469,7 +1470,17 @@ class MainWindow(QMainWindow):
                 stamp=None if take_next else time_str,
                 quiet=quiet,
             )
-        self._check_possibility_to_empty_upper(quiet)
+            if not quiet:
+                self._check_possibility_to_empty_upper()  # as the button always did
+            elif (
+                stamped
+                and self._focused_slot > 0
+                and self.focusWidget() in self._number_edits
+            ):
+                # One stamp, one move: the number being typed went up a slot with
+                # the others, and the focus follows it there.
+                self._focused_slot -= 1
+                self._number_edits[self._focused_slot].setFocus()
         self._save_backup_if_enabled()
         self._update_crosses()
         return stamped
