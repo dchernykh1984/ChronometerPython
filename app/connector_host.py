@@ -13,7 +13,7 @@ import sys
 import time
 from typing import Any
 
-from PySide6.QtCore import QObject, QProcess, QTimer, Signal
+from PySide6.QtCore import QCoreApplication, QObject, QProcess, QTimer, Signal
 
 from app import connector_protocol as cp
 
@@ -29,11 +29,14 @@ def next_pause(previous_ms: int | None, ran_ms: int) -> int:
     return min(previous_ms * 2, LONGEST_PAUSE_MS)
 
 
-def _dispose(process: QProcess) -> None:
-    """Cut a process we are done with off our handlers, kill it, free it once ended.
+def _dispose(process: QProcess, kill_after_ms: int = 0) -> None:
+    """Cut a process we are done with off our handlers, free it once it has ended.
 
     Freed only after it has finished: deleting a QProcess whose child still runs
-    makes its destructor wait, and this can run inside one of its own handlers.
+    kills the child and makes its destructor wait, and this can run inside one of
+    its own handlers. So it also leaves its host for the application, as the
+    window may free a stopped host at once. A child still running after
+    kill_after_ms is killed.
     """
     for signal in (
         process.readyReadStandardOutput,
@@ -45,8 +48,12 @@ def _dispose(process: QProcess) -> None:
     if process.state() == QProcess.ProcessState.NotRunning:
         process.deleteLater()
         return
+    process.setParent(QCoreApplication.instance())
     process.finished.connect(process.deleteLater)
-    process.kill()
+    if kill_after_ms:
+        QTimer.singleShot(kill_after_ms, process, process.kill)
+    else:
+        process.kill()
 
 
 def builtin_command(name: str) -> list[str]:
@@ -68,7 +75,7 @@ class ConnectorHost(QObject):
         kind: str,
         parent: QObject | None = None,
         *,
-        hello_timeout_ms: int = 10_000,
+        hello_timeout_ms: int = 30_000,  # a onefile build unpacks itself first
         ping_ms: int = 5000,
         pong_timeout_ms: int = 15_000,
         grace_ms: int = 3000,
@@ -123,10 +130,7 @@ class ConnectorHost(QObject):
                 process.waitForFinished(self._grace_ms)
                 _dispose(process)
             else:
-                # Tied to the process, so it never runs on one already freed.
-                QTimer.singleShot(
-                    self._grace_ms, process, lambda p=process: _dispose(p)
-                )
+                _dispose(process, kill_after_ms=self._grace_ms)
         elif process is not None:
             process.deleteLater()
         self._set_state("stopped")

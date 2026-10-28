@@ -20,9 +20,10 @@ that can speak this protocol itself (a future USB or Bluetooth beam) is a connec
 
 1. The chronometer starts the program: a built-in connector as `<chronometer> --connector <name>`,
    any other as the command line the judge entered.
-2. Within 10 s the connector writes `hello`. Without it the start failed, and the connector is
-   started again as in step 6. With another `protocol` the chronometer stops it for good and reports
-   why: a program that speaks another protocol would only fail again.
+2. Within 30 s the connector writes `hello`; a onefile build unpacks itself before it starts, which
+   antivirus scanning on a slow laptop can stretch past 10 s. Without it the start failed, and the
+   connector is started again as in step 6. With another `protocol` the chronometer stops it for
+   good and reports why: a program that speaks another protocol would only fail again.
 3. The chronometer sends `start` with the connector's settings; the connector begins to report.
 4. Every 5 s the chronometer sends `ping`; the connector answers `pong` with the same `id`. With
    no `pong` for 15 s the chronometer kills and restarts the connector.

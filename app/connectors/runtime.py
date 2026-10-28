@@ -30,9 +30,10 @@ def run(name: str) -> int:
         return 2
     kind, events_for = found
     commands: queue.Queue[dict[str, Any] | None] = queue.Queue()
-    reader = threading.Thread(
-        target=read_commands, args=(sys.stdin.buffer, commands), daemon=True
-    )
+    # Unbuffered: a thread blocked in a buffered read holds the buffer's lock, and an
+    # exit after "stop" then aborts when the interpreter cannot take it to close stdin.
+    stdin = open(sys.stdin.fileno(), "rb", buffering=0, closefd=False)
+    reader = threading.Thread(target=read_commands, args=(stdin, commands), daemon=True)
     reader.start()
     return serve(name, kind, events_for, commands, sys.stdout.buffer)
 

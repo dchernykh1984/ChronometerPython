@@ -178,3 +178,19 @@ def test_replay_of_a_missing_file_plays_nothing(tmp_path):
 
     assert list(replay.events({"path": str(tmp_path / "none.txt")})) == []
     assert connectors.find("replay").test
+
+
+def test_a_connector_told_to_stop_exits_cleanly_while_its_input_stays_open():
+    process = subprocess.Popen(
+        [sys.executable, "-m", "app.main", "--connector", "dummy-beam"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+    )
+    assert process.stdin and process.stdout
+    process.stdout.readline()  # hello
+    process.stdin.write(b'{"cmd":"stop"}\n')
+    process.stdin.flush()
+    try:
+        assert process.wait(timeout=10) == 0  # not an abort at interpreter shutdown
+    finally:
+        process.stdin.close()
