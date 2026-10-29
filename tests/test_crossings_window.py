@@ -200,11 +200,29 @@ def test_switching_the_results_file_updates_the_crossing_counts(win, results, tm
         "".join(f"15#1 10:{m}:0.000#nextLap#\n" for m in (0, 5, 9)), "utf-8"
     )
     win._edit_results_file.setText(str(other))
+    assert win._crossings_timer.isActive()
+    win._refresh_crossings()  # the timer's tick
     assert win._cross_labels[0].text() == "4"  # three in that file, and the slot
 
 
 def test_a_results_path_typed_through_a_folder_reads_as_no_file(win, results, tmp_path):
     win._edit_results_file.setText(str(tmp_path))  # "data" on the way to "data/r.txt"
+    win._refresh_crossings()
     assert win._crossings.count() == 0
     win._edit_results_file.setText(str(results))
+    win._refresh_crossings()
+    assert win._crossings.count() == 2
+
+
+def test_a_path_typed_letter_by_letter_is_read_once(win, results, monkeypatch):
+    reads = []
+    real = mw.read_file_lines
+    monkeypatch.setattr(
+        mw, "read_file_lines", lambda path: reads.append(path) or real(path)
+    )
+    for end in range(1, len(str(results)) + 1):
+        win._edit_results_file.setText(str(results)[:end])
+    assert reads == []
+    win._refresh_crossings()  # the timer's one tick, after the last letter
+    assert reads == [str(results)]
     assert win._crossings.count() == 2

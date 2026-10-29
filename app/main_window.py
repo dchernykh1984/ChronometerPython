@@ -349,7 +349,9 @@ class MainWindow(QMainWindow):
         file_layout = QGridLayout(file_box)
         file_layout.addWidget(QLabel("Results:"), 0, 0)
         self._edit_results_file = QLineEdit()
-        self._edit_results_file.textChanged.connect(self._refresh_crossings)
+        self._edit_results_file.textChanged.connect(
+            lambda _text: self._crossings_timer.start()
+        )
         file_layout.addWidget(self._edit_results_file, 0, 1)
         btn_results = QPushButton("...")
         btn_results.setFixedWidth(30)
@@ -1050,10 +1052,14 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         self._crossings = QListWidget()
-        # The results file's lines and how often each number crossed: re-read after a
-        # rewrite or a path change, kept up to date as lines are appended.
-        self._result_lines: list[str] = []
+        # How often each number crossed in the results file: re-read after a rewrite
+        # or a path change, kept up to date as lines are appended.
         self._result_counts: Counter[str] = Counter()
+        # A path typed letter by letter is read once, after the last letter.
+        self._crossings_timer = QTimer(self)
+        self._crossings_timer.setSingleShot(True)
+        self._crossings_timer.setInterval(300)
+        self._crossings_timer.timeout.connect(self._refresh_crossings)
         layout.addWidget(self._crossings)
         row = QHBoxLayout()
         for text, slot in (
@@ -1069,17 +1075,16 @@ class MainWindow(QMainWindow):
 
     def _refresh_crossings(self) -> None:
         """Re-read the results file: after a rewrite or a change of its path."""
-        self._result_lines = read_file_lines(self._results_path())
-        self._result_counts = Counter(line.split("#")[0] for line in self._result_lines)
+        lines = read_file_lines(self._results_path())
+        self._result_counts = Counter(line.split("#")[0] for line in lines)
         self._crossings.clear()
-        self._crossings.addItems(self._result_lines)
+        self._crossings.addItems(lines)
         self._crossings.scrollToBottom()
         self._update_crosses()  # the counts beside the slots follow the file in use
 
     def _note_written(self, line: str) -> None:
         """A line appended to the results file: shown and counted without a re-read,
         which a mass finish of chip crossings would pay for once per crossing."""
-        self._result_lines.append(line)
         self._result_counts[line.split("#")[0]] += 1
         self._crossings.addItem(line)
         self._crossings.scrollToBottom()
