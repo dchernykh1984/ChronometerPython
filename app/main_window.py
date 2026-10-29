@@ -647,8 +647,11 @@ class MainWindow(QMainWindow):
     def _stop_source(self, wait: bool = False) -> None:
         host, self._host = self._host, None
         if host is not None:
+            # A late state of this host must not cover the next one's, but what its
+            # program still reports until it ends counts: freed once it has ended.
+            host.state_changed.disconnect(self._on_source_state)
+            host.stopped.connect(host.deleteLater)
             host.stop(wait)
-            host.deleteLater()
         self._on_source_state("stopped")
         self._lbl_test_data.setVisible(False)
 

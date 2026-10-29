@@ -29,7 +29,8 @@ that can speak this protocol itself (a future USB or Bluetooth beam) is a connec
 4. Every 5 s the chronometer sends `ping`; the connector answers `pong` with the same `id`. With
    no `pong` for 15 s the chronometer kills and restarts the connector.
 5. To stop, the chronometer sends `stop` and closes standard input; a connector still running 3 s
-   later is killed.
+   later is killed. Everything it reports until it has ended still counts, a last line without a
+   line end included.
 6. A connector that exits, fails to start, sends a `fatal` error or misses its pings is started
    again after 1 s, the pause doubling up to 30 s while it keeps failing and returning to 1 s after
    30 s of running without a failure.
