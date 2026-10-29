@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 import urllib.request
 from unittest.mock import Mock
@@ -48,7 +49,7 @@ def test_a_download_replaces_the_file_and_keeps_the_old_one(
     assert [b.read_text(encoding="utf-8") for b in backups] == ["old#line#\n"]
     assert win._chip_map.bib_of == {"A": "15"}
     assert (
-        "start protocol downloaded: 1 line(s)"
+        f"start protocol downloaded into {start_file}: 1 line(s)"
         in win._log.item(win._log.count() - 1).text()
     )
     assert win._btn_download_start.isEnabled()
@@ -119,3 +120,18 @@ def test_reload_reads_the_path_as_typed(win, start_file, tmp_path):
     win._edit_start_protocol.setText(str(typed))
     win._btn_reload_start.click()
     assert win._chip_map.bib_of == {"A": "15"}
+
+
+def test_a_download_goes_into_the_file_chosen_when_it_was_asked(
+    win, start_file, tmp_path, monkeypatch
+):
+    answer = threading.Event()
+    monkeypatch.setattr(mw, "fetch_start_list", lambda *a: answer.wait(10) and LINES)
+    win._on_download_start_protocol()
+    other = tmp_path / "other.txt"
+    win._edit_start_protocol.setText(str(other))
+    win._on_start_protocol_path()  # another file chosen before the answer
+    answer.set()
+    assert _wait_until(lambda: win._fetch_worker is None)
+    assert start_file.read_text(encoding="utf-8") == LINES[0] + "\n"
+    assert not other.exists()

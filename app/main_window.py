@@ -797,12 +797,17 @@ class MainWindow(QMainWindow):
             )
             return
         worker = _FetchWorker(fetch_start_list, site, token)
-        worker.done.connect(self._on_start_list)
+        # Into the file chosen now, even if another is chosen before the answer.
+        worker.done.connect(
+            lambda result, path=self._sources["start_protocol"]: self._on_start_list(
+                result, path
+            )
+        )
         self._fetch_worker = worker
         self._btn_download_start.setEnabled(False)
         worker.start()
 
-    def _on_start_list(self, result: object) -> None:
+    def _on_start_list(self, result: object, path: str) -> None:
         """Keep the previous file, write the new one in one step, rebuild the map."""
         if self._fetch_worker is not None:
             self._fetch_worker.wait()
@@ -812,15 +817,13 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Start protocol", f"Nothing changed: {result}")
             return
         try:
-            backup = rewrite_results(
-                self._sources["start_protocol"], result, stem="start"
-            )
+            backup = rewrite_results(path, result, stem="start")
         except OSError as exc:
             QMessageBox.warning(self, "Start protocol", f"Nothing changed: {exc}")
             return
         self._reload_chip_map()
         self._append_log(
-            f"start protocol downloaded: {len(result)} line(s); "
+            f"start protocol downloaded into {path}: {len(result)} line(s); "
             f"{self._lbl_chip_map.text()}; previous file kept as {backup.name}"
         )
 
