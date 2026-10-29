@@ -6,8 +6,8 @@ from pathlib import Path
 
 from app import main_window as mw
 from app.connector_protocol import Break
-from app.device_files import append_record, side_file
-from app.models import format_time, record_field
+from app.device_files import side_file
+from app.models import append_line, format_time, record_field
 
 T0 = 1_761_725_400_123  # a break's time on the computer's clock
 
@@ -84,10 +84,10 @@ def test_device_files_sit_next_to_the_results_file(tmp_path):
         Path("r/Results.chip_reads.txt")
     )
     assert record_field("a#b\r\nc ") == "a b c"
-    assert not append_record("", "x")
+    assert not append_line("", "x")
     blocker = tmp_path / "file"
     blocker.write_text("x", encoding="utf-8")
-    assert not append_record(str(blocker / "beam.txt"), "x")
+    assert not append_line(str(blocker / "beam.txt"), "x")
 
 
 def test_a_break_that_finds_no_slot_says_so(win, tmp_path):
