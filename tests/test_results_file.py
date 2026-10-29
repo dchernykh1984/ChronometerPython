@@ -106,3 +106,9 @@ def test_a_rewrite_ends_its_lines_as_appends_do(tmp_path):
     appended = path.read_bytes()  # CRLF on Windows, LF elsewhere
     rf.rewrite_results(str(path), ["15#1 10:0:0.000#nextLap#"], tmp_path / "b")
     assert path.read_bytes() == appended
+
+
+def test_a_crossing_is_known_by_its_number_and_time_whatever_its_action():
+    line = rf.crossing_line("15", "1 10:0:0.000", "nextLap")
+    assert rf.crossing_key(line) == ("15", "1 10:0:0.000")
+    assert rf.crossing_key(line) == rf.crossing_key("15#1 10:0:0.000#finish#")
