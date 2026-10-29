@@ -8,7 +8,7 @@
 | `beam_connector` | connector name for the beam | `dummy-beam` |
 | `chips_connector` | connector name for chips | `dummy-chips` |
 | `settings.<connector>` | that connector's settings, one-line JSON | `{}` |
-| `custom_command` | command line of the `custom` connector | empty |
+| `custom_command.<kind>` | command line of the `custom` connector, for `beam` or `chips` | empty |
 | `dead_time_s` | dead time, 1-120 | `5` |
 | `start_protocol` | start protocol file path, kept as typed | `data/start.txt` |
 
