@@ -22,6 +22,7 @@ from app.paths import base_dir
 FIRST_PAUSE_MS = 1000
 LONGEST_PAUSE_MS = 30_000
 STEADY_MS = 30_000
+STDERR_LINES = 200  # a run's error output kept in the action log
 
 
 def next_pause(previous_ms: int | None, ran_ms: int) -> int:
@@ -92,6 +93,11 @@ class ConnectorHost(QObject):
         self._buffer = b""
         self._overlong = False  # dropping a line too long to keep, up to its end
         self._refused = False  # its hello named another protocol or kind
+        self._errors = b""  # error output not yet a whole line
+        self._run_errors: list[str] = []  # the error lines of this run
+        self._last_run_errors: list[str] = []
+        self._repeating = True  # so far this run says what the run before said
+        self._last_restart: tuple[str, int] = ("", 0)
         self._wanted = False
         self._pause_ms: int | None = None
         self._hello_at: float | None = None  # a steady run counts from the hello
@@ -158,6 +164,7 @@ class ConnectorHost(QObject):
         process.errorOccurred.connect(lambda error, p=process: self._on_error(p, error))
         self._process, self._buffer, self._overlong = process, b"", False
         self._refused = False
+        self._errors, self._run_errors, self._repeating = b"", [], True
         self._hello_at = None
         self._set_state("starting")
         self._hello_timer.start(self._hello_timeout_ms)
@@ -176,6 +183,8 @@ class ConnectorHost(QObject):
         self._drain(final=True)
         if process is not self._process:
             return  # what it sent last ended it already (a fatal error)
+        self._on_stderr(process)
+        self._end_of_errors()
         self._process = None
         _dispose(process)
         for timer in (self._hello_timer, self._ping_timer):
@@ -190,9 +199,13 @@ class ConnectorHost(QObject):
         )
         self._pause_ms = next_pause(self._pause_ms, ran_ms)
         pause = round(self._pause_ms * self._pause_scale)
-        self.log.emit(
-            f"connector {why}; starting it again in {self._pause_ms / 1000:g} s"
-        )
+        # The same failure again after the same pause is one line, not one a restart:
+        # the action log goes into every slots backup. The state line shows each.
+        if (why, self._pause_ms) != self._last_restart:
+            self._last_restart = (why, self._pause_ms)
+            self.log.emit(
+                f"connector {why}; starting it again in {self._pause_ms / 1000:g} s"
+            )
         self._set_state(f"restarting in {self._pause_ms / 1000:g} s")
         self._restart_timer.start(pause)
 
@@ -235,10 +248,42 @@ class ConnectorHost(QObject):
             self._process.write(cp.ping(self._ping_id))
 
     def _on_stderr(self, process: QProcess) -> None:
-        text = bytes(process.readAllStandardError().data()).decode("utf-8", "replace")
-        for line in text.splitlines():
-            if line.strip():
-                self.log.emit(f"connector: {line.strip()[:200]}")
+        self._errors += bytes(process.readAllStandardError().data())
+        *lines, self._errors = self._errors.split(b"\n")
+        for line in lines:
+            self._error_line(line.decode("utf-8", "replace").strip())
+
+    def _error_line(self, line: str) -> None:
+        """Log a line of the program's error output, within limits.
+
+        The action log goes into every slots backup, so a run logs at most
+        STDERR_LINES of them, and a run that says what the run before said, as a
+        program failing again does, says it in one line.
+        """
+        if not line or len(self._run_errors) > STDERR_LINES:
+            return
+        if len(self._run_errors) == STDERR_LINES:
+            self._run_errors.append("")
+            self.log.emit("connector: more error output, not logged")
+            return
+        at = len(self._run_errors)
+        self._run_errors.append(line)
+        last_run = self._last_run_errors
+        if self._repeating and at < len(last_run) and last_run[at] == line:
+            return  # said in the run before: not logged twice
+        if self._repeating and at:
+            self.log.emit(f"connector: ({at} line(s) as in its run before)")
+        self._repeating = False
+        self.log.emit(f"connector: {line[:200]}")
+
+    def _end_of_errors(self) -> None:
+        """A run's last error line, and its output said again in one line."""
+        self._error_line(self._errors.decode("utf-8", "replace").strip())
+        self._errors = b""
+        if self._run_errors:
+            if self._repeating:
+                self.log.emit("connector: the same error output as in its run before")
+            self._last_run_errors = self._run_errors
 
     def _on_output(self, process: QProcess) -> None:
         if self._process is None or process is not self._process:
