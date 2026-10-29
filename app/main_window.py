@@ -59,6 +59,7 @@ from app.models import (
     append_to_finish_file,
     append_to_group_file,
     dsq_status,
+    end_cut_line,
     format_time,
     get_current_time,
     load_config,
@@ -891,6 +892,8 @@ class MainWindow(QMainWindow):
                 "come back from its raw reads file when it is in use again"
             )
         dead_ms = self._spin_dead_time.value() * 1000
+        if path:
+            end_cut_line(side_file(path, "chip_reads"))
         raw = read_file_lines(side_file(path, "chip_reads")) if path else []
         timing = load_chip_state(side_file(path, "chip_state", "json"), dead_ms)
         # More reads processed than the raw file holds: a state left from another

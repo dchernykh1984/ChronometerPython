@@ -358,3 +358,17 @@ def test_a_state_left_unsaved_on_a_switch_says_how_it_comes_back(
     log = [win._log.item(i).text() for i in range(win._log.count())]
     assert any("results.txt not saved; its latest reads come back" in x for x in log)
     assert not any(x.startswith("chip state not saved; trying again") for x in log)
+
+
+def test_a_read_cut_by_a_crash_never_takes_the_next_one_with_it(win, chips_on):
+    win._on_source_event(Read("A", T0))
+    win._save_chip_state()
+    raw = chips_on / "results.chip_reads.txt"
+    with raw.open("a", encoding="utf-8") as f:
+        f.write("B#20390 1")  # the crash came halfway through this read
+    win._chip_timing = None  # the start after the crash
+    win._timing()
+    win._on_source_event(Read("C", T0 + 1000))
+    lines = raw.read_text(encoding="utf-8").splitlines()
+    assert lines[-1].startswith("C#")
+    assert win._chip_timing.processed_lines == len(lines)
