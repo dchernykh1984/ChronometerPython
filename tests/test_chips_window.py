@@ -341,3 +341,20 @@ def test_a_burst_of_crossings_saves_the_state_once(win, chips_on, monkeypatch):
     assert saved == []  # none on the window's thread meanwhile
     win._save_chip_state()  # the timer's one tick
     assert saved == [1]
+
+
+def test_a_state_left_unsaved_on_a_switch_says_how_it_comes_back(
+    win, chips_on, monkeypatch
+):
+    win._on_source_event(Read("A", T0))  # results.txt's state, not saved yet
+    real = mw.save_chip_state
+    monkeypatch.setattr(
+        mw,
+        "save_chip_state",
+        lambda path, timing: "other" in path and real(path, timing),
+    )
+    win._edit_results_file.setText(str(chips_on / "other.txt"))
+    win._on_source_event(Read("C", T0 + 1000))  # the state moves to other.txt
+    log = [win._log.item(i).text() for i in range(win._log.count())]
+    assert any("results.txt not saved; its latest reads come back" in x for x in log)
+    assert not any(x.startswith("chip state not saved; trying again") for x in log)
