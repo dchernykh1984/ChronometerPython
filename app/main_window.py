@@ -90,30 +90,12 @@ _CONFIG_PATH = str(app_path("data", "groupsList.txt"))
 _N_SLOTS = 5
 
 
-class _UploadWorker(QThread):
-    """Runs one timing upload off the UI thread so a slow network never blocks timing.
+class _Worker(QThread):
+    """Runs one site request off the UI thread, so a slow network never blocks timing.
 
-    Emits ``log`` (marshalled to the main thread) with a short result so the action log
-    can show success/failure; any network error is reported, never raised into the UI.
+    ``done`` (delivered on the main thread) carries the result or the error: a network
+    error is reported, never raised into the UI.
     """
-
-    log = Signal(str)
-
-    def __init__(self, func, *args) -> None:
-        super().__init__()
-        self._func = func
-        self._args = args
-
-    def run(self) -> None:
-        try:
-            count = self._func(*self._args)
-            self.log.emit(f"  site: uploaded {count} item(s)")
-        except Exception as exc:  # network errors must not crash timing
-            self.log.emit(f"  site upload error: {exc}")
-
-
-class _FetchWorker(QThread):
-    """Runs one download off the UI thread; ``done`` carries the result or the error."""
 
     done = Signal(object)
 
@@ -125,7 +107,7 @@ class _FetchWorker(QThread):
     def run(self) -> None:
         try:
             self.done.emit(self._func(*self._args))
-        except Exception as exc:  # a network error must not reach the UI as one
+        except Exception as exc:  # a network error must not crash timing
             self.done.emit(exc)
 
 
@@ -141,7 +123,7 @@ class MainWindow(QMainWindow):
         # Site-upload state: settings persisted in a key=value file; running upload
         # threads are kept alive until they finish (a GC'd running QThread would crash).
         self._http_cfg: dict[str, str] = load_http_config()
-        self._upload_workers: list[_UploadWorker] = []
+        self._upload_workers: list[_Worker] = []
         # Debounce finish/remote uploads: a batch save writes several lines, but we push
         # the resulting file snapshot once, shortly after the last write.
         self._finish_upload_timer = QTimer(self)
@@ -410,7 +392,7 @@ class MainWindow(QMainWindow):
         http_layout.addWidget(self._spin_point, 3, 2)
         self._btn_get_groups = QPushButton("Get groups")
         self._btn_get_groups.clicked.connect(self._on_get_groups)
-        self._groups_worker: _FetchWorker | None = None
+        self._groups_worker: _Worker | None = None
         http_layout.addWidget(self._btn_get_groups, 4, 0, 1, 3)
         right.addWidget(http_box)
 
@@ -719,7 +701,7 @@ class MainWindow(QMainWindow):
         self._btn_download_start = QPushButton("Download start protocol from the site")
         self._btn_download_start.clicked.connect(self._on_download_start_protocol)
         layout.addWidget(self._btn_download_start)
-        self._fetch_worker: _FetchWorker | None = None
+        self._fetch_worker: _Worker | None = None
         self._lbl_chip_map = QLabel()
         layout.addWidget(self._lbl_chip_map)
         dead_row = QHBoxLayout()
@@ -801,7 +783,7 @@ class MainWindow(QMainWindow):
                 self, "Start protocol", "Site URL and Token must be set first."
             )
             return
-        worker = _FetchWorker(fetch_start_list, site, token)
+        worker = _Worker(fetch_start_list, site, token)
         # Into the file chosen now, even if another is chosen before the answer.
         worker.done.connect(
             lambda result, path=self._sources["start_protocol"]: self._on_start_list(
@@ -1246,7 +1228,7 @@ class MainWindow(QMainWindow):
         if not site or not token:
             QMessageBox.warning(self, "Get groups", "Site URL and Token must be set.")
             return
-        worker = _FetchWorker(fetch_groups, site, token)
+        worker = _Worker(fetch_groups, site, token)
         worker.done.connect(self._on_groups)
         self._groups_worker = worker
         self._btn_get_groups.setEnabled(False)
@@ -1336,8 +1318,8 @@ class MainWindow(QMainWindow):
         return rev
 
     def _start_upload(self, func, *args) -> None:
-        worker = _UploadWorker(func, *args)
-        worker.log.connect(self._append_log)
+        worker = _Worker(func, *args)
+        worker.done.connect(self._on_uploaded)
         worker.finished.connect(
             lambda w=worker: (
                 self._upload_workers.remove(w) if w in self._upload_workers else None
@@ -1345,6 +1327,12 @@ class MainWindow(QMainWindow):
         )
         self._upload_workers.append(worker)
         worker.start()
+
+    def _on_uploaded(self, result: object) -> None:
+        if isinstance(result, Exception):
+            self._append_log(f"  site upload error: {result}")
+        else:
+            self._append_log(f"  site: uploaded {result} item(s)")
 
     def _schedule_finish_upload(self) -> None:
         # Collapse a batch of writes into a single upload shortly after the last one.
@@ -1660,7 +1648,7 @@ class MainWindow(QMainWindow):
             # the 10s urlopen timeout, so this cannot hang indefinitely.
             for worker in list(self._upload_workers):
                 try:
-                    worker.log.disconnect()
+                    worker.done.disconnect()
                     worker.finished.disconnect()
                 except RuntimeError:
                     pass
