@@ -58,3 +58,9 @@ def test_an_empty_section_says_none():
         "Chips on two bibs, not used:",
         "none",
     ]
+
+
+def test_a_bib_that_only_looks_like_a_number_sorts_after_the_numbers():
+    chip_map = ChipMap(bib_of={"A": "1\u00b2", "B": "10"})
+    lines = chip_report([], chip_map, 5000)
+    assert lines.index("bib 10: chip B") < lines.index("bib 1\u00b2: chip A")
