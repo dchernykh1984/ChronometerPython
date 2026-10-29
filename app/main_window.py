@@ -850,8 +850,13 @@ class MainWindow(QMainWindow):
         path = self._results_path()
         if self._chip_timing is not None and self._chip_timing_for == path:
             return self._chip_timing
-        if self._chip_timing is not None:
-            self._save_chip_state()
+        if self._chip_timing is not None and not self._save_chip_state(retry=False):
+            # Not retried: the retry would save the next file's state. Its raw reads
+            # file still has every read, replayed when it is in use again.
+            self._append_log(
+                f"chip state of {self._chip_timing_for} not saved; its latest reads "
+                "come back from its raw reads file when it is in use again"
+            )
         dead_ms = self._spin_dead_time.value() * 1000
         raw = read_file_lines(side_file(path, "chip_reads")) if path else []
         timing = load_chip_state(side_file(path, "chip_state", "json"), dead_ms)
@@ -1008,17 +1013,21 @@ class MainWindow(QMainWindow):
         suffix = f"; {waiting} chip crossing(s) waiting" if waiting else ""
         self._lbl_source_state.setText(self._source_state + suffix)
 
-    def _save_chip_state(self) -> None:
+    def _save_chip_state(self, retry: bool = True) -> bool:
+        """Save the chip state if it changed; False when it could not be saved."""
         self._chip_state_timer.stop()
         if not self._chip_state_dirty:
-            return
+            return True
         self._chip_state_dirty = False
         if self._chip_timing is not None and self._chip_timing_for:
             path = side_file(self._chip_timing_for, "chip_state", "json")
             if not save_chip_state(path, self._chip_timing):
-                self._append_log("chip state not saved; trying again in 5 s")
-                self._chip_state_dirty = True
-                self._chip_state_timer.start(5000)
+                if retry:
+                    self._append_log("chip state not saved; trying again in 5 s")
+                    self._chip_state_dirty = True
+                    self._chip_state_timer.start(5000)
+                return False
+        return True
 
     # ------------------------------------------------------------------
     # crossings: the results file, corrected by hand
