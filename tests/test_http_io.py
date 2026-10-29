@@ -287,3 +287,15 @@ def test_fetch_start_list_refuses_lines_that_are_not_text(monkeypatch, payload, 
     monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering(payload))
     with pytest.raises(ValueError, match=reason):
         http_io.fetch_start_list("https://s", "tok")
+
+
+def test_an_upload_timing_out_mid_answer_is_a_connection_error(monkeypatch) -> None:
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", lambda *a, **k: _TimesOut())
+    with pytest.raises(ValueError, match="Connection error: timed out"):
+        http_io.upload_finish_times("https://s", "tok", "dev", ["15#t#nextLap#"], 1)
+
+
+def test_an_upload_answer_that_is_not_an_object_is_invalid(monkeypatch) -> None:
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering([1]))
+    with pytest.raises(ValueError, match="Invalid response"):
+        http_io.upload_finish_times("https://s", "tok", "dev", ["15#t#nextLap#"], 1)

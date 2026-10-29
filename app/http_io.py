@@ -92,8 +92,17 @@ def _get_json(site_url: str, path: str, token: str) -> Any:
         + "?"
         + urllib.parse.urlencode({"competition_token": token})
     )
+    return _answer(url)
+
+
+def _answer(request: str | urllib.request.Request) -> Any:
+    """Send one request to the site; the JSON it answers with.
+
+    Raises:
+        ValueError: on HTTP error, network/timeout error, or an invalid response.
+    """
     try:
-        with urllib.request.urlopen(url, timeout=10) as resp:  # noqa: S310
+        with urllib.request.urlopen(request, timeout=10) as resp:  # noqa: S310
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         raise ValueError(f"HTTP {exc.code}: {exc.reason}") from exc
@@ -110,15 +119,10 @@ def _post(url: str, payload: dict) -> int:
     req = urllib.request.Request(  # noqa: S310
         url, data=body, headers={"Content-Type": "application/json"}, method="POST"
     )
+    data = _answer(req)
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310
-            data = json.loads(resp.read().decode("utf-8"))
         return int(data.get("count", len(payload.get("items", []))))
-    except urllib.error.HTTPError as exc:
-        raise ValueError(f"HTTP {exc.code}: {exc.reason}") from exc
-    except urllib.error.URLError as exc:
-        raise ValueError(f"Connection error: {exc.reason}") from exc
-    except (json.JSONDecodeError, ValueError) as exc:
+    except (AttributeError, TypeError, ValueError) as exc:
         raise ValueError(f"Invalid response: {exc}") from exc
 
 
