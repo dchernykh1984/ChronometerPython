@@ -226,3 +226,12 @@ def test_a_path_typed_letter_by_letter_is_read_once(win, results, monkeypatch):
     win._refresh_crossings()  # the timer's one tick, after the last letter
     assert reads == [str(results)]
     assert win._crossings.count() == 2
+
+
+def test_an_edit_keeps_the_fields_after_the_action(win, results, monkeypatch):
+    results.write_text("12#1 10:0:0.000#finish#extra#\n", encoding="utf-8")
+    win._refresh_crossings()
+    monkeypatch.setattr(win, "_ask_crossing", lambda n, t, a: (n, "1 10:0:1.000", a))
+    win._crossings.setCurrentRow(0)
+    win._on_edit_crossing()
+    assert results.read_text(encoding="utf-8") == "12#1 10:0:1.000#finish#extra#\n"

@@ -1198,7 +1198,9 @@ class MainWindow(QMainWindow):
         got = self._ask_crossing(number, time_str, action)
         lines = None if got is None else self._still_holding(row, old)
         if got is not None and lines is not None:
-            new = crossing_line(*got)
+            # Fields after the action, which another tool may have written, stay.
+            extra = [field for field in old.split("#")[3:] if field]
+            new = crossing_line(*got) + "".join(f"{field}#" for field in extra)
             changed = [*lines[:row], new, *lines[row + 1 :]]
             self._change_results(changed, f"changed {old} to {new}")
 

@@ -129,3 +129,9 @@ def test_a_failed_write_leaves_no_temporary_file(tmp_path, monkeypatch, step):
     with pytest.raises(OSError, match="disk full"):
         rf.write_in_one_step(target, "{}")
     assert list(tmp_path.iterdir()) == []
+
+
+def test_a_time_in_digits_other_than_ascii_is_refused():
+    arabic_indic = "".join(chr(0x660 + int(c)) for c in "1")  # one, as typed in Arabic
+    problem = rf.crossing_problem("15", f"{arabic_indic} 10:0:0.000", "finish")
+    assert problem is not None and "D H:M:S" in problem
