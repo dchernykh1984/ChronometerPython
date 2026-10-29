@@ -77,12 +77,16 @@ def write_in_one_step(
     untouched, when it cannot be done.
     """
     temporary = target.with_name(target.name + ".tmp")
-    # The platform's line end, as every append to the results file writes it.
-    with temporary.open("w", encoding="utf-8") as f:
-        f.write(text)
-        f.flush()
-        os.fsync(f.fileno())
-    _replace(temporary, target, patience_s)
+    try:
+        # The platform's line end, as every append to the results file writes it.
+        with temporary.open("w", encoding="utf-8") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        _replace(temporary, target, patience_s)
+    except OSError:
+        temporary.unlink(missing_ok=True)  # never left beside the file
+        raise
 
 
 def _free_name(folder: Path, stem: str) -> Path:
