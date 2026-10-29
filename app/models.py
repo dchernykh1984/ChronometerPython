@@ -178,6 +178,20 @@ def append_to_finish_file(path: str, number: str, time_str: str) -> bool:
     return append_line(path, f"{number}#{time_str}#")
 
 
+def end_cut_line(path: str) -> None:
+    """End a last line a crash cut short, so the next one appended never joins it:
+    a file's line count stays the count of what was appended to it."""
+    try:
+        with app_path(path).open("rb") as f:
+            f.seek(-1, 2)  # an empty or missing file has nothing to end
+            last = f.read(1)
+        if path and last not in (b"\n", b"\r"):
+            with app_path(path).open("a", encoding="utf-8") as f:
+                f.write("\n")
+    except OSError:
+        pass
+
+
 def append_line(path: str, line: str) -> bool:
     """Append one line to a text file, ended as the platform ends lines (the results
     file and the device files beside it alike); False if it cannot be opened."""
