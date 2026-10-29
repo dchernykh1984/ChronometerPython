@@ -10,7 +10,7 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
   padding. -- `refactor(time): format any moment, not only the current one`
 - [x] T002 `app/results_file.py`: `validate_crossing()`, `rewrite_results()`
   (backup to `temp/results<time>_<n>.txt`, refuse without it, temporary file, fsync,
-  `os.replace`, retried for up to 2 s on a permission error). Unit tests: backup content, refusal,
+  `os.replace`, retried for up to 0.5 s on a permission error). Unit tests: backup content, refusal,
   atomicity on a failing write, a replace that fails twice and then succeeds, validation.
   -- `feat(results): rewrite the results file only after a backup of it`
 - [x] T003 [US3] "Crossings" tab: the results file as a list; Add (number, time defaulting to now,

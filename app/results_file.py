@@ -18,7 +18,8 @@ from app.paths import app_path
 ACTIONS = ("nextLap", "finish", "nextStage")
 # On Windows a program holding the file open without delete sharing (PhotoFinish
 # reading it, an editor, an antivirus scan) makes os.replace fail for a moment.
-_REPLACE_PATIENCE_S = 2.0
+# Short: this waits on the window's thread, where a hand stamp is taken when handled.
+_REPLACE_PATIENCE_S = 0.5
 _REPLACE_PAUSE_S = 0.05
 
 
