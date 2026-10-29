@@ -78,8 +78,9 @@
 - **Rationale**: FR-014; `os.replace` is atomic on the three platforms within one folder.
 - **Windows**: a program that has the file open without delete sharing -- PhotoFinish reading it,
   an editor, an antivirus scan -- makes `os.replace` fail with a permission error. The rewrite
-  retries for up to 2 s before it reports the failure; the backup is kept either way, and the
-  results file is never left half written.
+  retries for up to 0.5 s before it reports the failure: it waits on the window's thread, where a
+  hand stamp waits too. The backup is kept either way, and the results file is never left half
+  written.
 
 ## 8. Crossing counts follow the file
 
