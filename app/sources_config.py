@@ -21,7 +21,6 @@ DEFAULTS = {
     "source": "hand",
     "beam_connector": "dummy-beam",
     "chips_connector": "dummy-chips",
-    "custom_command": "",
     "dead_time_s": "5",
     "start_protocol": "data/start.txt",
 }

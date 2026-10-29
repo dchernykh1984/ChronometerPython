@@ -489,7 +489,8 @@ class MainWindow(QMainWindow):
         grid.addWidget(self._lbl_test_data, 5, 0, 1, 3)
         index = self._combo_source.findData(self._sources["source"])
         self._combo_source.setCurrentIndex(max(index, 0))
-        self._settings_for = ""  # the connector the Settings field shows
+        # The source kind and connector the Settings field shows.
+        self._settings_for = ("hand", "")
         self._fill_connectors()
         self._combo_source.currentIndexChanged.connect(self._on_source_changed)
         self._combo_connector.currentIndexChanged.connect(self._on_connector_changed)
@@ -534,10 +535,10 @@ class MainWindow(QMainWindow):
         self._show_connector_settings()
 
     def _show_connector_settings(self) -> None:
-        name = self._settings_for = self._connector_name()
-        if name == "custom":
+        kind, name = self._settings_for = self._source_kind(), self._connector_name()
+        if name == "custom":  # a command per kind: a beam program is no chip reader
             self._edit_connector_settings.setText(
-                self._sources.get("custom_command", "")
+                self._sources.get(f"custom_command.{kind}", "")
             )
             self._edit_connector_settings.setPlaceholderText(
                 "command line of a program that speaks the connector protocol"
@@ -570,9 +571,12 @@ class MainWindow(QMainWindow):
     def _on_connector_settings_edited(self) -> bool:
         """Keep the Settings field's text for the connector it shows; False when it
         is not valid JSON."""
-        name, text = self._settings_for, self._edit_connector_settings.text().strip()
+        (kind, name), text = (
+            self._settings_for,
+            self._edit_connector_settings.text().strip(),
+        )
         if name == "custom":
-            self._sources["custom_command"] = text
+            self._sources[f"custom_command.{kind}"] = text
         elif name:
             try:
                 settings = json.loads(text or "{}")
@@ -604,7 +608,9 @@ class MainWindow(QMainWindow):
             )
             return
         if name == "custom":
-            program = QProcess.splitCommand(self._sources.get("custom_command", ""))
+            program = QProcess.splitCommand(
+                self._sources.get(f"custom_command.{kind}", "")
+            )
             if not program:
                 QMessageBox.warning(
                     self, "Event source", "Type the command line first."

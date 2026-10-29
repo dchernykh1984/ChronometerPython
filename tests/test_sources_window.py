@@ -98,7 +98,7 @@ def test_a_custom_connector_needs_a_command_line(win, monkeypatch):
     assert win._host is None and "command line" in warnings[0]
     win._edit_connector_settings.setText("my-beam --port 3")
     win._on_connector_settings_edited()
-    assert win._sources["custom_command"] == "my-beam --port 3"
+    assert win._sources["custom_command.beam"] == "my-beam --port 3"
 
 
 def test_closing_the_window_stops_the_connector(win, monkeypatch):
@@ -139,7 +139,7 @@ def test_start_uses_the_settings_typed_without_pressing_return(win, monkeypatch)
     win._on_source_start()
     assert warnings == []
     assert started[0][0] == ["my-beam", "--port", "3"]
-    assert win._sources["custom_command"] == "my-beam --port 3"
+    assert win._sources["custom_command.beam"] == "my-beam --port 3"
 
 
 def test_start_refuses_settings_typed_that_are_not_json(win, monkeypatch):
@@ -156,7 +156,7 @@ def test_settings_typed_are_kept_when_another_device_is_picked(win):
     _choose(win, "beam", "custom")
     win._edit_connector_settings.setText("my-beam --port 3")  # no Return pressed
     _choose(win, "beam", "dummy-beam")
-    assert win._sources["custom_command"] == "my-beam --port 3"
+    assert win._sources["custom_command.beam"] == "my-beam --port 3"
     assert "min_s" in win._edit_connector_settings.text()  # the test beam's own
 
 
@@ -193,3 +193,14 @@ def test_a_race_config_is_not_loaded_while_a_source_runs(win, monkeypatch):
     win._on_source_start()
     win._on_load_config()
     assert warnings[0].startswith("Stop the event source first")
+
+
+def test_a_custom_command_is_kept_per_kind_of_source(win):
+    _choose(win, "beam", "custom")
+    win._edit_connector_settings.setText("my-beam --port 3")
+    _choose(win, "chips", "custom")
+    assert win._edit_connector_settings.text() == ""
+    win._edit_connector_settings.setText("my-reader --host 10.0.0.5")
+    _choose(win, "beam", "custom")
+    assert win._edit_connector_settings.text() == "my-beam --port 3"
+    assert win._sources["custom_command.chips"] == "my-reader --host 10.0.0.5"
