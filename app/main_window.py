@@ -1044,8 +1044,8 @@ class MainWindow(QMainWindow):
         if written:
             self._update_crosses()
             self._schedule_chip_state_save()
-        if own and not timing.unwritten:
-            self._unwritten_timer.stop()  # kept ticking for a file left meanwhile
+        if not own or not timing.unwritten:
+            self._unwritten_timer.stop()  # tried again once that file is in use again
         waiting = self._waiting_crossings()
         self._lbl_unwritten.setText(
             f"{waiting} chip crossing(s) wait for the results file" if waiting else ""
@@ -1122,6 +1122,7 @@ class MainWindow(QMainWindow):
         self._crossings.addItems(lines)
         self._crossings.scrollToBottom()
         self._update_crosses()  # the counts beside the slots follow the file in use
+        self._retry_unwritten()  # crossings waiting for this file, if it is theirs
 
     def _note_written(self, line: str) -> None:
         """A line appended to the results file, by hand or by a device: logged, set
