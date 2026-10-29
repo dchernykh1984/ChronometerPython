@@ -67,12 +67,24 @@ def read_file_lines(path: str) -> list[str]:
     p = app_path(path)
     if not path or not p.is_file():
         return []
-    for enc in ("utf-8", "cp1251", "latin-1"):
+    lines: list[str] = []
+    for raw in p.read_bytes().split(b"\n"):
+        lines += [ln for ln in _decoded(raw.rstrip(b"\r")).splitlines() if ln.strip()]
+    return lines
+
+
+def _decoded(raw: bytes) -> str:
+    """One line as UTF-8, or else as the older C++ chronometer wrote it (cp1251).
+
+    Line by line: a file the old program began and this one went on with holds
+    both, and a rewrite must keep both readable.
+    """
+    for encoding in ("utf-8", "cp1251"):
         try:
-            return [ln for ln in p.read_text(encoding=enc).splitlines() if ln.strip()]
+            return raw.decode(encoding)
         except UnicodeDecodeError:
             continue
-    return []
+    return raw.decode("latin-1")
 
 
 # ---------------------------------------------------------------------------
