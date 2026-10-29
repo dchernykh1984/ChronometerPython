@@ -91,6 +91,7 @@ class ConnectorHost(QObject):
         self._process: QProcess | None = None
         self._buffer = b""
         self._overlong = False  # dropping a line too long to keep, up to its end
+        self._refused = False  # its hello named another protocol or kind
         self._wanted = False
         self._pause_ms: int | None = None
         self._hello_at: float | None = None  # a steady run counts from the hello
@@ -156,6 +157,7 @@ class ConnectorHost(QObject):
         process.finished.connect(lambda *_, p=process: self._on_ended(p, "exited"))
         process.errorOccurred.connect(lambda error, p=process: self._on_error(p, error))
         self._process, self._buffer, self._overlong = process, b"", False
+        self._refused = False
         self._hello_at = None
         self._set_state("starting")
         self._hello_timer.start(self._hello_timeout_ms)
@@ -261,6 +263,8 @@ class ConnectorHost(QObject):
 
     def _handle(self, message: cp.Event) -> str:
         """Act on one message; the reason a fatal error gives, else ""."""
+        if self._refused:
+            return ""
         if isinstance(message, cp.Hello):
             self._on_hello(message)
         elif isinstance(message, cp.Pong):
@@ -296,7 +300,9 @@ class ConnectorHost(QObject):
             else ""
         )
         if problem:
-            # It would only fail again: stopped for good, and said why.
+            # It would only fail again: stopped for good, and said why. Nothing more
+            # it sends is used, as its lines may mean something else.
+            self._refused = True
             self.log.emit(f"connector {hello.connector} {problem}")
             self.stop()
             self._set_state(f"failed: {problem}")
