@@ -31,14 +31,13 @@ def next_pause(previous_ms: int | None, ran_ms: int) -> int:
     return min(previous_ms * 2, LONGEST_PAUSE_MS)
 
 
-def _dispose(process: QProcess, kill_after_ms: int = 0) -> None:
-    """Cut a process we are done with off our handlers, free it once it has ended.
+def _dispose(process: QProcess) -> None:
+    """Cut a process we are done with off our handlers, kill it, free it once ended.
 
     Freed only after it has finished: deleting a QProcess whose child still runs
     kills the child and makes its destructor wait, and this can run inside one of
-    its own handlers. So it also leaves its host for the application, as the
-    window may free a stopped host at once. A child still running after
-    kill_after_ms is killed.
+    its own handlers. So it also leaves its host for the application, which the
+    window frees as soon as it says `stopped`.
     """
     for signal in (
         process.readyReadStandardOutput,
@@ -52,10 +51,7 @@ def _dispose(process: QProcess, kill_after_ms: int = 0) -> None:
         return
     process.setParent(QCoreApplication.instance())
     process.finished.connect(process.deleteLater)
-    if kill_after_ms:
-        QTimer.singleShot(kill_after_ms, process, process.kill)
-    else:
-        process.kill()
+    process.kill()
 
 
 def builtin_command(name: str) -> list[str]:
@@ -71,6 +67,7 @@ class ConnectorHost(QObject):
     received = Signal(object)  # cp.Read, cp.Break, cp.Status or cp.Error
     state_changed = Signal(str)
     log = Signal(str)
+    stopped = Signal()  # after stop(): its program has ended, or there was none
 
     def __init__(
         self,
@@ -115,29 +112,38 @@ class ConnectorHost(QObject):
 
     def start(self, program: list[str], settings: dict[str, Any]) -> None:
         """Run program (a command line, split) and keep it running until stop()."""
-        self.stop()
+        if self._process is not None:
+            self.stop(wait=True)  # one program at a time
         self._program, self._settings = list(program), dict(settings)
         self._wanted, self._pause_ms = True, None
         self._launch()
 
     def stop(self, wait: bool = False) -> None:
-        """Ask the connector to stop, close its input, kill it after the grace time."""
+        """Ask the connector to stop and close its input; kill it after the grace time.
+
+        What it reports until it has ended still counts, so the host must live till
+        then: `stopped` says when (at once when there is no program). With wait,
+        the ending is waited for here.
+        """
+        stopping_already = not self._wanted and self._process is not None
         self._wanted = False
         for timer in (self._hello_timer, self._ping_timer, self._restart_timer):
             timer.stop()
-        self._drain()
-        process, self._process = self._process, None
-        if process is not None and process.state() != QProcess.ProcessState.NotRunning:
+        self._set_state("stopped")
+        process = self._process
+        if process is None:
+            self.stopped.emit()
+            return
+        if process.state() == QProcess.ProcessState.NotRunning:
+            self._on_ended(process, "stopped")
+            return
+        if not stopping_already:
             process.write(cp.stop())
             process.closeWriteChannel()
-            if wait:
-                process.waitForFinished(self._grace_ms)
-                _dispose(process)
-            else:
-                _dispose(process, kill_after_ms=self._grace_ms)
-        elif process is not None:
-            process.deleteLater()
-        self._set_state("stopped")
+            QTimer.singleShot(self._grace_ms, process, process.kill)
+        if wait and not process.waitForFinished(self._grace_ms):
+            process.kill()
+            process.waitForFinished(1000)
 
     # -- the process ------------------------------------------------------------
 
@@ -163,12 +169,18 @@ class ConnectorHost(QObject):
             self._on_ended(process, "could not start")
 
     def _on_ended(self, process: QProcess, why: str) -> None:
-        if process is not self._process or not self._wanted:
-            return  # an old process, or one we stopped on purpose
+        if process is not self._process:
+            return  # an old process
+        self._drain(final=True)
+        if process is not self._process:
+            return  # what it sent last ended it already (a fatal error)
         self._process = None
         _dispose(process)
         for timer in (self._hello_timer, self._ping_timer):
             timer.stop()
+        if not self._wanted:  # stopped on purpose: it has ended now
+            self.stopped.emit()
+            return
         ran_ms = (
             0
             if self._hello_at is None
@@ -182,15 +194,20 @@ class ConnectorHost(QObject):
         self._set_state(f"restarting in {self._pause_ms / 1000:g} s")
         self._restart_timer.start(pause)
 
-    def _drain(self) -> None:
+    def _drain(self, final: bool = False) -> None:
         """Handle what the connector already sent before it is cut off: a stop or a
-        restart must not lose a read waiting in the pipe."""
+        restart must not lose a read waiting in the pipe. At its end (final), a last
+        line it wrote without a line end counts too."""
         process = self._process
         if process is None:
             return
         if process.state() != QProcess.ProcessState.NotRunning:
             process.waitForReadyRead(0)
         self._on_output(process)
+        if final and self._process is process and not self._overlong:
+            last, self._buffer = self._buffer, b""
+            if last.strip():
+                self._handle(cp.decode(last))  # ending already, fatal or not
 
     def _kill_and_restart(self, why: str) -> None:
         self._drain()

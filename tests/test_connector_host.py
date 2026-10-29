@@ -5,7 +5,6 @@ from __future__ import annotations
 import sys
 import time
 
-import shiboken6
 from PySide6.QtWidgets import QApplication
 
 from app import connector_host as ch
@@ -101,12 +100,15 @@ def test_a_program_of_another_protocol_or_kind_is_stopped_for_good():
         (1, "chips", "chips connector"),
     ):
         host, _, states, _ = _host()
+        ended: list[int] = []
+        host.stopped.connect(lambda e=ended: e.append(1))
         host.start(
             _python("import json\n" + HELLO % (protocol, kind) + "\n" + SLEEP), {}
         )
         assert _wait_until(lambda h=host: h.state.startswith("failed"))
         assert why in host.state
         assert not _wait_until(lambda s=states: "starting" in s[2:], timeout=0.3)
+        assert _wait_until(lambda e=ended: e)  # its program has ended, too
 
 
 def test_a_fatal_error_restarts_the_connector():
@@ -158,7 +160,7 @@ def test_built_in_connectors_run_from_the_chronometer_itself(monkeypatch):
     ]
 
 
-def test_a_stopped_connector_gets_its_grace_time_after_its_host_is_freed(tmp_path):
+def test_a_stopped_connector_ends_in_its_own_time_and_then_says_so(tmp_path):
     closed = tmp_path / "closed"
     # Takes its time to stop, as a reader closing its session does.
     slow = "\n".join(
@@ -171,11 +173,14 @@ def test_a_stopped_connector_gets_its_grace_time_after_its_host_is_freed(tmp_pat
         ]
     )
     host, _, states, _ = _host()
+    ended: list[int] = []
+    host.stopped.connect(lambda: ended.append(1))
     host.start(_python(slow), {})
     assert _wait_until(lambda: "running" in states)
     host.stop()
-    shiboken6.delete(host)  # what the window's deleteLater does on its next turn
+    assert not ended  # still closing its session
     assert _wait_until(closed.exists, timeout=5)
+    assert _wait_until(lambda: ended)
 
 
 def test_the_pause_grows_for_a_connector_that_never_says_hello(monkeypatch):
@@ -217,9 +222,12 @@ def test_a_hello_of_an_unknown_kind_or_a_text_protocol_stops_it_for_good():
         ('{"type": "hello", "protocol": "1", "kind": "beam"}', "protocol '1'"),
     ):
         host, _, _, _ = _host()
+        ended: list[int] = []
+        host.stopped.connect(lambda e=ended: e.append(1))
         host.start(_python(f"print({hello!r}, flush=True)\n{SLEEP}"), {})
         assert _wait_until(lambda h=host: h.state.startswith("failed"))
         assert why in host.state
+        assert _wait_until(lambda e=ended: e)
 
 
 def test_events_already_sent_count_when_the_connector_is_stopped():
@@ -328,3 +336,37 @@ def test_a_connector_works_in_the_folder_the_data_is_in(tmp_path, monkeypatch):
     assert _wait_until(lambda: events)
     assert tmp_path.samefile(events[0].device_time)
     host.stop(wait=True)
+
+
+def test_a_last_line_without_a_line_end_still_counts():
+    code = "\n".join(
+        [
+            "import json, sys",
+            HELLO % (1, "beam"),
+            "sys.stdin.readline()",
+            "sys.stdout.write(json.dumps({'type': 'beam', 'seq': 3}))",
+            "sys.stdout.flush()",
+        ]
+    )
+    host, events, _, logs = _host()
+    host.start(_python(code), {})
+    assert _wait_until(lambda: events)
+    assert events[0] == cp.Break(3, None)
+    assert _wait_until(lambda: any("exited" in line for line in logs))
+    host.stop(wait=True)
+
+
+def test_what_a_connector_reports_until_it_ends_after_stop_counts():
+    code = _beams_then(
+        "sys.stdin.readline()",  # the stop command
+        "print(json.dumps({'type': 'beam', 'seq': 7}), flush=True)",
+    )
+    host, events, states, _ = _host()
+    ended: list[int] = []
+    host.stopped.connect(lambda: ended.append(1))
+    host.start(_python(code), {})
+    assert _wait_until(lambda: "running" in states)
+    host.stop()
+    assert _wait_until(lambda: ended)
+    assert events == [cp.Break(7, None)]
+    assert host.state == "stopped"
