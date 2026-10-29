@@ -505,6 +505,7 @@ class MainWindow(QMainWindow):
         grid.addWidget(self._lbl_test_data, 5, 0, 1, 3)
         index = self._combo_source.findData(self._sources["source"])
         self._combo_source.setCurrentIndex(max(index, 0))
+        self._settings_for = ""  # the connector the Settings field shows
         self._fill_connectors()
         self._combo_source.currentIndexChanged.connect(self._on_source_changed)
         self._combo_connector.currentIndexChanged.connect(self._on_connector_changed)
@@ -549,7 +550,7 @@ class MainWindow(QMainWindow):
         self._show_connector_settings()
 
     def _show_connector_settings(self) -> None:
-        name = self._connector_name()
+        name = self._settings_for = self._connector_name()
         if name == "custom":
             self._edit_connector_settings.setText(
                 self._sources.get("custom_command", "")
@@ -567,23 +568,25 @@ class MainWindow(QMainWindow):
             self._append_log("event source settings could not be saved")
 
     def _on_source_changed(self) -> None:
+        # Text typed in Settings is kept first: on macOS a combo takes no focus,
+        # so no editingFinished came for it.
+        self._on_connector_settings_edited()
         self._stop_source()
         self._sources["source"] = self._source_kind()
         self._save_sources()
         self._fill_connectors()
 
     def _on_connector_changed(self) -> None:
+        self._on_connector_settings_edited()  # as when the source changes
         self._stop_source()
         self._sources[f"{self._source_kind()}_connector"] = self._connector_name()
         self._save_sources()
         self._show_connector_settings()
 
     def _on_connector_settings_edited(self) -> bool:
-        """Keep the Settings field's text; False when it is not valid JSON."""
-        name, text = (
-            self._connector_name(),
-            self._edit_connector_settings.text().strip(),
-        )
+        """Keep the Settings field's text for the connector it shows; False when it
+        is not valid JSON."""
+        name, text = self._settings_for, self._edit_connector_settings.text().strip()
         if name == "custom":
             self._sources["custom_command"] = text
         elif name:
