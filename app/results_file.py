@@ -26,6 +26,12 @@ def crossing_line(number: str, time_str: str, action: str) -> str:
     return f"{number}#{time_str}#{action}#"
 
 
+def crossing_key(line: str) -> tuple[str, str]:
+    """A crossing's number and time: two lines with both the same are one crossing."""
+    number, _, rest = line.partition("#")
+    return number, rest.partition("#")[0]
+
+
 def crossing_problem(number: str, time_str: str, action: str) -> str | None:
     """Why a crossing cannot be written as given, or None when it can."""
     if not number.strip():

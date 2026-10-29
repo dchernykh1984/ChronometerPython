@@ -73,6 +73,7 @@ from app.models import (
 from app.paths import app_path
 from app.results_file import (
     ACTIONS,
+    crossing_key,
     crossing_line,
     crossing_problem,
     rewrite_results,
@@ -878,10 +879,8 @@ class MainWindow(QMainWindow):
             self._chip_state_dirty = True
         # A crash between writing a crossing and saving the state leaves it in the
         # results file, still waiting or made again here: never written twice.
-        done = {tuple(line.split("#")[:2]) for line in read_file_lines(path)}
-        waiting = [
-            line for line in timing.unwritten if tuple(line.split("#")[:2]) not in done
-        ]
+        done = {crossing_key(line) for line in read_file_lines(path)}
+        waiting = [line for line in timing.unwritten if crossing_key(line) not in done]
         if len(waiting) < len(timing.unwritten):
             timing.unwritten = waiting
             self._chip_state_dirty = True
@@ -948,7 +947,7 @@ class MainWindow(QMainWindow):
             return
         for bib, at in made:
             self._chip_timing.unwritten.append(
-                f"{bib}#{scale_time(at)}#{self._action()}#"
+                crossing_line(bib, scale_time(at), self._action())
             )
         self._schedule_chip_state_save()
         self._retry_unwritten()
