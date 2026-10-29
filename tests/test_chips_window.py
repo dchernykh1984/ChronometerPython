@@ -325,10 +325,14 @@ def test_waiting_crossings_are_counted_on_the_source_state_line(
     win._on_source_event(Read("A", T0))
     assert win._lbl_source_state.text() == "running; 1 chip crossing(s) waiting"
     win._edit_results_file.setText(str(chips_on / "other.txt"))
-    win._retry_unwritten()  # the timer's tick after the switch
+    win._refresh_crossings()  # the path has settled on the other file
     assert win._lbl_source_state.text() == "running"
     assert win._lbl_unwritten.text() == ""
-    assert win._unwritten_timer.isActive()  # for when that file is back
+    assert not win._unwritten_timer.isActive()  # nothing to try for this file
+    win._edit_results_file.setText(str(blocker / "results.txt"))
+    win._refresh_crossings()  # back on the file the crossing waits for
+    assert win._lbl_source_state.text() == "running; 1 chip crossing(s) waiting"
+    assert win._unwritten_timer.isActive()
 
 
 def test_a_burst_of_crossings_saves_the_state_once(win, chips_on, monkeypatch):
