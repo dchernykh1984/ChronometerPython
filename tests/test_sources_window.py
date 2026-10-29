@@ -167,3 +167,15 @@ def test_settings_typed_are_kept_when_another_source_is_picked(win):
         "min_s": 1,
         "max_s": 2,
     }
+
+
+def test_a_running_source_keeps_the_file_paths_frozen(win, monkeypatch):
+    monkeypatch.setattr(mw.ConnectorHost, "start", lambda self, *a: None)
+    win._chk_freeze.setChecked(False)
+    _choose(win, "beam", "dummy-beam")
+    win._on_source_start()
+    assert win._chk_freeze.isChecked()
+    assert not win._chk_freeze.isEnabled()
+    assert not win._edit_results_file.isEnabled()
+    win._on_source_stop()
+    assert win._chk_freeze.isEnabled()

@@ -66,7 +66,10 @@ def test_a_failed_download_changes_nothing(win, start_file, monkeypatch):
     win._on_download_start_protocol()
     assert _wait_until(lambda: win._fetch_worker is None)
     assert start_file.read_text(encoding="utf-8") == "old#line#\n"
-    assert "offline" in warnings[0]
+    assert warnings == []  # it came seconds after the click: no dialog mid-race
+    assert "nothing changed: Connection error: offline" in (
+        win._lbl_download_state.text()
+    )
 
 
 def test_without_a_site_nothing_is_asked(win, monkeypatch):

@@ -394,6 +394,9 @@ class MainWindow(QMainWindow):
         self._btn_get_groups.clicked.connect(self._on_get_groups)
         self._groups_worker: _Worker | None = None
         http_layout.addWidget(self._btn_get_groups, 4, 0, 1, 3)
+        self._lbl_groups_state = QLabel()
+        self._lbl_groups_state.setWordWrap(True)
+        http_layout.addWidget(self._lbl_groups_state, 5, 0, 1, 3)
         right.addWidget(http_box)
 
         root.addLayout(right)
@@ -630,6 +633,10 @@ class MainWindow(QMainWindow):
         host.log.connect(self._append_log)
         self._host = host
         self._lbl_test_data.setVisible(info.test)
+        # The file paths stay as they are while a device writes next to them: a path
+        # typed letter by letter would scatter its reads over half-typed names.
+        self._chk_freeze.setChecked(True)
+        self._chk_freeze.setEnabled(False)
         host.start(program, settings)
 
     def _on_source_stop(self) -> None:
@@ -645,6 +652,7 @@ class MainWindow(QMainWindow):
             host.stop(wait)
         self._on_source_state("stopped")
         self._lbl_test_data.setVisible(False)
+        self._chk_freeze.setEnabled(True)
 
     def _event_time(self, time_ms: int | None) -> str:
         """A device event's time as the results file writes it, summer time included."""
@@ -701,6 +709,9 @@ class MainWindow(QMainWindow):
         self._btn_download_start = QPushButton("Download start protocol from the site")
         self._btn_download_start.clicked.connect(self._on_download_start_protocol)
         layout.addWidget(self._btn_download_start)
+        self._lbl_download_state = QLabel()
+        self._lbl_download_state.setWordWrap(True)
+        layout.addWidget(self._lbl_download_state)
         self._fetch_worker: _Worker | None = None
         self._lbl_chip_map = QLabel()
         layout.addWidget(self._lbl_chip_map)
@@ -801,17 +812,25 @@ class MainWindow(QMainWindow):
             self._fetch_worker = None
         self._btn_download_start.setEnabled(True)
         if not isinstance(result, list):  # the error the download ended with
-            QMessageBox.warning(self, "Start protocol", f"Nothing changed: {result}")
+            self._site_said(
+                self._lbl_download_state,
+                f"start protocol not downloaded, nothing changed: {result}",
+            )
             return
         try:
             backup = rewrite_results(path, result, stem="start")
         except OSError as exc:
-            QMessageBox.warning(self, "Start protocol", f"Nothing changed: {exc}")
+            self._site_said(
+                self._lbl_download_state,
+                f"start protocol not written, nothing changed: {exc}",
+            )
             return
         self._reload_chip_map()
-        self._append_log(
+        self._site_said(
+            self._lbl_download_state,
             f"start protocol downloaded into {path}: {len(result)} line(s); "
-            f"{self._lbl_chip_map.text()}; previous file kept as {backup.name}"
+            f"{self._lbl_chip_map.text()}; previous file kept as {backup.name}",
+            failed=False,
         )
 
     def _on_chip_report(self) -> None:
@@ -1247,7 +1266,7 @@ class MainWindow(QMainWindow):
             self._groups_worker = None
         self._btn_get_groups.setEnabled(True)
         if not isinstance(result, list):  # the error the download ended with
-            QMessageBox.warning(self, "Get groups", f"Could not load groups:\n{result}")
+            self._site_said(self._lbl_groups_state, f"groups not loaded: {result}")
             return
         groups = result
         current = self._combo_group.currentText()
@@ -1264,14 +1283,23 @@ class MainWindow(QMainWindow):
             self._groups_path(),
         )
         if not saved:
-            QMessageBox.warning(
-                self,
-                "Get groups",
-                f"Loaded {len(groups)} group(s), but could not save the list to "
-                f"{self._config_path}.",
+            self._site_said(
+                self._lbl_groups_state,
+                f"loaded {len(groups)} group(s), but could not save the list to "
+                f"{self._config_path}",
             )
             return
-        QMessageBox.information(self, "Get groups", f"Loaded {len(groups)} group(s).")
+        self._site_said(
+            self._lbl_groups_state, f"loaded {len(groups)} group(s)", failed=False
+        )
+
+    def _site_said(self, label: QLabel, text: str, failed: bool = True) -> None:
+        """What the site answered, which comes up to 10 s after the click: logged and
+        shown beside its button, never in a dialog that would take the keys a judge
+        is stamping with."""
+        self._append_log(text)
+        label.setText(text)
+        label.setStyleSheet("color: red;" if failed else "")
 
     def _start_timer(self) -> None:
         self._timer = QTimer(self)

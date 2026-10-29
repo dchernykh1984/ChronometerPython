@@ -40,7 +40,9 @@ reports what a device sees: **Device** picks it, **Settings** holds its settings
   runs any program that speaks `specs/001-event-sources/contracts/connector-protocol.md`. LLRP,
   RaceResult, R2000, USB beam and Bluetooth beam are listed as "not available yet".
 - A connector starts only on **Start**, also after the program restarts, and stops on **Stop** or
-  when the window closes. The line under the buttons shows its state.
+  when the window closes; what it reports until it has ended still counts. The line under the
+  buttons shows its state and the chip crossings waiting. While it runs, the file paths stay
+  frozen.
 - A connector that exits, fails to start, says no hello within 30 s or answers no ping for 15 s is
   started again after 1 s, then 2, 4 and so on up to 30 s while it keeps failing, and after 30 s
   of steady running the pause is back to 1 s. One that speaks another protocol version or is of
@@ -130,5 +132,6 @@ Only when the site URL, token and device id are all set; otherwise nothing is se
 - "Download start protocol from the site" reads `GET /api/v1/start-list/`, the lines every device
   uploaded, merged, into the start protocol file, and only on that button. An error or an empty
   list changes nothing.
-- Uploads and the download run on a `QThread`. An upload's result and a finished download go to
-  the action log, a failed download to a dialog. Closing the window waits for them.
+- Uploads and both downloads run on a `QThread`. What the site answers goes to the action log, and
+  a download's answer also beside its button, never in a dialog, as it comes seconds after the
+  click. Closing the window waits for them.
