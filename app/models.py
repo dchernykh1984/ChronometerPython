@@ -166,6 +166,11 @@ def dsq_status(reason: str = "") -> str:
     return f"DSQ: {cleaned}" if cleaned else "DSQ"
 
 
+def one_line(text: str) -> bool:
+    """True when text holds none of the line breaks str.splitlines() knows."""
+    return text.splitlines() in ([text], [])
+
+
 def record_field(text: str) -> str:
     """Text made safe for one field of a #-separated line.
 

@@ -12,7 +12,7 @@ import os
 import time
 from pathlib import Path
 
-from app.models import parse_time
+from app.models import one_line, parse_time
 from app.paths import app_path
 
 ACTIONS = ("nextLap", "finish", "nextStage")
@@ -38,7 +38,7 @@ def crossing_problem(number: str, time_str: str, action: str) -> str | None:
     if not number.strip():
         return "The number is empty."
     text = number + action
-    if "#" in text or text.splitlines() != [text]:  # any break splitlines() knows
+    if "#" in text or not one_line(text):
         return "A number or an action cannot hold '#' or a line break."
     if parse_time(time_str) is None:
         return "The time is not 'D H:M:S' or 'D H:M:S.mmm'."

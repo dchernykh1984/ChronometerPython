@@ -8,8 +8,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 
-from app.chips import ChipMap, ChipTiming
-from app.models import scale_time
+from app.chips import ChipMap, ChipTiming, unknown_line
 
 
 def chip_report(
@@ -44,8 +43,7 @@ def chip_report(
             else:
                 never.append(f"bib {bib}: chip {chip}")
     unknown = [
-        f"{chip}: {_reads(count)}, first {scale_time(first)}, last {scale_time(last)}"
-        for chip, (first, last, count) in sorted(timing.unknown().items())
+        unknown_line(chip, *seen) for chip, seen in sorted(timing.unknown().items())
     ]
     twice = [
         f"{chip} on bibs {', '.join(bibs)}: {_reads(reads_of[chip])}"
