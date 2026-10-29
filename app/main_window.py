@@ -145,6 +145,8 @@ class MainWindow(QMainWindow):
         # A connector starts only on Start, also after a restart of the program.
         self._sources: dict[str, str] = load_sources()
         self._host: ConnectorHost | None = None
+        # Stopped, but their program may still report until it ends.
+        self._stopping: list[ConnectorHost] = []
         self._setup_ui()
         self._reload_chip_map()  # the file used last; the site is never asked here
         self._config_path: str = _CONFIG_PATH
@@ -642,6 +644,9 @@ class MainWindow(QMainWindow):
         # typed letter by letter would scatter its reads over half-typed names.
         self._chk_freeze.setChecked(True)
         self._chk_freeze.setEnabled(False)
+        # Nor does the source change under it: a mouse wheel over a combo box would
+        # stop it unasked in the middle of a race. Stop comes first.
+        self._lock_source_choice(True)
         host.start(program, settings)
 
     def _on_source_stop(self) -> None:
@@ -653,11 +658,32 @@ class MainWindow(QMainWindow):
             # A late state of this host must not cover the next one's, but what its
             # program still reports until it ends counts: freed once it has ended.
             host.state_changed.disconnect(self._on_source_state)
-            host.stopped.connect(host.deleteLater)
+            self._stopping.append(host)
+            host.stopped.connect(lambda h=host: self._on_host_ended(h))
             host.stop(wait)
+        if wait:  # closing: every program stopped before has to end now too
+            for other in list(self._stopping):
+                other.stop(wait=True)
         self._on_source_state("stopped")
         self._lbl_test_data.setVisible(False)
-        self._chk_freeze.setEnabled(True)
+        self._chk_freeze.setEnabled(not self._device_runs())
+        self._lock_source_choice(False)
+
+    def _lock_source_choice(self, locked: bool) -> None:
+        by_hand = self._source_kind() == "hand"
+        self._combo_source.setEnabled(not locked)
+        for widget in (self._combo_connector, self._edit_connector_settings):
+            widget.setEnabled(not locked and not by_hand)
+
+    def _on_host_ended(self, host: ConnectorHost) -> None:
+        if host in self._stopping:
+            self._stopping.remove(host)
+        host.deleteLater()
+        self._chk_freeze.setEnabled(not self._device_runs())
+
+    def _device_runs(self) -> bool:
+        """A device writes next to the results file, or may until its program ends."""
+        return self._host is not None or bool(self._stopping)
 
     def _event_time(self, time_ms: int | None) -> str:
         """A device event's time as the results file writes it, summer time included."""
@@ -1685,7 +1711,7 @@ class MainWindow(QMainWindow):
         self._update_crosses()
 
     def _on_load_config(self) -> None:
-        if self._host is not None:  # its files stay where they are while it runs
+        if self._device_runs():  # its files stay where they are while it runs
             QMessageBox.warning(
                 self,
                 "Load race config",

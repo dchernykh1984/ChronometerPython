@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import time
 
 import pytest
@@ -204,3 +205,39 @@ def test_a_custom_command_is_kept_per_kind_of_source(win):
     _choose(win, "beam", "custom")
     assert win._edit_connector_settings.text() == "my-beam --port 3"
     assert win._sources["custom_command.chips"] == "my-reader --host 10.0.0.5"
+
+
+def test_the_paths_stay_frozen_until_a_stopped_device_has_ended(
+    win, monkeypatch, tmp_path
+):
+    slow = tmp_path / "slow.py"
+    slow.write_text(
+        "import json, sys, time\n"
+        "print(json.dumps({'type': 'hello', 'protocol': 1, 'kind': 'beam'}),"
+        " flush=True)\n"
+        "sys.stdin.read()\n"
+        "time.sleep(0.5)  # closing its device\n",
+        encoding="utf-8",
+    )
+    _choose(win, "beam", "custom")
+    win._edit_connector_settings.setText(f'"{sys.executable}" "{slow}"')
+    win._on_source_start()
+    assert _wait_until(lambda: win._lbl_source_state.text() == "running")
+    win._on_source_stop()
+    assert win._stopping and not win._chk_freeze.isEnabled()
+    assert _wait_until(lambda: not win._stopping)
+    assert win._chk_freeze.isEnabled()
+
+
+def test_the_source_cannot_change_under_a_running_device(win, monkeypatch):
+    monkeypatch.setattr(mw.ConnectorHost, "start", lambda self, *a: None)
+    _choose(win, "beam", "dummy-beam")
+    win._on_source_start()
+    for widget in (
+        win._combo_source,
+        win._combo_connector,
+        win._edit_connector_settings,
+    ):
+        assert not widget.isEnabled()
+    win._on_source_stop()
+    assert win._combo_source.isEnabled() and win._combo_connector.isEnabled()

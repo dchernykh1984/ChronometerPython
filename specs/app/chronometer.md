@@ -44,8 +44,9 @@ reports what a device sees: **Device** picks it, **Settings** holds its settings
   RaceResult, R2000, USB beam and Bluetooth beam are listed as "not available yet".
 - A connector starts only on **Start**, also after the program restarts, and stops on **Stop** or
   when the window closes; what it reports until it has ended still counts. The line under the
-  buttons shows its state and the chip crossings waiting. While it runs, the file paths stay
-  frozen.
+  buttons shows its state and the chip crossings waiting. While it runs, and until its program has
+  ended after Stop, the file paths stay frozen, the Source, Device and Settings choices are locked
+  and "Load race config" waits; to change any of them, Stop first.
 - A connector that exits, fails to start, says no hello within 30 s or answers no ping for 15 s is
   started again after 1 s, then 2, 4 and so on up to 30 s while it keeps failing, and after 30 s
   of steady running the pause is back to 1 s. One that speaks another protocol version or is of
