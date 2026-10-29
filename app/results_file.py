@@ -36,7 +36,8 @@ def crossing_problem(number: str, time_str: str, action: str) -> str | None:
     """Why a crossing cannot be written as given, or None when it can."""
     if not number.strip():
         return "The number is empty."
-    if any(c in number + action for c in "#\r\n"):
+    text = number + action
+    if "#" in text or text.splitlines() != [text]:  # any break splitlines() knows
         return "A number or an action cannot hold '#' or a line break."
     if parse_time(time_str) is None:
         return "The time is not 'D H:M:S' or 'D H:M:S.mmm'."

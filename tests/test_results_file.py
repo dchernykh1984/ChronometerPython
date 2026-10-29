@@ -112,3 +112,8 @@ def test_a_crossing_is_known_by_its_number_and_time_whatever_its_action():
     line = rf.crossing_line("15", "1 10:0:0.000", "nextLap")
     assert rf.crossing_key(line) == ("15", "1 10:0:0.000")
     assert rf.crossing_key(line) == rf.crossing_key("15#1 10:0:0.000#finish#")
+
+
+@pytest.mark.parametrize("number", ["15\u2028", "1\x0c5", "15\x85"])
+def test_a_number_with_any_line_break_is_refused(number):
+    assert "line break" in rf.crossing_problem(number, "1 10:0:0.000", "finish")
