@@ -68,7 +68,9 @@ def read_file_lines(path: str) -> list[str]:
     if not path or not p.is_file():
         return []
     lines: list[str] = []
-    for raw in p.read_bytes().split(b"\n"):
+    # Notepad's "UTF-8 with BOM": the mark goes before decoding, so that a first line
+    # decoded as cp1251 loses it too.
+    for raw in p.read_bytes().removeprefix(b"\xef\xbb\xbf").split(b"\n"):
         lines += [ln for ln in _decoded(raw.rstrip(b"\r")).splitlines() if ln.strip()]
     return lines
 

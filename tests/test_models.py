@@ -356,6 +356,16 @@ class TestReadFileLines:
         p.write_text("1#0 0:0:1#\n\n2#0 0:0:2#\n", encoding="utf-8")
         assert read_file_lines(str(p)) == ["1#0 0:0:1#", "2#0 0:0:2#"]
 
+    def test_a_byte_order_mark_is_no_part_of_the_first_line(self, tmp_path) -> None:
+        from app.models import read_file_lines
+
+        p = tmp_path / "start.txt"
+        p.write_bytes(b"\xef\xbb\xbf15#A#\n16#B#\n")
+        assert read_file_lines(str(p)) == ["15#A#", "16#B#"]
+        rider = "15#" + chr(0x0418) + "#"  # a first line in cp1251 loses it too
+        p.write_bytes(b"\xef\xbb\xbf" + rider.encode("cp1251") + b"\n")
+        assert read_file_lines(str(p)) == [rider]
+
     def test_missing_or_empty_path_returns_empty(self, tmp_path) -> None:
         from app.models import read_file_lines
 
