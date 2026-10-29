@@ -124,6 +124,7 @@ class MainWindow(QMainWindow):
         # threads are kept alive until they finish (a GC'd running QThread would crash).
         self._http_cfg: dict[str, str] = load_http_config()
         self._upload_workers: list[_Worker] = []
+        self._fetches: list[_Worker] = []  # downloads asked of the site, answer to come
         # Debounce finish/remote uploads: a batch save writes several lines, but we push
         # the resulting file snapshot once, shortly after the last write.
         self._finish_upload_timer = QTimer(self)
@@ -392,7 +393,6 @@ class MainWindow(QMainWindow):
         http_layout.addWidget(self._spin_point, 3, 2)
         self._btn_get_groups = QPushButton("Get groups")
         self._btn_get_groups.clicked.connect(self._on_get_groups)
-        self._groups_worker: _Worker | None = None
         http_layout.addWidget(self._btn_get_groups, 4, 0, 1, 3)
         self._lbl_groups_state = QLabel()
         self._lbl_groups_state.setWordWrap(True)
@@ -715,7 +715,6 @@ class MainWindow(QMainWindow):
         self._lbl_download_state = QLabel()
         self._lbl_download_state.setWordWrap(True)
         layout.addWidget(self._lbl_download_state)
-        self._fetch_worker: _Worker | None = None
         self._lbl_chip_map = QLabel()
         layout.addWidget(self._lbl_chip_map)
         dead_row = QHBoxLayout()
@@ -790,30 +789,40 @@ class MainWindow(QMainWindow):
 
     def _on_download_start_protocol(self) -> None:
         self._on_start_protocol_path()  # into the path as typed, Return or not
+        # Into the file chosen now, even if another is chosen before the answer.
+        path = self._sources["start_protocol"]
+        self._fetch(
+            "Start protocol",
+            self._btn_download_start,
+            fetch_start_list,
+            lambda result: self._on_start_list(result, path),
+        )
+
+    def _fetch(self, title: str, button: QPushButton, func, on_answer) -> None:
+        """Ask the site off the UI thread; on_answer gets what it said or the error.
+
+        The button waits disabled meanwhile, and closing the window waits too.
+        """
         site = self._http_cfg.get("site_url", "").strip()
         token = self._http_cfg.get("token", "").strip()
         if not site or not token:
-            QMessageBox.warning(
-                self, "Start protocol", "Site URL and Token must be set first."
-            )
+            QMessageBox.warning(self, title, "Site URL and Token must be set first.")
             return
-        worker = _Worker(fetch_start_list, site, token)
-        # Into the file chosen now, even if another is chosen before the answer.
-        worker.done.connect(
-            lambda result, path=self._sources["start_protocol"]: self._on_start_list(
-                result, path
-            )
-        )
-        self._fetch_worker = worker
-        self._btn_download_start.setEnabled(False)
+        worker = _Worker(func, site, token)
+
+        def answered(result: object, worker: _Worker = worker) -> None:
+            worker.wait()
+            self._fetches.remove(worker)
+            button.setEnabled(True)
+            on_answer(result)
+
+        worker.done.connect(answered)
+        self._fetches.append(worker)
+        button.setEnabled(False)
         worker.start()
 
     def _on_start_list(self, result: object, path: str) -> None:
         """Keep the previous file, write the new one in one step, rebuild the map."""
-        if self._fetch_worker is not None:
-            self._fetch_worker.wait()
-            self._fetch_worker = None
-        self._btn_download_start.setEnabled(True)
         if not isinstance(result, list):  # the error the download ended with
             self._site_said(
                 self._lbl_download_state,
@@ -1250,16 +1259,7 @@ class MainWindow(QMainWindow):
 
     def _on_get_groups(self) -> None:
         """Fetch the group list from the site off the UI thread, so timing goes on."""
-        site = self._http_cfg.get("site_url", "").strip()
-        token = self._http_cfg.get("token", "").strip()
-        if not site or not token:
-            QMessageBox.warning(self, "Get groups", "Site URL and Token must be set.")
-            return
-        worker = _Worker(fetch_groups, site, token)
-        worker.done.connect(self._on_groups)
-        self._groups_worker = worker
-        self._btn_get_groups.setEnabled(False)
-        worker.start()
+        self._fetch("Get groups", self._btn_get_groups, fetch_groups, self._on_groups)
 
     def _on_groups(self, result: object) -> None:
         """Replace the Group start dropdown with the groups the site sent.
@@ -1269,10 +1269,6 @@ class MainWindow(QMainWindow):
         list, which clears the dropdown so a start with no groups does not keep
         showing a previous start's groups.
         """
-        if self._groups_worker is not None:
-            self._groups_worker.wait()
-            self._groups_worker = None
-        self._btn_get_groups.setEnabled(True)
         if not isinstance(result, list):  # the error the download ended with
             self._site_said(self._lbl_groups_state, f"groups not loaded: {result}")
             return
@@ -1712,10 +1708,9 @@ class MainWindow(QMainWindow):
                     pass
                 worker.wait()
             self._upload_workers.clear()
-            for fetch in (self._fetch_worker, self._groups_worker):
-                if fetch is not None:  # a download also ends within 10 s
-                    fetch.done.disconnect()
-                    fetch.wait()
+            for fetch in list(self._fetches):  # a download also ends within 10 s
+                fetch.done.disconnect()
+                fetch.wait()
             event.accept()
         else:
             event.ignore()

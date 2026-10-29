@@ -165,10 +165,10 @@ def _get_groups(win) -> None:
     """Press Get groups and wait for the download, which runs off the UI thread."""
     win._on_get_groups()
     deadline = time.monotonic() + 10
-    while win._groups_worker is not None and time.monotonic() < deadline:
+    while win._fetches and time.monotonic() < deadline:
         QApplication.processEvents()
         time.sleep(0.01)
-    assert win._groups_worker is None
+    assert not win._fetches
 
 
 def test_get_groups_leaves_the_window_free_while_the_site_answers(win, monkeypatch):
@@ -176,11 +176,11 @@ def test_get_groups_leaves_the_window_free_while_the_site_answers(win, monkeypat
     monkeypatch.setattr(mw, "fetch_groups", lambda *a: answer.wait(10) and ["G1"])
     monkeypatch.setattr(mw.QMessageBox, "information", lambda *a, **k: None)
     win._on_get_groups()  # returns at once
-    assert win._groups_worker is not None
+    assert win._fetches
     assert not win._btn_get_groups.isEnabled()
     answer.set()
     deadline = time.monotonic() + 10
-    while win._groups_worker is not None and time.monotonic() < deadline:
+    while win._fetches and time.monotonic() < deadline:
         QApplication.processEvents()
         time.sleep(0.01)
     assert win._combo_group.itemText(0) == "G1"
