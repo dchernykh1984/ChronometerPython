@@ -53,9 +53,9 @@ time. A pass is only ever made together with its crossing, so it never gets anot
 
 `pending`: reads of chips the map did not bind when they came (unknown, or on two bibs), per chip
 as runs `[first, last, count]` of reads less than the dead time apart, so a chip left by the
-antenna for hours is one run. When a new map binds one, its runs go into passes in time order
-(FR-010); a run's first read decides whether it starts a pass, the others only stretch and merge
-passes, as each read would have. A pass is `[first, last]`: every pass exists because it made a
+antenna for hours is one run. When a new map binds one, its runs join the bib's reads (FR-010):
+runs less than the dead time apart form one group, a group near a pass joins it and makes
+nothing, and a group near none is a new pass, its crossing at its first read. A pass is `[first, last]`: every pass exists because it made a
 crossing, so it needs no flag for that. A state of another `version` is rebuilt from the raw
 reads file.
 

@@ -217,22 +217,22 @@ def test_a_chip_left_by_the_antenna_is_one_run_not_every_read():
     assert timing.unknown() == {"X": (0, 3_599_980, 180_000)}
 
 
-def _read_by_read(passes: list[list[int]], dead: int, reads: list[int]) -> list[int]:
-    """The pass rule applied to each read in time order: what runs must equal."""
-    made = []
-    for at in sorted(reads):
-        near = [p for p in passes if p[0] - dead < at < p[1] + dead]
-        if near:
-            merged = [min(at, *(p[0] for p in near)), max(at, *(p[1] for p in near))]
-            passes[:] = [p for p in passes if p not in near] + [merged]
+def _fr010(old: list[list[int]], dead: int, reads: list[int]):
+    """FR-010 from scratch: all the bib's reads less than the dead time apart are one
+    pass, and only a pass with no crossing in it yet gets one, at its first read."""
+    items = sorted([(a, b, True) for a, b in old] + [(t, t, False) for t in reads])
+    groups: list[list] = []
+    for first, last, crossed in items:
+        if groups and first < groups[-1][1] + dead:
+            group = groups[-1]
+            group[1], group[2] = max(group[1], last), group[2] or crossed
         else:
-            passes.append([at, at])
-            made.append(at)
-        passes.sort()
-    return made
+            groups.append([first, last, crossed])
+    made = [first for first, _, crossed in groups if not crossed]
+    return made, [[first, last] for first, last, _ in groups]
 
 
-def test_runs_bind_to_the_crossings_and_passes_their_reads_would_make():
+def test_waiting_reads_bind_as_fr_010_says():
     rnd = random.Random(49)  # noqa: S311 - test data, not security
     for _ in range(500):
         timing = chips.ChipTiming(5000)
@@ -244,6 +244,6 @@ def test_runs_bind_to_the_crossings_and_passes_their_reads_would_make():
         for at in late:  # in the order they came, not in time order
             timing.on_read("X", at)
         made = timing.set_map(chips.ChipMap(bib_of={"A": "15", "X": "15"}))
-        expected = _read_by_read(before, 5000, late)
+        expected, passes = _fr010(before, 5000, late)
         assert made == [("15", at) for at in expected]
-        assert timing.passes["15"] == before
+        assert timing.passes["15"] == passes
