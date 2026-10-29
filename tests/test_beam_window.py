@@ -141,3 +141,28 @@ def test_a_break_with_every_slot_stamped_moves_them_once(win, tmp_path):
     assert win._number_edits[1].text() == "4"
     assert win.focusWidget() is win._number_edits[1]
     assert win._time_edits[4].text() == f"{format_time(T0)}#nextLap"
+
+
+def test_a_break_never_writes_slot_1_while_its_number_is_typed(win, tmp_path):
+    for i in range(5):
+        win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")
+    win._focused_slot = 0
+    win._number_edits[0].setText("12")  # of 123, say
+    win._number_edits[0].setFocus()
+    win._on_source_event(Break(6, T0))
+    assert not (tmp_path / "results.txt").exists()
+    assert win._number_edits[0].text() == "12"
+    last = win._log.item(win._log.count() - 1).text()
+    assert "slot 1's number is being typed" in last
+
+
+def test_a_burst_of_breaks_backs_the_slots_up_once(win, monkeypatch):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
+    for seq in (1, 2, 3):
+        win._on_source_event(Break(seq, T0 + seq))
+    assert backups == []
+    assert win._backup_timer.isActive()
+    win._save_backup_if_enabled()  # the timer's tick, 2 s on
+    assert len(backups) == 1

@@ -152,6 +152,10 @@ class MainWindow(QMainWindow):
         self._http_save_timer = QTimer(self)
         self._http_save_timer.setSingleShot(True)
         self._http_save_timer.timeout.connect(self._flush_http_config)
+        # A device's stamps back up the slots once per burst, not once per stamp.
+        self._backup_timer = QTimer(self)
+        self._backup_timer.setSingleShot(True)
+        self._backup_timer.timeout.connect(self._save_backup_if_enabled)
         # The event source: by hand, or a connector process for a beam or chips.
         # A connector starts only on Start, also after a restart of the program.
         self._sources: dict[str, str] = load_sources()
@@ -669,10 +673,10 @@ class MainWindow(QMainWindow):
         record = f"{event.seq}#{stamp}#{record_field(event.device_time)}#"
         if not append_record(side_file(self._results_path(), "beam_breaks"), record):
             self._append_log(f"beam break not kept in the beam file: {record}")
-        if not self._stamp_first_empty_slot(stamp, take_next=False, quiet=True):
+        if why := self._stamp_first_empty_slot(stamp, take_next=False, quiet=True):
             self._append_log(
-                f"beam break {stamp} not stamped: slot 1 could not be written, "
-                "so no slot was free; the break is in the beam file"
+                f"beam break {stamp} not stamped: every slot has a time and {why}; "
+                "the break is in the beam file"
             )
 
     def _on_source_event(self, event: object) -> None:
@@ -1509,40 +1513,44 @@ class MainWindow(QMainWindow):
 
     def _stamp_first_empty_slot(
         self, time_str: str, take_next: bool, quiet: bool = False
-    ) -> bool:
+    ) -> str:
         """Put time_str into the first slot without a time, shifting when all have one.
 
         A beam break comes here with take_next False -- the Next field is the judge's
         typing, never a machine's to take -- and quiet, so a write it causes reports
-        in the action log rather than in a dialog. False when every slot had a time
-        and slot 1 could not be written, so time_str is in no slot.
+        in the action log rather than in a dialog. Returns why time_str is in no
+        slot, or "" when it is in one.
         """
-        stamped = True
+        why = ""
         for i in range(_N_SLOTS):
             if not self._time_edits[i].text():
                 self._time_edits[i].setText(time_str + "#" + self._action())
                 self._check_possibility_to_empty_upper(quiet)
                 break
         else:
-            stamped = self._shift_fields_up(
+            # Every slot has a time: slot 1 goes to the results file to make room,
+            # but a device never commits a number the judge is still typing.
+            if quiet and self.focusWidget() is self._number_edits[0]:
+                why = "slot 1's number is being typed"
+            elif not self._shift_fields_up(
                 get_next_competitor=take_next,
                 stamp=None if take_next else time_str,
                 quiet=quiet,
-            )
-            if not quiet:
-                self._check_possibility_to_empty_upper()  # as the button always did
-            elif (
-                stamped
-                and self._focused_slot > 0
-                and self.focusWidget() in self._number_edits
             ):
+                why = "slot 1 could not be written"
+            elif not quiet:
+                self._check_possibility_to_empty_upper()  # as the button always did
+            elif self._focused_slot > 0 and self.focusWidget() in self._number_edits:
                 # One stamp, one move: the number being typed went up a slot with
                 # the others, and the focus follows it there.
                 self._focused_slot -= 1
                 self._number_edits[self._focused_slot].setFocus()
-        self._save_backup_if_enabled()
+        if not quiet:
+            self._save_backup_if_enabled()
+        elif not self._backup_timer.isActive():
+            self._backup_timer.start(2000)
         self._update_crosses()
-        return stamped
+        return why
 
     def _shift_fields_up(
         self, get_next_competitor: bool, stamp: str | None = None, quiet: bool = False
