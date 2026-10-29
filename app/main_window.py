@@ -1565,6 +1565,11 @@ class MainWindow(QMainWindow):
         else:
             # Every slot has a time: slot 1 goes to the results file to make room,
             # but a device never commits a number the judge is still typing.
+            unnamed = (
+                ""
+                if self._number_edits[0].text().strip()
+                else f"#{self._time_edits[0].text()}#"
+            )
             if quiet and self.focusWidget() is self._number_edits[0]:
                 why = "slot 1's number is being typed"
             elif not self._shift_fields_up(
@@ -1575,11 +1580,17 @@ class MainWindow(QMainWindow):
                 why = "slot 1 could not be written"
             elif not quiet:
                 self._check_possibility_to_empty_upper()  # as the button always did
-            elif self._focused_slot > 0 and self.focusWidget() in self._number_edits:
-                # One stamp, one move: the number being typed went up a slot with
-                # the others, and the focus follows it there.
-                self._focused_slot -= 1
-                self._number_edits[self._focused_slot].setFocus()
+            else:
+                if unnamed:  # its time is kept rather than lost; its number by hand
+                    self._append_log(
+                        f"slot 1 written with no number to make room for a break: "
+                        f"{unnamed}; give it its number in the Crossings tab"
+                    )
+                if self._focused_slot > 0 and self.focusWidget() in self._number_edits:
+                    # One stamp, one move: the number being typed went up a slot
+                    # with the others, and the focus follows it there.
+                    self._focused_slot -= 1
+                    self._number_edits[self._focused_slot].setFocus()
         if not quiet:
             self._save_backup_if_enabled()
         elif not self._backup_timer.isActive():

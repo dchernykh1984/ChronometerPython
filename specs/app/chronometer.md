@@ -24,9 +24,12 @@ Five slots on the left, each a number field and a time field. The time field hol
 - **Crosses** shows how often each slot's number already appears in the results file and the slots;
   "FINISH ALL" lights up when one reaches **Max laps**. This is a hint for the judge only.
 - A **beam break** stamps the first slot without a time with the break's time, as FINISH does,
-  but never takes the "Next" number: when every slot has a time, slot 1 is written, the others
-  move up and the last one gets the break's time and no number. A write it causes that fails is
-  reported in the action log, not in a dialog.
+  but never takes the "Next" number. When every slot has a time, slot 1 is written, the others
+  move up and the last one gets the break's time and no number; slot 1 written with no number
+  keeps its time and is named in the action log, to be given its number in the Crossings tab,
+  and while slot 1's number is being typed the break is not stamped at all (it stays in the beam
+  file). Otherwise a break writes slot 1 only once it has a number and the judge types further
+  down. A write a break causes that fails is reported in the action log, not in a dialog.
 
 ## Event source
 
