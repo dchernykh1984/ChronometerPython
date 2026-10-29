@@ -135,3 +135,16 @@ def test_a_time_in_digits_other_than_ascii_is_refused():
     arabic_indic = "".join(chr(0x660 + int(c)) for c in "1")  # one, as typed in Arabic
     problem = rf.crossing_problem("15", f"{arabic_indic} 10:0:0.000", "finish")
     assert problem is not None and "D H:M:S" in problem
+
+
+def test_a_file_begun_in_cp1251_and_gone_on_in_utf8_keeps_both(tmp_path):
+    from app.models import read_file_lines
+
+    reason = "".join(chr(c) for c in (0x441, 0x440, 0x435, 0x437))  # Russian text
+    old = f"15#1 10:0:0.000#DSQ: {reason}#"
+    new = f"16#1 10:0:1.000#DSQ: {reason}#"
+    path = tmp_path / "results.txt"
+    path.write_bytes((old + "\r\n").encode("cp1251") + (new + "\n").encode("utf-8"))
+    assert read_file_lines(str(path)) == [old, new]
+    rf.rewrite_results(str(path), [old, new], tmp_path / "b")
+    assert read_file_lines(str(path)) == [old, new]
