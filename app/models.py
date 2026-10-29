@@ -175,11 +175,12 @@ def append_to_finish_file(path: str, number: str, time_str: str) -> bool:
     Returns True on success, False if file cannot be opened.
     Port of C++ writeToFinishFile logic.
     """
-    return append_result_line(path, f"{number}#{time_str}#")
+    return append_line(path, f"{number}#{time_str}#")
 
 
-def append_result_line(path: str, line: str) -> bool:
-    """Append one whole line to the results file; False if it cannot be opened."""
+def append_line(path: str, line: str) -> bool:
+    """Append one line to a text file, ended as the platform ends lines (the results
+    file and the device files beside it alike); False if it cannot be opened."""
     if not path:
         return False
     try:

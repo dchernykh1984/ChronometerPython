@@ -46,7 +46,7 @@ from app.chips import (
 )
 from app.connector_host import ConnectorHost, builtin_command
 from app.connectors import builtin, connectors_for, find
-from app.device_files import append_record, side_file
+from app.device_files import side_file
 from app.http_io import (
     fetch_groups,
     fetch_start_list,
@@ -55,7 +55,7 @@ from app.http_io import (
     upload_remote_points,
 )
 from app.models import (
-    append_result_line,
+    append_line,
     append_to_finish_file,
     append_to_group_file,
     dsq_status,
@@ -670,7 +670,7 @@ class MainWindow(QMainWindow):
         """Keep the break in the beam file first, then stamp a slot with its time."""
         stamp = self._event_time(event.time_ms)
         record = f"{event.seq}#{stamp}#{record_field(event.device_time)}#"
-        if not append_record(side_file(self._results_path(), "beam_breaks"), record):
+        if not append_line(side_file(self._results_path(), "beam_breaks"), record):
             self._append_log(f"beam break not kept in the beam file: {record}")
         if why := self._stamp_first_empty_slot(stamp, take_next=False, quiet=True):
             self._append_log(
@@ -861,7 +861,7 @@ class MainWindow(QMainWindow):
         lines = chip_report(reads, self._chip_map, self._spin_dead_time.value() * 1000)
         path = app_path(side_file(results, "chip_report"))
         try:
-            path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         except OSError as exc:
             QMessageBox.warning(self, "Chip report", f"Not written: {exc}")
             return
@@ -945,7 +945,7 @@ class MainWindow(QMainWindow):
             f"{chip}#{stamp}#{record_field(event.device_time)}#{record_field(event.antenna)}#"
             f"{rssi}#{record_field(event.reader)}#"
         )
-        if append_record(side_file(self._results_path(), "chip_reads"), record):
+        if append_line(side_file(self._results_path(), "chip_reads"), record):
             timing.processed_lines += 1
         else:
             self._append_log(f"chip read not kept in the raw file: {record}")
@@ -1003,7 +1003,7 @@ class MainWindow(QMainWindow):
         written = False
         while own and timing.unwritten:
             line = timing.unwritten[0]
-            if not append_result_line(self._results_path(), line):
+            if not append_line(self._results_path(), line):
                 if not self._unwritten_timer.isActive():
                     self._append_log(
                         f"chip crossing waits: results file not writable ({line})"

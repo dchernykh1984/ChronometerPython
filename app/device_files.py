@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from app.paths import app_path
-
 
 def side_file(results_path: str, kind: str, extension: str = "txt") -> str:
     """``results.txt`` -> ``results.<kind>.<extension>``, in the same folder.
@@ -29,17 +27,3 @@ def side_file(results_path: str, kind: str, extension: str = "txt") -> str:
     elif not path.suffix:
         name += "."
     return str(path.with_name(f"{name}.{kind}.{extension}"))
-
-
-def append_record(path: str, record: str) -> bool:
-    """Append one line; False (and nothing raised) when it cannot be written."""
-    if not path:
-        return False
-    try:
-        target = app_path(path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        with target.open("a", encoding="utf-8", newline="\n") as f:
-            f.write(record + "\n")
-        return True
-    except OSError:
-        return False
