@@ -42,7 +42,7 @@ def test_a_download_replaces_the_file_and_keeps_the_old_one(
     asked = []
     monkeypatch.setattr(mw, "fetch_start_list", lambda *a: asked.append(a) or LINES)
     win._on_download_start_protocol()
-    assert _wait_until(lambda: win._fetch_worker is None)
+    assert _wait_until(lambda: not win._fetches)
     assert asked == [("https://s", "tok")]
     assert start_file.read_text(encoding="utf-8") == LINES[0] + "\n"
     backups = list((tmp_path / "temp").glob("start*.txt"))
@@ -64,7 +64,7 @@ def test_a_failed_download_changes_nothing(win, start_file, monkeypatch):
 
     monkeypatch.setattr(mw, "fetch_start_list", offline)
     win._on_download_start_protocol()
-    assert _wait_until(lambda: win._fetch_worker is None)
+    assert _wait_until(lambda: not win._fetches)
     assert start_file.read_text(encoding="utf-8") == "old#line#\n"
     assert warnings == []  # it came seconds after the click: no dialog mid-race
     assert "nothing changed: Connection error: offline" in (
@@ -78,7 +78,7 @@ def test_without_a_site_nothing_is_asked(win, monkeypatch):
     monkeypatch.setattr(mw, "fetch_start_list", lambda *a: pytest.fail("asked"))
     win._http_cfg["site_url"] = ""
     win._on_download_start_protocol()
-    assert win._fetch_worker is None and "must be set" in warnings[0]
+    assert not win._fetches and "must be set" in warnings[0]
 
 
 def test_nothing_reaches_the_network_without_a_button(monkeypatch, request):
@@ -99,7 +99,7 @@ def test_closing_waits_for_a_running_download(win, start_file, monkeypatch):
     )
     monkeypatch.setattr(mw, "fetch_start_list", lambda *a: time.sleep(0.5) or LINES)
     win._on_download_start_protocol()
-    worker = win._fetch_worker
+    (worker,) = win._fetches
     event = Mock()
     win.closeEvent(event)
     assert not worker.isRunning()
@@ -112,7 +112,7 @@ def test_download_goes_into_the_path_as_typed(win, start_file, tmp_path, monkeyp
     win._edit_start_protocol.setText(str(typed))  # no Return pressed
     monkeypatch.setattr(mw, "fetch_start_list", lambda *a: LINES)
     win._on_download_start_protocol()
-    assert _wait_until(lambda: win._fetch_worker is None)
+    assert _wait_until(lambda: not win._fetches)
     assert typed.read_text(encoding="utf-8") == LINES[0] + "\n"
     assert start_file.read_text(encoding="utf-8") == "old#line#\n"
 
@@ -135,7 +135,7 @@ def test_a_download_goes_into_the_file_chosen_when_it_was_asked(
     win._edit_start_protocol.setText(str(other))
     win._on_start_protocol_path()  # another file chosen before the answer
     answer.set()
-    assert _wait_until(lambda: win._fetch_worker is None)
+    assert _wait_until(lambda: not win._fetches)
     assert start_file.read_text(encoding="utf-8") == LINES[0] + "\n"
     assert not other.exists()
     assert win._chip_map.bib_of == {}  # still the map of the file chosen
