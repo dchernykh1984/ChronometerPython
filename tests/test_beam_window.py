@@ -163,7 +163,7 @@ def test_a_break_never_writes_slot_1_while_its_number_is_typed(win, tmp_path):
     assert not (tmp_path / "results.txt").exists()
     assert win._number_edits[0].text() == "12"
     last = win._log.item(win._log.count() - 1).text()
-    assert "slot 1's number is being typed" in last
+    assert "slot 1 is being typed in" in last
 
 
 def test_a_burst_of_breaks_backs_the_slots_up_once(win, monkeypatch):
@@ -197,3 +197,13 @@ def test_a_slot_written_with_no_number_to_make_room_is_logged(win, tmp_path):
     assert results == "#1 10:0:0.000#nextLap#\n"  # the time is kept
     log = [win._log.item(i).text() for i in range(win._log.count())]
     assert any("written with no number to make room" in line for line in log)
+
+
+def test_a_break_never_writes_slot_1_while_its_time_is_corrected(win, tmp_path):
+    for i in range(5):
+        win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")
+    win._time_edits[0].setText("1 10:0:")  # halfway through a correction
+    win._time_edits[0].setFocus()
+    win._on_source_event(Break(6, T0))
+    assert not (tmp_path / "results.txt").exists()
+    assert win._time_edits[0].text() == "1 10:0:"

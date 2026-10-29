@@ -1568,8 +1568,11 @@ class MainWindow(QMainWindow):
                 if self._number_edits[0].text().strip()
                 else f"#{self._time_edits[0].text()}#"
             )
-            if quiet and self.focusWidget() is self._number_edits[0]:
-                why = "slot 1's number is being typed"
+            if quiet and self.focusWidget() in (
+                self._number_edits[0],
+                self._time_edits[0],
+            ):
+                why = "slot 1 is being typed in"
             elif not self._shift_fields_up(
                 get_next_competitor=take_next,
                 stamp=None if take_next else time_str,
