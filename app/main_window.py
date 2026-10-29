@@ -1612,8 +1612,12 @@ class MainWindow(QMainWindow):
     def _check_possibility_to_empty_upper(self, quiet: bool = False) -> None:
         # A device's stamp moves the slots only while the judge types in one: the
         # slot typed in last, long ago maybe, says nothing about slot 1 being done,
-        # and the focus must stay in any other field the judge types in.
-        if quiet and self.focusWidget() not in self._number_edits:
+        # and the focus must stay in any other field the judge types in. Nor does
+        # it write slot 1 before its number is typed: the judge may come back to it.
+        if quiet and (
+            self.focusWidget() not in self._number_edits
+            or not self._number_edits[0].text().strip()
+        ):
             return
         if self._focused_slot != 0 and self._time_edits[0].text():
             shifted = self._shift_fields_up(get_next_competitor=False, quiet=quiet)
