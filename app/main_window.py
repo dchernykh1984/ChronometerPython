@@ -55,6 +55,7 @@ from app.http_io import (
     upload_remote_points,
 )
 from app.models import (
+    append_result_line,
     append_to_finish_file,
     append_to_group_file,
     dsq_status,
@@ -1002,8 +1003,7 @@ class MainWindow(QMainWindow):
         written = False
         while own and timing.unwritten:
             line = timing.unwritten[0]
-            number, _, rest = line.partition("#")
-            if not append_to_finish_file(self._results_path(), number, rest[:-1]):
+            if not append_result_line(self._results_path(), line):
                 if not self._unwritten_timer.isActive():
                     self._append_log(
                         f"chip crossing waits: results file not writable ({line})"
