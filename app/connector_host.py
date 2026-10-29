@@ -17,6 +17,7 @@ from typing import Any
 from PySide6.QtCore import QCoreApplication, QObject, QProcess, QTimer, Signal
 
 from app import connector_protocol as cp
+from app.paths import base_dir
 
 FIRST_PAUSE_MS = 1000
 LONGEST_PAUSE_MS = 30_000
@@ -152,6 +153,9 @@ class ConnectorHost(QObject):
         self._hello_at = None
         self._set_state("starting")
         self._hello_timer.start(self._hello_timeout_ms)
+        # Where the data lives, so a command's relative paths mean the event folder,
+        # also when a frozen app was started from Finder with "/" to work in.
+        process.setWorkingDirectory(str(base_dir()))
         process.start(self._program[0], self._program[1:])
 
     def _on_error(self, process: QProcess, error: QProcess.ProcessError) -> None:

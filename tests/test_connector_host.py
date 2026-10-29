@@ -314,3 +314,17 @@ def test_an_event_of_the_other_kind_is_logged_not_passed_on():
     assert events == [cp.Break(1, None)]
     assert any("a read on a beam source" in line for line in logs)
     host.stop(wait=True)
+
+
+def test_a_connector_works_in_the_folder_the_data_is_in(tmp_path, monkeypatch):
+    monkeypatch.setattr(ch, "base_dir", lambda: tmp_path)
+    code = _beams_then(
+        "import os",
+        "beam = {'type': 'beam', 'seq': 1, 'device_time': os.getcwd()}",
+        "print(json.dumps(beam), flush=True)",
+    )
+    host, events, _, _ = _host()
+    host.start(_python(code), {})
+    assert _wait_until(lambda: events)
+    assert tmp_path.samefile(events[0].device_time)
+    host.stop(wait=True)
