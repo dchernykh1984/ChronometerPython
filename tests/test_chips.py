@@ -164,11 +164,12 @@ def test_a_lost_state_comes_back_from_the_raw_reads_without_crossings():
     assert timing.on_read("A", day + 3000) == []  # still the first pass
 
 
-def test_the_state_is_on_disk_before_it_replaces_the_old_one(tmp_path, monkeypatch):
+def test_a_state_save_costs_the_window_no_wait_for_the_disk(tmp_path, monkeypatch):
     synced: list[int] = []
     monkeypatch.setattr(rf.os, "fsync", synced.append)
     assert chips.save_chip_state(str(tmp_path / "s.json"), chips.ChipTiming())
-    assert len(synced) == 1
+    assert synced == []  # a state lost to a power cut is rebuilt from the raw reads
+    assert " " not in (tmp_path / "s.json").read_text(encoding="utf-8")
 
 
 def test_a_state_save_held_up_by_a_reader_never_waits_on_the_window(

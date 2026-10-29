@@ -69,9 +69,9 @@ def rewrite_results(
 
 
 def write_in_one_step(
-    target: Path, text: str, patience_s: float = _REPLACE_PATIENCE_S
+    target: Path, text: str, patience_s: float = _REPLACE_PATIENCE_S, sync: bool = True
 ) -> None:
-    """Put text in target through a temporary file flushed to disk.
+    """Put text in target through a temporary file, flushed to disk unless not sync.
 
     A crash leaves the old content or the new one, never a mix, and a replace that
     Windows holds up is retried for patience_s. Raises OSError, with target
@@ -82,8 +82,9 @@ def write_in_one_step(
         # The platform's line end, as every append to the results file writes it.
         with temporary.open("w", encoding="utf-8") as f:
             f.write(text)
-            f.flush()
-            os.fsync(f.fileno())
+            if sync:
+                f.flush()
+                os.fsync(f.fileno())
         _replace(temporary, target, patience_s)
     except OSError:
         temporary.unlink(missing_ok=True)  # never left beside the file

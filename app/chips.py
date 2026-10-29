@@ -249,13 +249,14 @@ def rebuilt_timing(raw: list[str], chip_map: ChipMap, dead_ms: int) -> ChipTimin
 def save_chip_state(path: str, timing: ChipTiming) -> bool:
     """Write the chip state in one step; False when it cannot be written.
 
-    On disk before it replaces the old state: a power cut must not leave an empty
-    file where the passes were.
+    A crash leaves the old state or the new one, never a mix.
     """
     try:
-        # One try: this runs on the window's thread every second of a race, and a
-        # state that could not be saved is tried again a few seconds later.
-        write_in_one_step(app_path(path), json.dumps(timing.to_json()), patience_s=0)
+        # This runs on the window's thread every second of a race: one try (a state
+        # not saved is tried again a few seconds later) and no fsync (a state a
+        # power cut left empty is rebuilt from the raw reads, crossings not twice).
+        text = json.dumps(timing.to_json(), separators=(",", ":"))
+        write_in_one_step(app_path(path), text, patience_s=0, sync=False)
         return True
     except OSError:
         return False
