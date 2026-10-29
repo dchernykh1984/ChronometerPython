@@ -451,9 +451,6 @@ class MainWindow(QMainWindow):
                     0, lambda m=msg: QMessageBox.warning(self, "File error", m)
                 )
             return False
-        self._log.addItem(result_line)
-        self._log.scrollToBottom()
-        self._schedule_finish_upload()
         self._note_written(result_line)
         return True
 
@@ -1001,9 +998,6 @@ class MainWindow(QMainWindow):
             timing.unwritten.pop(0)
             self._chip_state_dirty = True
             written = True
-            self._log.addItem(line)
-            self._log.scrollToBottom()
-            self._schedule_finish_upload()
             self._note_written(line)
         if written:
             self._update_crosses()
@@ -1088,8 +1082,12 @@ class MainWindow(QMainWindow):
         self._update_crosses()  # the counts beside the slots follow the file in use
 
     def _note_written(self, line: str) -> None:
-        """A line appended to the results file: shown and counted without a re-read,
-        which a mass finish of chip crossings would pay for once per crossing."""
+        """A line appended to the results file, by hand or by a device: logged, set
+        to upload, shown and counted without a re-read, which a mass finish of chip
+        crossings would pay for once per crossing."""
+        self._log.addItem(line)
+        self._log.scrollToBottom()
+        self._schedule_finish_upload()
         self._result_counts[line.split("#")[0]] += 1
         self._crossings.addItem(line)
         self._crossings.scrollToBottom()

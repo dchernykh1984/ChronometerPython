@@ -117,3 +117,15 @@ def test_a_crossing_is_known_by_its_number_and_time_whatever_its_action():
 @pytest.mark.parametrize("number", ["15\u2028", "1\x0c5", "15\x85"])
 def test_a_number_with_any_line_break_is_refused(number):
     assert "line break" in rf.crossing_problem(number, "1 10:0:0.000", "finish")
+
+
+@pytest.mark.parametrize("step", ["fsync", "replace"])
+def test_a_failed_write_leaves_no_temporary_file(tmp_path, monkeypatch, step):
+    def fail(*a):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(rf.os, step, fail)
+    target = tmp_path / "results.chip_state.json"
+    with pytest.raises(OSError, match="disk full"):
+        rf.write_in_one_step(target, "{}")
+    assert list(tmp_path.iterdir()) == []
