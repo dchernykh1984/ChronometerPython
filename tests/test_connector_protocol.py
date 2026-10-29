@@ -38,10 +38,13 @@ def test_every_event_decodes():
         ("not json", "not JSON"),
         ("[1, 2]", "not a JSON object"),
         (_line(type="mystery"), "unknown type"),
+        (_line(type=[]), "unknown type"),
+        (_line(type={"a": 1}), "unknown type"),
         (_line(cmd="ping"), "unknown type"),
         (_line(type="read", chip="  "), "chip is empty"),
-        (_line(type="read", chip="A1", time_ms="5"), "whole number"),
-        (_line(type="read", chip="A1", time_ms=True), "whole number"),
+        (_line(type="read", chip="A1", time_ms="5"), "a number"),
+        (_line(type="read", chip="A1", time_ms=True), "a number"),
+        ('{"type": "read", "chip": "A1", "time_ms": NaN}', "a number"),
         (_line(type="read", chip="A1", time_ms=10**17), "out of range"),
         (_line(type="beam", seq=1, time_ms=-1), "out of range"),
         (_line(type="read", chip="A1", rssi="loud"), "rssi"),
@@ -85,3 +88,9 @@ def test_commands_are_json_lines():
 )
 def test_any_hello_is_a_hello_for_the_host_to_judge(fields, hello):
     assert cp.decode(_line(type="hello", **fields)) == hello
+
+
+def test_a_time_with_a_fraction_is_rounded_to_the_millisecond():
+    read = cp.decode(_line(type="read", chip="A1", time_ms=1761725400123.6))
+    assert isinstance(read, cp.Read)
+    assert read.time_ms == 1761725400124
