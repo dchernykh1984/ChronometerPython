@@ -825,11 +825,15 @@ class MainWindow(QMainWindow):
                 f"start protocol not written, nothing changed: {exc}",
             )
             return
-        self._reload_chip_map()
+        if path == self._sources["start_protocol"]:
+            self._reload_chip_map()
+            in_use = self._lbl_chip_map.text()
+        else:  # another file was chosen meanwhile: the chips map stays its own
+            in_use = f"the chips map comes from {self._sources['start_protocol']}"
         self._site_said(
             self._lbl_download_state,
             f"start protocol downloaded into {path}: {len(result)} line(s); "
-            f"{self._lbl_chip_map.text()}; previous file kept as {backup.name}",
+            f"{in_use}; previous file kept as {backup.name}",
             failed=False,
         )
 
