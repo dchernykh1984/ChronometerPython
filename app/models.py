@@ -173,13 +173,17 @@ def append_to_finish_file(path: str, number: str, time_str: str) -> bool:
     Returns True on success, False if file cannot be opened.
     Port of C++ writeToFinishFile logic.
     """
+    return append_result_line(path, f"{number}#{time_str}#")
+
+
+def append_result_line(path: str, line: str) -> bool:
+    """Append one whole line to the results file; False if it cannot be opened."""
     if not path:
         return False
     try:
-        record = f"{number}#{time_str}#\n"
         app_path(path).parent.mkdir(parents=True, exist_ok=True)
         with app_path(path).open("a", encoding="utf-8") as f:
-            f.write(record)
+            f.write(line + "\n")
         return True
     except OSError:
         return False
