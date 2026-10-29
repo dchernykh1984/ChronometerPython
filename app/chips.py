@@ -125,27 +125,26 @@ class ChipTiming:
         return [(bib, at)] if self._into_passes(bib, at, at) else []
 
     def set_map(self, chip_map: ChipMap) -> list[tuple[str, int]]:
-        """Use a new map; the waiting reads of chips it binds become crossings.
+        """Use a new map; the waiting reads of chips it binds join their bibs' reads.
 
-        They go into their bib's passes in time order, so a pass gets its crossing
-        at its first read. A chip that moved to another bib keeps its past
-        crossings on the old one: only waiting reads are replayed.
+        As FR-010 says: the bib's reads less than the dead time apart are one pass,
+        and only a pass that never had a crossing gets one, at its first read. So
+        the newly bound reads are grouped first, and a group that comes near a pass
+        makes nothing, however much earlier its first read is. A chip that moved to
+        another bib keeps its past crossings on the old one: only waiting reads join.
         """
         self.chip_map = chip_map
-        spans = sorted(
-            (first, last, chip)
-            for chip, runs in self.pending.items()
-            if chip in chip_map.bib_of
-            for first, last, _ in runs
-        )
-        for chip in {chip for _, _, chip in spans}:
-            del self.pending[chip]
+        spans: dict[str, list[list[int]]] = {}
+        for chip in [chip for chip in self.pending if chip in chip_map.bib_of]:
+            spans.setdefault(chip_map.bib_of[chip], []).extend(
+                [first, last] for first, last, _ in self.pending.pop(chip)
+            )
         made: list[tuple[str, int]] = []
-        for first, last, chip in spans:
-            bib = chip_map.bib_of[chip]
-            if self._into_passes(bib, first, last):
-                made.append((bib, first))
-        return made
+        for bib, runs in spans.items():
+            for first, last in self._groups(sorted(runs)):
+                if self._into_passes(bib, first, last):
+                    made.append((bib, first))
+        return sorted(made, key=lambda crossing: crossing[1])
 
     def unknown(self) -> dict[str, tuple[int, int, int]]:
         """Chips no map binds, with first read, last read and number of reads.
@@ -171,22 +170,29 @@ class ChipTiming:
                 return
         runs.append([at, at, 1])
 
-    def _into_passes(self, bib: str, first: int, last: int) -> bool:
-        """Put a span of reads into the bib's passes; True when it starts a new one.
+    def _groups(self, spans: list[list[int]]) -> list[list[int]]:
+        """Sorted spans of reads joined wherever less than the dead time apart."""
+        groups: list[list[int]] = []
+        for first, last in spans:
+            if groups and first < groups[-1][1] + self.dead_ms:
+                groups[-1][1] = max(groups[-1][1], last)
+            else:
+                groups.append([first, last])
+        return groups
 
-        A span is one read, or a run of reads less than the dead time apart: its
-        first read decides whether it starts a pass, and the others only stretch
-        and merge passes, as each read on its own would have done.
-        """
+    def _into_passes(self, bib: str, first: int, last: int) -> bool:
+        """Put a read, or a group of reads, into the bib's passes; True when it is a
+        new pass. One less than the dead time from a pass joins it, merging all the
+        passes it comes near, and makes nothing."""
         passes = self.passes.setdefault(bib, [])
         dead = self.dead_ms
-        new = not any(p[0] - dead < first < p[1] + dead for p in passes)
-        if new:
-            passes.append([first, first])
         near = [p for p in passes if p[0] - dead < last and first < p[1] + dead]
-        merged = [min(first, *(p[0] for p in near)), max(last, *(p[1] for p in near))]
+        merged = [
+            min([first, *(p[0] for p in near)]),
+            max([last, *(p[1] for p in near)]),
+        ]
         passes[:] = sorted([p for p in passes if p not in near] + [merged])
-        return new
+        return not near
 
     def to_json(self) -> dict:
         return {

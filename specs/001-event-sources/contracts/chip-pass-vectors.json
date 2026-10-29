@@ -71,6 +71,12 @@
       "crossings": [["15", 0], ["15", 18000]]
     },
     {
+      "name": "reads of a chip that becomes known, from long before a pass with a crossing up to it, join it",
+      "map": {"A": "7"},
+      "events": [{"read": ["A", 8000]}, {"read": ["B", 0]}, {"read": ["B", 2000]}, {"read": ["B", 4000]}, {"read": ["B", 6000]}, {"read": ["B", 9000]}, {"map": {"A": "7", "B": "7"}}],
+      "crossings": [["7", 8000]]
+    },
+    {
       "name": "a chip moved to another bib keeps its past crossings on the old bib",
       "map": {"A": "15"},
       "events": [{"read": ["A", 0]}, {"map": {"A": "16"}}, {"read": ["A", 20000]}],
