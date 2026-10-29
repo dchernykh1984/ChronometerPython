@@ -1129,8 +1129,7 @@ class MainWindow(QMainWindow):
         """A line appended to the results file, by hand or by a device: logged, set
         to upload, shown and counted without a re-read, which a mass finish of chip
         crossings would pay for once per crossing."""
-        self._log.addItem(line)
-        self._log.scrollToBottom()
+        self._append_log(line)
         self._schedule_finish_upload()
         self._result_counts[line.split("#")[0]] += 1
         self._crossings.addItem(line)
@@ -1254,8 +1253,7 @@ class MainWindow(QMainWindow):
         except OSError as exc:
             QMessageBox.warning(self, "Crossings", f"Nothing changed: {exc}")
             return
-        self._log.addItem(f"{what} (previous file kept as {backup.name})")
-        self._log.scrollToBottom()
+        self._append_log(f"{what} (previous file kept as {backup.name})")
         self._refresh_crossings()
         self._schedule_finish_upload()
 
@@ -1545,8 +1543,7 @@ class MainWindow(QMainWindow):
                 self, "File error", f"Cannot open groups file: {self._groups_path()}"
             )
             return
-        self._log.addItem(result_line)
-        self._log.scrollToBottom()
+        self._append_log(result_line)
         self._upload_group_stream()
         self._combo_group.removeItem(self._combo_group.currentIndex())
         self._combo_group.setCurrentText("")
