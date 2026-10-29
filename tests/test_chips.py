@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import random
 from pathlib import Path
 
@@ -172,19 +171,19 @@ def test_the_state_is_on_disk_before_it_replaces_the_old_one(tmp_path, monkeypat
     assert len(synced) == 1
 
 
-def test_a_state_save_held_up_by_a_reader_is_retried(tmp_path, monkeypatch):
-    real, calls = os.replace, []
+def test_a_state_save_held_up_by_a_reader_never_waits_on_the_window(
+    tmp_path, monkeypatch
+):
+    slept: list[float] = []
 
-    def busy_once(source, target):
-        calls.append(source)
-        if len(calls) < 2:
-            raise PermissionError("sharing violation")
-        real(source, target)
+    def busy(source, target):
+        raise PermissionError("sharing violation")
 
-    monkeypatch.setattr(rf.os, "replace", busy_once)
-    monkeypatch.setattr(rf.time, "sleep", lambda s: None)
-    assert chips.save_chip_state(str(tmp_path / "s.json"), chips.ChipTiming())
-    assert len(calls) == 2
+    monkeypatch.setattr(rf.os, "replace", busy)
+    monkeypatch.setattr(rf.time, "sleep", slept.append)
+    assert not chips.save_chip_state(str(tmp_path / "s.json"), chips.ChipTiming())
+    assert slept == []  # given up at once; the window tries again a bit later
+    assert not (tmp_path / "s.json.tmp").exists()
 
 
 def test_raw_reads_lines_give_chip_and_time():

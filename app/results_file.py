@@ -67,11 +67,13 @@ def rewrite_results(
     return backup
 
 
-def write_in_one_step(target: Path, text: str) -> None:
+def write_in_one_step(
+    target: Path, text: str, patience_s: float = _REPLACE_PATIENCE_S
+) -> None:
     """Put text in target through a temporary file flushed to disk.
 
     A crash leaves the old content or the new one, never a mix, and a replace that
-    Windows holds up for a moment is retried. Raises OSError, with target
+    Windows holds up is retried for patience_s. Raises OSError, with target
     untouched, when it cannot be done.
     """
     temporary = target.with_name(target.name + ".tmp")
@@ -80,7 +82,7 @@ def write_in_one_step(target: Path, text: str) -> None:
         f.write(text)
         f.flush()
         os.fsync(f.fileno())
-    _replace(temporary, target)
+    _replace(temporary, target, patience_s)
 
 
 def _free_name(folder: Path, stem: str) -> Path:
@@ -90,8 +92,8 @@ def _free_name(folder: Path, stem: str) -> Path:
     return folder / f"{stem}_{n}.txt"
 
 
-def _replace(source: Path, target: Path) -> None:
-    deadline = time.monotonic() + _REPLACE_PATIENCE_S
+def _replace(source: Path, target: Path, patience_s: float) -> None:
+    deadline = time.monotonic() + patience_s
     while True:
         try:
             source.replace(target)
