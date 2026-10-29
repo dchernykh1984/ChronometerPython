@@ -390,3 +390,50 @@ def test_nothing_a_program_of_another_protocol_sends_is_used():
     assert _wait_until(lambda: ended)
     assert host.state.startswith("failed")
     assert events == []
+
+
+def test_a_chatty_connector_fills_the_action_log_only_so_far(monkeypatch):
+    monkeypatch.setattr(ch, "STDERR_LINES", 5)
+    chatty = (
+        "import sys\n" + "for i in range(20):\n    print('noise', i, file=sys.stderr)"
+    )
+    host, _, _, logs = _host()
+    host.start(_python(chatty), {})
+    assert _wait_until(lambda: any("more error output" in line for line in logs))
+    host.stop(wait=True)
+    noise = [line for line in logs if line.startswith("connector: noise")]
+    assert len(noise) == 5
+
+
+def test_a_program_failing_the_same_way_again_is_one_line_in_the_log():
+    host, _, states, logs = _host()
+    host.start(_python("import sys; sys.exit(3)"), {})
+    assert _wait_until(lambda: sum(s.startswith("restarting") for s in states) >= 9)
+    host.stop(wait=True)
+    again = [line for line in logs if "starting it again" in line]
+    assert len(again) == 6  # 1, 2, 4, 8, 16 and 30 s: then the 30 s line stays
+
+
+def test_a_program_saying_the_same_errors_again_says_them_once():
+    noisy = "import sys\nprint('bad port', file=sys.stderr)\nsys.exit(3)"
+    host, _, states, logs = _host()
+    host.start(_python(noisy), {})
+    assert _wait_until(lambda: sum(s.startswith("restarting") for s in states) >= 3)
+    host.stop(wait=True)
+    assert logs.count("connector: bad port") == 1
+    assert "connector: the same error output as in its run before" in logs
+
+
+def test_an_error_line_written_in_two_pieces_is_logged_whole():
+    code = "\n".join(
+        [
+            "import sys, time",
+            "sys.stderr.write('half '); sys.stderr.flush(); time.sleep(0.2)",
+            "sys.stderr.write('and half\\n'); sys.stderr.flush()",
+            "sys.exit(3)",
+        ]
+    )
+    host, _, _, logs = _host()
+    host.start(_python(code), {})
+    assert _wait_until(lambda: "connector: half and half" in logs)
+    host.stop(wait=True)
