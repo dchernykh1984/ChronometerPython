@@ -201,3 +201,10 @@ def test_switching_the_results_file_updates_the_crossing_counts(win, results, tm
     )
     win._edit_results_file.setText(str(other))
     assert win._cross_labels[0].text() == "4"  # three in that file, and the slot
+
+
+def test_a_results_path_typed_through_a_folder_reads_as_no_file(win, results, tmp_path):
+    win._edit_results_file.setText(str(tmp_path))  # "data" on the way to "data/r.txt"
+    assert win._crossings.count() == 0
+    win._edit_results_file.setText(str(results))
+    assert win._crossings.count() == 2

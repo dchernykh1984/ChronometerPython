@@ -60,9 +60,12 @@ def save_http_config(cfg: dict[str, str], path: str = HTTP_CONFIG_PATH) -> bool:
 
 
 def read_file_lines(path: str) -> list[str]:
-    """Read non-empty lines from a results/groups file; [] if missing."""
+    """Read non-empty lines from a results/groups file; [] if missing.
+
+    A folder is no file: a path typed letter by letter passes through folders.
+    """
     p = app_path(path)
-    if not path or not p.exists():
+    if not path or not p.is_file():
         return []
     for enc in ("utf-8", "cp1251", "latin-1"):
         try:
