@@ -43,6 +43,7 @@ from app.chips import (
     read_start_protocol,
     rebuilt_timing,
     save_chip_state,
+    unknown_line,
 )
 from app.connector_host import ConnectorHost, builtin_command
 from app.connectors import builtin, connectors_for, find
@@ -1004,10 +1005,7 @@ class MainWindow(QMainWindow):
         if self._chip_timing is None:
             return
         for chip, (first, last, count) in sorted(self._chip_timing.unknown().items()):
-            self._list_unknown.addItem(
-                f"{chip}: {count} read(s), first {scale_time(first)}, "
-                f"last {scale_time(last)}"
-            )
+            self._list_unknown.addItem(unknown_line(chip, first, last, count))
 
     def _write_chip_crossings(self, made: list[tuple[str, int]]) -> None:
         if not made or self._chip_timing is None:

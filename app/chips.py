@@ -14,7 +14,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from app.models import parse_time, read_file_lines
+from app.models import parse_time, read_file_lines, scale_time
 from app.paths import app_path
 from app.results_file import write_in_one_step
 
@@ -217,6 +217,12 @@ class ChipTiming:
         }
         timing.unwritten = [str(line) for line in data.get("unwritten", [])]
         return timing
+
+
+def unknown_line(chip: str, first: int, last: int, count: int) -> str:
+    """An unknown chip as the Chips tab and the chip report both show it."""
+    reads = f"{count} read" if count == 1 else f"{count} reads"
+    return f"{chip}: {reads}, first {scale_time(first)}, last {scale_time(last)}"
 
 
 def load_chip_state(path: str, dead_ms: int) -> ChipTiming | None:

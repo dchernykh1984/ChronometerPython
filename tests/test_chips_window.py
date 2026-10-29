@@ -132,7 +132,7 @@ def test_an_unknown_chip_is_listed_and_timed_once_the_map_binds_it(win, chips_on
     assert win._unknown_timer.isActive()
     win._show_unknown()  # what the timer does half a second later
     assert win._list_unknown.count() == 1
-    assert win._list_unknown.item(0).text().startswith("D: 2 read(s)")
+    assert win._list_unknown.item(0).text().startswith("D: 2 reads")
     assert _results(chips_on) == []
     with (chips_on / "start.txt").open("a", encoding="utf-8") as f:
         f.write("31#Late#M40#3#1#1992#T#C##0 00:00:00.000#r3#D#\n")
@@ -217,7 +217,7 @@ def test_a_burst_of_unknown_reads_refreshes_the_list_once(win, chips_on):
     assert win._list_unknown.count() == 0  # not rebuilt read by read
     assert win._unknown_timer.isActive()
     win._show_unknown()
-    assert win._list_unknown.item(0).text().startswith("D: 300 read(s)")
+    assert win._list_unknown.item(0).text().startswith("D: 300 reads")
 
 
 def test_a_read_with_no_results_file_is_logged_not_timed(win, chips_on):

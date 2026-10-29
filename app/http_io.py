@@ -18,6 +18,8 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
+from app.models import one_line
+
 
 def fetch_groups(site_url: str, token: str) -> list[str]:
     """Fetch the competition's group names from the cycling site.
@@ -71,7 +73,7 @@ def fetch_start_list(site_url: str, token: str) -> list[str]:
         for line in items if isinstance(items, list) else []:
             # Written as they come: anything but one line of text would replace a
             # good start protocol with junk.
-            if not isinstance(line, str) or line.splitlines() not in ([line], []):
+            if not isinstance(line, str) or not one_line(line):
                 raise ValueError("Invalid response: a line is not one line of text")
             if line.strip():  # a blank line is no rider
                 lines.append(line)
