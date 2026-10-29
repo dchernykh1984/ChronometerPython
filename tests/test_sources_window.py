@@ -149,3 +149,21 @@ def test_start_refuses_settings_typed_that_are_not_json(win, monkeypatch):
     win._on_source_start()
     assert win._host is None
     assert "JSON" in warnings[0]
+
+
+def test_settings_typed_are_kept_when_another_device_is_picked(win):
+    _choose(win, "beam", "custom")
+    win._edit_connector_settings.setText("my-beam --port 3")  # no Return pressed
+    _choose(win, "beam", "dummy-beam")
+    assert win._sources["custom_command"] == "my-beam --port 3"
+    assert "min_s" in win._edit_connector_settings.text()  # the test beam's own
+
+
+def test_settings_typed_are_kept_when_another_source_is_picked(win):
+    _choose(win, "beam", "dummy-beam")
+    win._edit_connector_settings.setText('{"min_s": 1, "max_s": 2}')
+    _choose(win, "chips")
+    assert sources.connector_settings(win._sources, "dummy-beam") == {
+        "min_s": 1,
+        "max_s": 2,
+    }
