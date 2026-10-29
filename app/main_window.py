@@ -1664,6 +1664,13 @@ class MainWindow(QMainWindow):
         self._update_crosses()
 
     def _on_load_config(self) -> None:
+        if self._host is not None:  # its files stay where they are while it runs
+            QMessageBox.warning(
+                self,
+                "Load race config",
+                "Stop the event source first: its files sit next to the results file.",
+            )
+            return
         path, _ = QFileDialog.getOpenFileName(self, "Load groups list")
         if path:
             self._load_config(path)

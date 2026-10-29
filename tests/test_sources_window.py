@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 
+import pytest
 from PySide6.QtWidgets import QApplication
 
 from app import main_window as mw
@@ -179,3 +180,16 @@ def test_a_running_source_keeps_the_file_paths_frozen(win, monkeypatch):
     assert not win._edit_results_file.isEnabled()
     win._on_source_stop()
     assert win._chk_freeze.isEnabled()
+
+
+def test_a_race_config_is_not_loaded_while_a_source_runs(win, monkeypatch):
+    warnings = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warnings.append(a[2]))
+    monkeypatch.setattr(mw.ConnectorHost, "start", lambda self, *a: None)
+    monkeypatch.setattr(
+        mw.QFileDialog, "getOpenFileName", lambda *a: pytest.fail("asked a file")
+    )
+    _choose(win, "beam", "dummy-beam")
+    win._on_source_start()
+    win._on_load_config()
+    assert warnings[0].startswith("Stop the event source first")
