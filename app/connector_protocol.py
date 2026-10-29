@@ -80,7 +80,8 @@ def decode(line: bytes | str) -> Event:
         return Ignored(f"not JSON: {text.strip()[:80]}")
     if not isinstance(obj, dict):
         return Ignored("not a JSON object")
-    decoder = _DECODERS.get(obj.get("type"))  # type: ignore[arg-type]
+    kind = obj.get("type")
+    decoder = _DECODERS.get(kind) if isinstance(kind, str) else None
     if decoder is None:
         return Ignored(f"unknown type {obj.get('type')!r}")
     try:
@@ -110,10 +111,19 @@ LATEST_MS = 4_102_444_800_000
 
 
 def _moment(obj: dict[str, Any]) -> int | None:
-    value = _whole(obj, "time_ms")
-    if value is not None and not 0 <= value < LATEST_MS:
+    """time_ms as a whole millisecond: a JSON number often has a fraction."""
+    value = obj.get("time_ms")
+    if value is None:
+        return None
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int | float)
+        or not math.isfinite(value)
+    ):
+        raise TypeError("time_ms must be a number")
+    if not 0 <= value < LATEST_MS:
         raise ValueError("time_ms is out of range")
-    return value
+    return round(value)
 
 
 def _hello(obj: dict[str, Any]) -> Event:
