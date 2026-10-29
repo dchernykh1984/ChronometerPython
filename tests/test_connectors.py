@@ -8,6 +8,7 @@ import json
 import queue
 import subprocess
 import sys
+import threading
 
 import pytest
 
@@ -230,3 +231,16 @@ def test_a_test_connector_says_what_is_wrong_with_its_settings(
     (event,) = [event for _, event in connector.events(settings)]
     assert event["type"] == "error" and not event["fatal"]
     assert says in event["message"]
+
+
+def test_an_endless_pause_waits_without_failing():
+    q: queue.Queue = queue.Queue()
+
+    def source(settings):
+        yield 1e12, {"type": "read", "chip": "A1"}
+
+    q.put({"cmd": "start"})
+    threading.Timer(0.2, q.put, ({"cmd": "stop"},)).start()
+    code, lines = _serve([], source, q)
+    assert code == 0
+    assert [line["type"] for line in lines] == ["hello"]
