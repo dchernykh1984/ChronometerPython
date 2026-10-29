@@ -371,3 +371,22 @@ def test_what_a_connector_reports_until_it_ends_after_stop_counts():
     assert _wait_until(lambda: ended)
     assert events == [cp.Break(7, None)]
     assert host.state == "stopped"
+
+
+def test_nothing_a_program_of_another_protocol_sends_is_used():
+    hello = HELLO % (2, "beam")
+    code = "\n".join(
+        [
+            "import json, sys",
+            hello.replace("flush=True)", "flush=False)"),
+            "print(json.dumps({'type': 'beam', 'seq': 1}), flush=True)",
+            SLEEP,
+        ]
+    )
+    host, events, _, _ = _host()
+    ended: list[int] = []
+    host.stopped.connect(lambda: ended.append(1))
+    host.start(_python(code), {})
+    assert _wait_until(lambda: ended)
+    assert host.state.startswith("failed")
+    assert events == []
