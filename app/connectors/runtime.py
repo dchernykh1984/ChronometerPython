@@ -20,6 +20,9 @@ from app import connector_protocol as cp
 from app.connectors import Events, builtin
 
 _EOF = None
+# A queue cannot wait longer than the platform's timeout allows; the loop just
+# looks again after an hour when a setting asks for an endless pause.
+_LONGEST_WAIT_S = 3600.0
 
 
 def run(name: str) -> int:
@@ -74,7 +77,11 @@ def serve(
             if due is not None and clock() >= due[0]:
                 command = commands.get_nowait()
             else:
-                wait = None if due is None else max(0.0, due[0] - clock())
+                wait = (
+                    None
+                    if due is None
+                    else max(0.0, min(_LONGEST_WAIT_S, due[0] - clock()))
+                )
                 command = commands.get(timeout=wait)
         except queue.Empty:
             if due is not None and clock() >= due[0]:
