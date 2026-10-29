@@ -60,8 +60,8 @@ Field rules:
   and digits only) before looking it up. An empty id after normalisation makes the read invalid.
 - `time_ms`: Unix time in milliseconds **on the chronometer's clock** -- the connector maps a
   device clock to it when it can. Without `time_ms` the chronometer uses the time it received the
-  event. A fraction of a millisecond is rounded off; a `time_ms` before 1970 or from 2100 on makes
-  the line an error.
+  event. A fraction of a millisecond is rounded off; a `time_ms` before 2000 (a device clock never
+  set) or from 2100 on makes the line an error.
 - `device_time`: the device's own time, as text, exactly as reported; kept for later analysis.
 - `antenna`: text (port number or name). `rssi`: number, dBm. `reader`: text (address or serial).
 - `seq`: the beam's own break counter when it has one, else the connector's count from 1.
