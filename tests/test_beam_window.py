@@ -166,3 +166,13 @@ def test_a_burst_of_breaks_backs_the_slots_up_once(win, monkeypatch):
     assert win._backup_timer.isActive()
     win._save_backup_if_enabled()  # the timer's tick, 2 s on
     assert len(backups) == 1
+
+
+def test_a_break_never_writes_slot_1_before_its_number_is_typed(win, tmp_path):
+    win._time_edits[0].setText("1 10:0:0.000#nextLap")  # a rider not known yet
+    win._focused_slot = 2
+    win._number_edits[2].setFocus()  # the judge went on to slot 3
+    win._on_source_event(Break(1, T0))
+    assert win._time_edits[1].text() == f"{format_time(T0)}#nextLap"
+    assert win._time_edits[0].text() == "1 10:0:0.000#nextLap"
+    assert not (tmp_path / "results.txt").exists()
