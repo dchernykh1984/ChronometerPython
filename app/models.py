@@ -80,7 +80,9 @@ def read_file_lines(path: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-_TIME = re.compile(r"(\d+) (\d{1,2}):(\d{1,2}):(\d{1,2})(?:\.(\d{3}))?")
+# ASCII digits only: a time in other digits would be written as typed and read by
+# no other tool of the set.
+_TIME = re.compile(r"(\d+) (\d{1,2}):(\d{1,2}):(\d{1,2})(?:\.(\d{3}))?", re.ASCII)
 
 
 def format_time(epoch_ms: int, accuracy: int = 3, dst: bool = False) -> str:
