@@ -138,3 +138,5 @@ def test_a_download_goes_into_the_file_chosen_when_it_was_asked(
     assert _wait_until(lambda: win._fetch_worker is None)
     assert start_file.read_text(encoding="utf-8") == LINES[0] + "\n"
     assert not other.exists()
+    assert win._chip_map.bib_of == {}  # still the map of the file chosen
+    assert f"the chips map comes from {other}" in win._lbl_download_state.text()
