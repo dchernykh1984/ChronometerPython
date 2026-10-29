@@ -106,6 +106,5 @@ def _replace(source: Path, target: Path, patience_s: float) -> None:
             return
         except PermissionError:
             if time.monotonic() >= deadline:
-                source.unlink(missing_ok=True)
-                raise
+                raise  # write_in_one_step removes source
             time.sleep(_REPLACE_PAUSE_S)
