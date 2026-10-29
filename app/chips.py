@@ -253,7 +253,9 @@ def save_chip_state(path: str, timing: ChipTiming) -> bool:
     file where the passes were.
     """
     try:
-        write_in_one_step(app_path(path), json.dumps(timing.to_json()))
+        # One try: this runs on the window's thread every second of a race, and a
+        # state that could not be saved is tried again a few seconds later.
+        write_in_one_step(app_path(path), json.dumps(timing.to_json()), patience_s=0)
         return True
     except OSError:
         return False
