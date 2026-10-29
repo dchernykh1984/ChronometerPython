@@ -210,7 +210,9 @@ def test_get_groups_offline_leaves_dropdown_unchanged(win, monkeypatch):
     _get_groups(win)
     items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
     assert items == ["Keep"]  # unchanged
-    assert warned  # a popup was shown
+    assert not warned  # it came seconds after the click: no dialog mid-race
+    assert "offline" in win._lbl_groups_state.text()
+    assert "groups not loaded" in win._log.item(win._log.count() - 1).text()
 
 
 def test_get_groups_empty_result_clears_dropdown(win, monkeypatch):
