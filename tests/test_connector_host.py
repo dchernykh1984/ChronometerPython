@@ -22,7 +22,7 @@ GOOD = "\n".join(
         "    cmd = json.loads(line)",
         "    if cmd.get('cmd') == 'start':",
         "        print('garbage', flush=True)",
-        "        beam = {'type': 'beam', 'seq': 1, 'time_ms': 5}",
+        "        beam = {'type': 'beam', 'seq': 1, 'time_ms': 1761725400005}",
         "        print(json.dumps(beam), flush=True)",
         "    elif cmd.get('cmd') == 'ping':",
         "        print(json.dumps({'type': 'pong', 'id': cmd['id']}), flush=True)",
@@ -63,7 +63,7 @@ def test_a_running_connector_reports_its_events_and_stops():
     host, events, states, logs = _host()
     host.start(_python(GOOD), {"x": 1})
     assert _wait_until(lambda: events)
-    assert events[0] == cp.Break(1, 5)
+    assert events[0] == cp.Break(1, 1761725400005)
     assert states[:2] == ["starting", "running"]
     assert any("ignored" in line for line in logs)
     host.stop(wait=True)
@@ -202,7 +202,8 @@ def test_a_line_without_an_end_is_dropped_before_it_fills_the_memory():
             "sys.stdout.flush()",
             "sys.stdin.readline()",  # the first ping, 2 s later
             "print()",
-            "print(json.dumps({'type': 'beam', 'seq': 1, 'time_ms': 5}), flush=True)",
+            "beam = {'type': 'beam', 'seq': 1, 'time_ms': 1761725400005}",
+            "print(json.dumps(beam), flush=True)",
             SLEEP,
         ]
     )
@@ -211,7 +212,7 @@ def test_a_line_without_an_end_is_dropped_before_it_fills_the_memory():
     assert _wait_until(lambda: any("longer than" in line for line in logs), 1.5)
     assert len(host._buffer) <= cp.MAX_LINE
     assert _wait_until(lambda: events)
-    assert events[0] == cp.Break(1, 5)
+    assert events[0] == cp.Break(1, 1761725400005)
     assert not any("not JSON" in line for line in logs)  # its end went too
     host.stop(wait=True)
 
@@ -238,7 +239,7 @@ def test_events_already_sent_count_when_the_connector_is_stopped():
             "sys.stdin.readline()",
             "time.sleep(0.2)",
             "for seq in (1, 2, 3):",
-            "    beam = {'type': 'beam', 'seq': seq, 'time_ms': seq}",
+            "    beam = {'type': 'beam', 'seq': seq}",
             "    print(json.dumps(beam), flush=True)",
             SLEEP,
         ]

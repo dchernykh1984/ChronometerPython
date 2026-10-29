@@ -106,7 +106,9 @@ def _whole(obj: dict[str, Any], key: str) -> int | None:
     return value
 
 
-# An event's moment: from 1970 up to 2100, the times the window can format.
+# An event's moment: from 2000 up to 2100. Earlier is a device clock never set
+# (an uptime, say), which the results file's day count cannot even hold.
+EARLIEST_MS = 946_684_800_000
 LATEST_MS = 4_102_444_800_000
 
 
@@ -121,7 +123,7 @@ def _moment(obj: dict[str, Any]) -> int | None:
         or not math.isfinite(value)
     ):
         raise TypeError("time_ms must be a number")
-    if not 0 <= value < LATEST_MS:
+    if not EARLIEST_MS <= value < LATEST_MS:
         raise ValueError("time_ms is out of range")
     return round(value)
 

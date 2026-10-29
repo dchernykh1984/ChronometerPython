@@ -8,6 +8,8 @@ import pytest
 
 from app import connector_protocol as cp
 
+T0 = 1_761_725_400_000
+
 
 def _line(**fields) -> str:
     return json.dumps(fields)
@@ -18,8 +20,8 @@ def test_every_event_decodes():
         _line(type="hello", protocol=1, connector="dummy", kind="chips")
     ) == (cp.Hello("dummy", "chips", 1))
     assert cp.decode(
-        _line(type="read", chip="a1", time_ms=5, antenna=2, rssi=-58.5, reader="r")
-    ) == cp.Read("a1", 5, "", "2", -58.5, "r")
+        _line(type="read", chip="a1", time_ms=T0, antenna=2, rssi=-58.5, reader="r")
+    ) == cp.Read("a1", T0, "", "2", -58.5, "r")
     assert cp.decode(_line(type="read", chip="A1")) == cp.Read("A1")
     assert cp.decode(_line(type="beam", seq=12, device_time="812")) == cp.Break(
         12, None, "812"
@@ -47,6 +49,7 @@ def test_every_event_decodes():
         ('{"type": "read", "chip": "A1", "time_ms": NaN}', "a number"),
         (_line(type="read", chip="A1", time_ms=10**17), "out of range"),
         (_line(type="beam", seq=1, time_ms=-1), "out of range"),
+        (_line(type="beam", seq=1, time_ms=3_600_000), "out of range"),  # uptime
         (_line(type="read", chip="A1", rssi="loud"), "rssi"),
         (_line(type="read", chip={"x": 1}), "text"),
         (_line(type="beam"), "seq is missing"),
