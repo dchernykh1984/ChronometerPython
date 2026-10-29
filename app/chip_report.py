@@ -62,7 +62,8 @@ def chip_report(
 
 def _bib_order(bib: str) -> tuple[int, int, str]:
     """Numeric bibs in number order, then the rest."""
-    return (0, int(bib), "") if bib.isdigit() else (1, 0, bib)
+    # isdecimal, not isdigit: a superscript two is a digit int() refuses.
+    return (0, int(bib), "") if bib.isdecimal() else (1, 0, bib)
 
 
 def _reads(count: int) -> str:
