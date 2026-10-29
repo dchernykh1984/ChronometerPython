@@ -10,14 +10,23 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.connectors import Events
+from app.connectors import Events, positive, trouble
 from app.models import parse_time, read_file_lines
+from app.paths import app_path
 
 
 def events(settings: dict[str, Any]) -> Events:
-    speed = float(settings.get("speed", 1)) or 1.0
+    path = str(settings.get("path", ""))
+    speed = positive(settings, "speed", 1)
+    if speed is None:
+        speed_was = settings.get("speed")
+        yield 0.0, trouble(f"speed must be a number above 0, not {speed_was!r}")
+        return
+    if not app_path(path).is_file():
+        yield 0.0, trouble(f"no reads file at {path!r}")
+        return
     previous: int | None = None
-    for line in read_file_lines(str(settings.get("path", ""))):
+    for line in read_file_lines(path):
         fields = [*line.split("#"), "", "", "", "", ""]
         at = parse_time(fields[1])
         if not fields[0].strip() or at is None:

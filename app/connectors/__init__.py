@@ -15,6 +15,20 @@ from typing import Any
 Events = Iterator[tuple[float, dict[str, Any]]]
 
 
+def positive(settings: dict[str, Any], key: str, default: float) -> float | None:
+    """A setting that must be a number above 0, or None when it is not one."""
+    try:
+        value = float(settings.get(key, default))
+    except TypeError, ValueError:
+        return None
+    return value if value > 0 else None  # NaN is not above 0 either
+
+
+def trouble(message: str) -> dict[str, Any]:
+    """An error the judge reads in the action log; the connector then just waits."""
+    return {"type": "error", "message": message, "fatal": False}
+
+
 @dataclass(frozen=True)
 class ConnectorInfo:
     name: str

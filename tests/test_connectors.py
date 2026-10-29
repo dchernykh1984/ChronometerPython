@@ -9,6 +9,8 @@ import queue
 import subprocess
 import sys
 
+import pytest
+
 from app import connectors
 from app.connectors import dummy_beam, dummy_chips, runtime
 
@@ -173,10 +175,11 @@ def test_replay_plays_a_reads_file_at_its_own_pace(tmp_path):
     assert [round(p, 3) for p in fast] == [0, 0.03, 0.17, 0.7]
 
 
-def test_replay_of_a_missing_file_plays_nothing(tmp_path):
+def test_replay_of_a_missing_file_plays_no_read(tmp_path):
     from app.connectors import replay
 
-    assert list(replay.events({"path": str(tmp_path / "none.txt")})) == []
+    events = [event for _, event in replay.events({"path": str(tmp_path / "x")})]
+    assert [event["type"] for event in events] == ["error"]
     assert connectors.find("replay").test
 
 
@@ -194,3 +197,36 @@ def test_a_connector_told_to_stop_exits_cleanly_while_its_input_stays_open():
         assert process.wait(timeout=10) == 0  # not an abort at interpreter shutdown
     finally:
         process.stdin.close()
+
+
+@pytest.mark.parametrize(
+    ("settings", "says"),
+    [
+        ({"path": "no/such/reads.txt"}, "no reads file at 'no/such/reads.txt'"),
+        ({"path": "x", "speed": "fast"}, "speed must be a number above 0"),
+        ({"path": "x", "speed": -2}, "speed must be a number above 0"),
+    ],
+)
+def test_replay_says_what_is_wrong_with_its_settings(settings, says):
+    from app.connectors import replay
+
+    (event,) = [event for _, event in replay.events(settings)]
+    assert event["type"] == "error" and not event["fatal"]
+    assert says in event["message"]
+
+
+@pytest.mark.parametrize(
+    ("connector", "settings", "says"),
+    [
+        (dummy_beam, {"min_s": "five"}, "min_s and max_s"),
+        (dummy_beam, {"min_s": 9, "max_s": 2}, "min_s <= max_s"),
+        (dummy_chips, {"period_s": "x"}, "period_s"),
+        (dummy_chips, {"riders": "A,B"}, "riders"),
+    ],
+)
+def test_a_test_connector_says_what_is_wrong_with_its_settings(
+    connector, settings, says
+):
+    (event,) = [event for _, event in connector.events(settings)]
+    assert event["type"] == "error" and not event["fatal"]
+    assert says in event["message"]
