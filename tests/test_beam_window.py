@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from app import main_window as mw
 from app.connector_protocol import Break
 from app.device_files import append_record, side_file
@@ -73,6 +75,14 @@ def test_device_files_sit_next_to_the_results_file(tmp_path):
         tmp_path / "results.chip_reads.txt"
     )
     assert side_file("", "chip_reads") == ""
+    day1, day2 = (side_file(f"r/finish.day{n}", "chip_reads") for n in (1, 2))
+    assert day1 != day2  # two results files never share a raw reads file
+    assert side_file("r/finish", "chip_reads") != side_file(
+        "r/finish.txt", "chip_reads"
+    )
+    assert side_file("r/Results.TXT", "chip_reads") == str(
+        Path("r/Results.chip_reads.txt")
+    )
     assert record_field("a#b\r\nc ") == "a b c"
     assert not append_record("", "x")
     blocker = tmp_path / "file"

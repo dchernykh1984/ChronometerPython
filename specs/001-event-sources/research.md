@@ -43,7 +43,8 @@
   them, making nothing), else starts a new one, whose crossing is made at once at `t`. Reads of
   chips the map does not bind wait in a pending list. The passes, the pending reads, the crossings
   waiting to be written and the number of raw lines processed are saved to
-  `<results name>.chip_state.json` after every crossing and once a second otherwise.
+  `<results name>.chip_state.json` at most once a second; loading replays the raw reads made since
+  and skips crossings the results file already holds.
 - **Rationale**: intervals give FR-009's gap rule in any arrival order; a pass remembers that it
   was issued, so a crossing the judge deleted is never made again (spec, US3 and Android US6);
   passes formed under one dead time keep their shape when it changes. At start-up the state is
@@ -64,7 +65,8 @@
 ## 6. Files next to the results file
 
 - **Decision**: `<results name>.chip_reads.txt`, `<results name>.beam_breaks.txt`,
-  `<results name>.chip_state.json`, `<results name>.chip_report.txt` in the results file's folder.
+  `<results name>.chip_state.json`, `<results name>.chip_report.txt` in the results file's folder,
+  `<results name>` being its name without a `.txt` ending (`finish.day1` keeps its whole name).
   The start protocol file is chosen in the window (default `data/start.txt`).
 - **Rationale**: the spec puts the raw files "next to the results file"; deriving the names keeps
   two results files in one folder apart, and a new results file starts a fresh chip state.
