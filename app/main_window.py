@@ -1271,11 +1271,12 @@ class MainWindow(QMainWindow):
         if not disabled and self._backup_left_out:
             self._save_backup_if_enabled()
 
-    def _save_backup_if_enabled(self) -> None:
+    def _save_backup_if_enabled(self) -> bool:
+        """The slots backup now; False when one was due and could not be written."""
         self._backup_timer.stop()  # a backup now takes the place of a waiting one
         if self._chk_disable_backup.isChecked():
             self._backup_left_out = True
-            return
+            return True
         self._backup_left_out = False
         ts = int(time.time())
         found, n = app_path("temp", f"stc{ts}.txt"), 0
@@ -1301,6 +1302,7 @@ class MainWindow(QMainWindow):
         self._backup_failing = not written
         if not written:
             self._schedule_backup()  # tried again 2 s on: a held folder lets go
+        return written
 
     def _load_config(self, path: str) -> None:
         groups, results_file, group_start_file = load_config(path)
@@ -1544,7 +1546,11 @@ class MainWindow(QMainWindow):
         )
         if reply != QMessageBox.StandardButton.Yes:
             return
-        self._save_backup_if_enabled()  # the slots as they were, before they go
+        if not self._save_backup_if_enabled():  # the slots as they were, kept first
+            QMessageBox.warning(
+                self, "Empty all", "The slots cannot be backed up: nothing emptied."
+            )
+            return
         for i in range(_N_SLOTS):
             self._number_edits[i].clear()
             self._time_edits[i].clear()
