@@ -192,7 +192,9 @@ class MainWindow(QMainWindow):
 
             num_edit = QLineEdit()
             num_edit.setFixedWidth(70)
-            num_edit.textChanged.connect(self._on_number_changed)
+            num_edit.textChanged.connect(
+                lambda _text, slot=i: self._on_number_changed(slot)
+            )
             num_edit.installEventFilter(self)
             self._number_edits.append(num_edit)
             slots_layout.addWidget(num_edit, row, 1)
@@ -1482,8 +1484,10 @@ class MainWindow(QMainWindow):
                 self._timer.setInterval(1000)
                 self._show_time = True
 
-    def _on_number_changed(self) -> None:
+    def _on_number_changed(self, slot: int) -> None:
         self._update_crosses()
+        if self._time_edits[slot].text():  # a stamp's number, however the judge goes on
+            self._schedule_backup()
 
     def _on_finish(self, idx: int) -> None:
         t = get_current_time(summer_time=self._chk_summer_time.isChecked())
