@@ -143,6 +143,7 @@ class MainWindow(QMainWindow):
         self._backup_timer.setSingleShot(True)
         self._backup_timer.timeout.connect(self._save_backup_if_enabled)
         self._backup_failing = False  # said once, until a backup is written again
+        self._backup_left_out = False  # while backups were off: written once on
         # The event source: by hand, or a connector process for a beam or chips.
         # A connector starts only on Start, also after a restart of the program.
         self._sources: dict[str, str] = load_sources()
@@ -357,6 +358,7 @@ class MainWindow(QMainWindow):
         self._chk_freeze.toggled.connect(self._on_freeze_toggled)
         file_layout.addWidget(self._chk_freeze, 2, 0, 1, 3)
         self._chk_disable_backup = QCheckBox("Disable backup")
+        self._chk_disable_backup.toggled.connect(self._on_backup_toggled)
         file_layout.addWidget(self._chk_disable_backup, 3, 0, 1, 3)
         self._chk_summer_time = QCheckBox("Summer time (+1h)")
         file_layout.addWidget(self._chk_summer_time, 4, 0, 1, 3)
@@ -1264,10 +1266,17 @@ class MainWindow(QMainWindow):
         if not self._backup_timer.isActive():
             self._backup_timer.start(2000)
 
+    def _on_backup_toggled(self, disabled: bool) -> None:
+        """Backups on again: the one left out while they were off, written now."""
+        if not disabled and self._backup_left_out:
+            self._save_backup_if_enabled()
+
     def _save_backup_if_enabled(self) -> None:
         self._backup_timer.stop()  # a backup now takes the place of a waiting one
         if self._chk_disable_backup.isChecked():
+            self._backup_left_out = True
             return
+        self._backup_left_out = False
         ts = int(time.time())
         path = str(app_path("temp", f"stc{ts}.txt"))
         log_items = [self._log.item(i).text() for i in range(self._log.count())]

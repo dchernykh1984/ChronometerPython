@@ -294,8 +294,9 @@ nothing at the race depends on it.
 - **FR-018**: Every crossing leaves the backup a hand crossing leaves: `temp/stc<unix time>.txt`,
   with the action log and the slots, unless "Disable backup" is checked. A hand crossing, by any
   button or key, a DSQ and a correction write it at once; a burst of beam breaks or chip crossings
-  writes it once, within 2 s of the first. A backup
-  that cannot be written is said in the action log once, until one is written again.
+  writes it once, within 2 s of the first. A backup left out while "Disable backup" is checked is
+  written when it is cleared. A backup that cannot be written is said in the action log once,
+  until one is written again.
 
 ### Key Entities
 
