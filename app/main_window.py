@@ -1025,12 +1025,15 @@ class MainWindow(QMainWindow):
     def _write_chip_crossings(self, made: list[tuple[str, int]]) -> None:
         if not made or self._chip_timing is None:
             return
-        for bib, at in made:
-            self._chip_timing.unwritten.append(
-                crossing_line(bib, scale_time(at), self._action())
-            )
+        lines = [crossing_line(bib, scale_time(at), self._action()) for bib, at in made]
+        self._chip_timing.unwritten.extend(lines)
         self._schedule_chip_state_save()
         self._retry_unwritten()
+        waiting = [line for line in lines if line in self._chip_timing.unwritten]
+        for line in waiting:  # in the log, so in a backup: its drive may be gone
+            self._append_log(f"chip crossing waits: {line}")
+        if waiting:
+            self._schedule_backup()
 
     def _retry_unwritten(self) -> None:
         """Write waiting chip crossings in order; never a dialog (constitution III).
@@ -1047,9 +1050,7 @@ class MainWindow(QMainWindow):
             line = timing.unwritten[0]
             if not append_line(self._results_path(), line):
                 if not self._unwritten_timer.isActive():
-                    self._append_log(
-                        f"chip crossing waits: results file not writable ({line})"
-                    )
+                    self._append_log("chip crossings wait: results file not writable")
                     self._unwritten_timer.start()
                 break
             timing.unwritten.pop(0)

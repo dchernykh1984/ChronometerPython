@@ -222,6 +222,24 @@ def test_a_crossing_waits_while_the_results_file_cannot_be_written(
     assert not win._unwritten_timer.isActive()
 
 
+def test_crossings_waiting_for_the_results_file_are_backed_up_each(
+    win, chips_on, monkeypatch
+):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
+    blocker = chips_on / "blocker"  # a drive pulled: no results file, no chip state
+    blocker.write_text("x", encoding="utf-8")
+    win._edit_results_file.setText(str(blocker / "results.txt"))
+    for chip, offset in (("A", 0), ("C", 100)):
+        win._on_source_event(Read(chip, T0 + offset))
+    assert win._backup_timer.isActive()
+    win._backup_timer.timeout.emit()  # its tick, 2 s on
+    logged = "\n".join(backups[-1]["log_items"])
+    assert f"15#{format_time(T0)}#nextLap#" in logged
+    assert f"22#{format_time(T0 + 100)}#nextLap#" in logged
+
+
 def test_reads_a_crash_left_unprocessed_are_replayed(win, chips_on):
     win._on_source_event(Read("A", T0))
     win._save_chip_state()  # within its second

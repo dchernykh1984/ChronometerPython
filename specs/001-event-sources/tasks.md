@@ -98,6 +98,9 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
   a backup now takes the place of a waiting one; one waiting is written on exit; one left out
   while backups were off is written when they are on again; one that fails is said once,
   tried again 2 s on and said again when written; two in one second get `_01`, `_02`.
+- [x] T022 [US1] From review: a chip crossing that waits for a results file that cannot be
+  written is logged as it waits and backed up within 2 s, each one, not only the first.
+  Qt-level test.
 
 ## Dependencies
 
