@@ -1731,6 +1731,8 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.StandardButton.Yes:
             self._stop_source(wait=True)
             self._save_chip_state()
+            if self._backup_timer.isActive():  # the last crossings, kept before exit
+                self._save_backup_if_enabled()
             self._finish_upload_timer.stop()
             if self._http_save_timer.isActive():
                 self._http_save_timer.stop()
