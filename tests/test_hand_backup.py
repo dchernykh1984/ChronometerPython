@@ -36,9 +36,13 @@ def test_ctrl_enter_in_next_is_backed_up_at_once(win, monkeypatch):
     assert len(backups) == 1
 
 
-def test_enter_for_a_second_judge_is_backed_up_at_once(win, monkeypatch):
+def test_enter_for_a_second_judge_is_backed_up_once_it_writes_slot_1(win, monkeypatch):
     backups = _backups(win, monkeypatch)
     win._chk_second_user.setChecked(True)
     win._number_edits[0].setText("12")
-    _enter(win, win._number_edits[0])
+    _enter(win, win._number_edits[0])  # slot 1 has no time: nothing moves
+    assert backups == []
+    win._time_edits[0].setText("1 10:0:0.000#finish")
+    win._focused_slot = 1
+    _enter(win, win._number_edits[1])  # slot 1 goes to the results file
     assert len(backups) == 1
