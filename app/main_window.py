@@ -1044,7 +1044,6 @@ class MainWindow(QMainWindow):
         if written:
             self._update_crosses()
             self._schedule_chip_state_save()
-            self._schedule_backup()  # as a hand crossing is backed up
         if not own or not timing.unwritten:
             self._unwritten_timer.stop()  # tried again once that file is in use again
         waiting = self._waiting_crossings()
@@ -1127,9 +1126,10 @@ class MainWindow(QMainWindow):
 
     def _note_written(self, line: str) -> None:
         """A line appended to the results file, by hand or by a device: logged, set
-        to upload, shown and counted without a re-read, which a mass finish of chip
-        crossings would pay for once per crossing."""
+        to upload, backed up within 2 s, shown and counted without a re-read, which a
+        mass finish of chip crossings would pay for once per crossing."""
         self._append_log(line)
+        self._schedule_backup()  # a hand action backs up at once, in its place
         self._schedule_finish_upload()
         self._result_counts[line.split("#")[0]] += 1
         self._crossings.addItem(line)
