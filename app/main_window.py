@@ -91,6 +91,7 @@ from app.sources_config import (
 
 _CONFIG_PATH = str(app_path("data", "groupsList.txt"))
 _N_SLOTS = 5
+_BACKUP_DELAY_MS = 2000  # a device burst's backup, and a failed one tried again
 
 
 class _Worker(QThread):
@@ -142,8 +143,7 @@ class MainWindow(QMainWindow):
         self._backup_timer = QTimer(self)
         self._backup_timer.setSingleShot(True)
         self._backup_timer.timeout.connect(self._save_backup_if_enabled)
-        self._backup_failing = False  # said once, until a backup is written again
-        self._backup_retry_ms = 2000  # doubled while backups keep failing, to a minute
+        self._backup_retry_ms = _BACKUP_DELAY_MS  # doubled while backups fail, to 1 min
         self._backup_left_out = False  # while backups were off: written once on
         # The event source: by hand, or a connector process for a beam or chips.
         # A connector starts only on Start, also after a restart of the program.
@@ -1265,9 +1265,11 @@ class MainWindow(QMainWindow):
         self._schedule_finish_upload()
 
     def _schedule_backup(self) -> None:
-        """The slots backup within 2 s, once for a whole burst of device events."""
-        if not self._backup_timer.isActive():
-            self._backup_timer.start(2000)
+        """The slots backup within 2 s, once for a whole burst of device events; a
+        try again of a failed one, further off, is brought forward to it."""
+        timer = self._backup_timer
+        if not timer.isActive() or timer.remainingTime() > _BACKUP_DELAY_MS:
+            timer.start(_BACKUP_DELAY_MS)
 
     def _on_backup_toggled(self, disabled: bool) -> None:
         """Backups on again: the one left out while they were off, written now."""
@@ -1300,16 +1302,16 @@ class MainWindow(QMainWindow):
             slots=slots,
             finish_mode=self._chk_finish.isChecked(),
         )
-        if written and self._backup_failing:
+        failing = self._backup_retry_ms != _BACKUP_DELAY_MS  # one failed before this
+        if written and failing:
             self._append_log(f"backup written again: {path}")
         elif not written:
-            if not self._backup_failing:  # said once, not at every try
+            if not failing:  # said once, not at every try
                 self._append_log(f"backup not written: {path}")
             self._backup_timer.start(self._backup_retry_ms)  # a held folder lets go
         self._backup_retry_ms = (
-            2000 if written else min(2 * self._backup_retry_ms, 60_000)
+            _BACKUP_DELAY_MS if written else min(2 * self._backup_retry_ms, 60_000)
         )
-        self._backup_failing = not written
         return written
 
     def _load_config(self, path: str) -> None:

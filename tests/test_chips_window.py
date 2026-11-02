@@ -164,6 +164,19 @@ def test_a_backup_that_keeps_failing_is_tried_less_often(win, monkeypatch):
     assert win._backup_timer.interval() == 2000
 
 
+def test_a_crossing_brings_a_backup_tried_again_later_forward(
+    win, chips_on, monkeypatch
+):
+    written = iter([False] * 6 + [True] * 2)
+    monkeypatch.setattr(mw, "save_backup", lambda **k: next(written))
+    win._chk_disable_backup.setChecked(False)
+    for _ in range(6):  # hand actions while temp/ was held
+        win._save_backup_if_enabled()
+    assert win._backup_timer.remainingTime() > 30_000
+    win._on_source_event(Read("A", T0, "dev", "1", -58.5, "r1"))
+    assert win._backup_timer.remainingTime() <= 2000
+
+
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
     win._chk_finish.setChecked(True)
     win._on_source_event(Read("C", T0))
