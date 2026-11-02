@@ -1566,9 +1566,9 @@ class MainWindow(QMainWindow):
                 'Check "Disable backup" to empty them without one.',
             )
             return
-        for i in range(_N_SLOTS):
+        for i in range(_N_SLOTS):  # the time first: a number cleared beside no stamp
+            self._time_edits[i].clear()  # schedules no backup of empty slots
             self._number_edits[i].clear()
-            self._time_edits[i].clear()
         self._next_number.clear()
         self._update_crosses()
 
