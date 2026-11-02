@@ -239,16 +239,25 @@ class TestSaveBackup:
         assert ok is False
         assert list(tmp_path.iterdir()) == []  # nothing a judge could take for one
 
-    def test_a_backup_is_on_the_disk_before_it_has_its_name(
+    def test_a_backup_makes_no_hand_stamp_wait_for_the_disk(
         self, tmp_path, monkeypatch
     ) -> None:
         import os
+        import time
 
         path = tmp_path / "stc1761725400.txt"
-        synced = []
-        monkeypatch.setattr(os, "fsync", lambda fd: synced.append(path.exists()))
+        waited: list[float] = []
+        monkeypatch.setattr(os, "fsync", waited.append)
+        monkeypatch.setattr(time, "sleep", waited.append)
         assert save_backup(str(path), ["1#T0#nextLap#"], "", "", [("", "")] * 5, False)
-        assert synced == [False]  # synced while it still had no name
+
+        def held(source, target):
+            raise PermissionError("sharing violation")  # a scanner on the new file
+
+        monkeypatch.setattr(os, "replace", held)
+        assert not save_backup(str(path), [], "", "", [("", "")] * 5, False)
+        assert waited == []  # a stamp is taken when handled, on the same thread
+        assert [p.name for p in tmp_path.iterdir()] == [path.name]  # no .tmp left
 
     def test_invalid_path_returns_false(self) -> None:
         ok = save_backup(
