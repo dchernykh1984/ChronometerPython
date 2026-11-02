@@ -103,6 +103,21 @@ def test_a_backup_that_cannot_be_written_is_said_once(win, monkeypatch):
     assert len([s for s in said if s.startswith("backup not written: ")]) == 2
 
 
+def test_a_backup_left_out_while_backups_were_off_is_written_when_on_again(
+    win, chips_on, monkeypatch
+):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
+    win._on_source_event(Read("A", T0, "dev", "1", -58.5, "r1"))
+    win._chk_disable_backup.setChecked(True)
+    win._backup_timer.timeout.emit()  # its tick, while they are off
+    assert backups == []
+    win._chk_disable_backup.setChecked(False)
+    (backup,) = backups
+    assert f"15#{format_time(T0)}#nextLap#" in backup["log_items"]
+
+
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
     win._chk_finish.setChecked(True)
     win._on_source_event(Read("C", T0))
