@@ -1572,6 +1572,7 @@ class MainWindow(QMainWindow):
         if ok:
             self._edit_dsq.clear()
             self._edit_dsq_reason.clear()
+            self._save_backup_if_enabled()
         self._update_crosses()
 
     def _on_second_user_toggled(self, checked: bool) -> None:
@@ -1782,6 +1783,7 @@ class MainWindow(QMainWindow):
                         self._next_number.setFocus()
                     if self._chk_second_user.isChecked():
                         self._check_possibility_to_empty_upper()
+                        self._save_backup_if_enabled()
                     return True
                 if key == Qt.Key.Key_Up and idx > 0:
                     self._number_edits[idx - 1].setFocus()
@@ -1801,6 +1803,7 @@ class MainWindow(QMainWindow):
                                 summer_time=self._chk_summer_time.isChecked()
                             )
                             self._time_edits[_N_SLOTS - 1].setText(t + "#nextStage")
+                        self._save_backup_if_enabled()
                     else:
                         self._on_save_and_shift()
                     return True
