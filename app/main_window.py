@@ -143,6 +143,11 @@ class MainWindow(QMainWindow):
         self._backup_timer = QTimer(self)
         self._backup_timer.setSingleShot(True)
         self._backup_timer.timeout.connect(self._save_backup_if_enabled)
+        # A failed backup tried again on a timer of its own: a burst's 2 s wait is
+        # never held up by a try a minute off.
+        self._backup_retry_timer = QTimer(self)
+        self._backup_retry_timer.setSingleShot(True)
+        self._backup_retry_timer.timeout.connect(self._save_backup_if_enabled)
         self._backup_retry_ms = _BACKUP_DELAY_MS  # doubled while backups fail, to 1 min
         self._backup_left_out = False  # while backups were off: written once on
         # The event source: by hand, or a connector process for a beam or chips.
@@ -1269,13 +1274,9 @@ class MainWindow(QMainWindow):
         self._schedule_finish_upload()
 
     def _schedule_backup(self) -> None:
-        """The slots backup within 2 s, once for a whole burst of device events; a
-        failed one tried again much later is brought forward to it. Not one already
-        due in about 2 s: a coarse timer reports up to 5% more, and starting it again
-        at each event of a steady stream would put the backup off for ever."""
-        timer = self._backup_timer
-        if not timer.isActive() or timer.remainingTime() > 2 * _BACKUP_DELAY_MS:
-            timer.start(_BACKUP_DELAY_MS)
+        """The slots backup within 2 s, once for a whole burst of device events."""
+        if not self._backup_timer.isActive():
+            self._backup_timer.start(_BACKUP_DELAY_MS)
 
     def _on_backup_toggled(self, disabled: bool) -> None:
         """Backups on again: the one left out while they were off, written now."""
@@ -1285,6 +1286,7 @@ class MainWindow(QMainWindow):
     def _save_backup_if_enabled(self) -> bool:
         """The slots backup now; False when one was due and could not be written."""
         self._backup_timer.stop()  # a backup now takes the place of a waiting one
+        self._backup_retry_timer.stop()  # and of a try again
         if self._chk_disable_backup.isChecked():
             self._backup_left_out = True
             return True
@@ -1314,7 +1316,7 @@ class MainWindow(QMainWindow):
         elif not written:
             if not failing:  # said once, not at every try
                 self._append_log(f"backup not written: {path}")
-            self._backup_timer.start(self._backup_retry_ms)  # a held folder lets go
+            self._backup_retry_timer.start(self._backup_retry_ms)  # a held one lets go
         self._backup_retry_ms = (
             _BACKUP_DELAY_MS if written else min(2 * self._backup_retry_ms, 60_000)
         )
@@ -1785,7 +1787,7 @@ class MainWindow(QMainWindow):
             self._save_chip_state()
             # The last crossings, kept before the waits below: an upload, its signal
             # cut, logs nothing more, and a site that does not answer takes 10 s.
-            if self._backup_timer.isActive():
+            if self._backup_timer.isActive() or self._backup_retry_timer.isActive():
                 self._save_backup_if_enabled()
             self._finish_upload_timer.stop()
             if self._http_save_timer.isActive():

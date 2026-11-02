@@ -144,10 +144,10 @@ def test_a_backup_that_could_not_be_written_is_tried_again(win, monkeypatch):
     )
     win._chk_disable_backup.setChecked(False)
     win._save_backup_if_enabled()  # temp/ held by a virus scanner
-    assert win._backup_timer.isActive()
-    win._backup_timer.timeout.emit()  # 2 s on
+    assert win._backup_retry_timer.isActive()
+    win._backup_retry_timer.timeout.emit()  # 2 s on
     assert len(backups) == 2
-    assert not win._backup_timer.isActive()
+    assert not win._backup_retry_timer.isActive()
 
 
 def test_a_backup_that_keeps_failing_is_tried_less_often(win, monkeypatch):
@@ -157,11 +157,10 @@ def test_a_backup_that_keeps_failing_is_tried_less_often(win, monkeypatch):
     waits = []
     for _ in range(7):
         win._save_backup_if_enabled()
-        waits.append(win._backup_timer.interval())
+        waits.append(win._backup_retry_timer.interval())
     assert waits == [2000, 4000, 8000, 16000, 32000, 60000, 60000]
     win._save_backup_if_enabled()  # written at last
-    win._schedule_backup()
-    assert win._backup_timer.interval() == 2000
+    assert not win._backup_retry_timer.isActive()
 
 
 def test_a_crossing_brings_a_backup_tried_again_later_forward(
@@ -172,9 +171,11 @@ def test_a_crossing_brings_a_backup_tried_again_later_forward(
     win._chk_disable_backup.setChecked(False)
     for _ in range(6):  # hand actions while temp/ was held
         win._save_backup_if_enabled()
-    assert win._backup_timer.remainingTime() > 30_000
+    assert win._backup_retry_timer.remainingTime() > 30_000
     win._on_source_event(Read("A", T0, "dev", "1", -58.5, "r1"))
-    assert win._backup_timer.remainingTime() < 3000  # 2 s, a coarse timer's 5% more
+    assert win._backup_timer.isActive()  # its own 2 s, whatever the try again
+    win._schedule_backup()  # the next event of a steady stream
+    assert win._backup_timer.remainingTime() < 3000  # not put off
 
 
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
