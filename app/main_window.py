@@ -285,6 +285,8 @@ class MainWindow(QMainWindow):
         grp_btn_row = QHBoxLayout()
         self._edit_group_time = QLineEdit()
         self._edit_group_time.setText("0 00:00:00.000")
+        # A start typed by hand, backed up within 2 s as a stamped slot's number is.
+        self._edit_group_time.textChanged.connect(lambda _text: self._schedule_backup())
         self._edit_group_time.setMinimumWidth(180)
         grp_btn_row.addWidget(self._edit_group_time)
         self._btn_start_group = QPushButton("Start")
