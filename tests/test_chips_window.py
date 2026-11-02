@@ -62,9 +62,14 @@ def test_a_burst_of_chip_crossings_is_backed_up_once(win, chips_on, monkeypatch)
     assert f"22#{format_time(T0 + 100)}#nextLap#" in backup["log_items"]
 
 
-def test_every_line_written_to_the_results_file_is_backed_up(win, tmp_path):
+def test_every_line_written_to_the_results_file_is_backed_up(win, monkeypatch):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
     win._note_written("15#1 10:0:0.000#finish#")  # by hand or by any device
-    assert win._backup_timer.isActive()
+    win._backup_timer.timeout.emit()  # its tick, 2 s on
+    (backup,) = backups
+    assert backup["log_items"][-1] == "15#1 10:0:0.000#finish#"
 
 
 def test_a_backup_now_takes_the_place_of_a_waiting_one(win, chips_on, monkeypatch):
