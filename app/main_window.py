@@ -1749,6 +1749,10 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.StandardButton.Yes:
             self._stop_source(wait=True)
             self._save_chip_state()
+            # The last crossings, kept before the waits below: an upload, its signal
+            # cut, logs nothing more, and a site that does not answer takes 10 s.
+            if self._backup_timer.isActive():
+                self._save_backup_if_enabled()
             self._finish_upload_timer.stop()
             if self._http_save_timer.isActive():
                 self._http_save_timer.stop()
@@ -1767,8 +1771,6 @@ class MainWindow(QMainWindow):
             for fetch in list(self._fetches):  # a download also ends within 10 s
                 fetch.done.disconnect()
                 fetch.wait()
-            if self._backup_timer.isActive():  # the last crossings, kept before exit
-                self._save_backup_if_enabled()  # with what the uploads logged
             event.accept()
         else:
             event.ignore()
