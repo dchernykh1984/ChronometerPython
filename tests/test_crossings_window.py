@@ -49,6 +49,18 @@ def test_adding_a_crossing_appends_it_after_a_backup(
     assert win._finish_upload_timer.isActive()
 
 
+def test_a_correction_is_backed_up_at_once(win, results, monkeypatch):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
+    monkeypatch.setattr(
+        win, "_ask_crossing", lambda *a: ("23", "1 10:1:2.300", "nextLap")
+    )
+    win._on_add_crossing()
+    (backup,) = backups
+    assert "added 23#1 10:1:2.300#nextLap#" in backup["log_items"][-1]
+
+
 def test_editing_changes_that_line_in_place(win, results, monkeypatch):
     seen = []
 

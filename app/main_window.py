@@ -1254,6 +1254,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Crossings", f"Nothing changed: {exc}")
             return
         self._append_log(f"{what} (previous file kept as {backup.name})")
+        self._save_backup_if_enabled()  # as a hand crossing is backed up
         self._refresh_crossings()
         self._schedule_finish_upload()
 
