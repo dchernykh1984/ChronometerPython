@@ -1132,7 +1132,7 @@ class MainWindow(QMainWindow):
         to upload, backed up within 2 s, shown and counted without a re-read, which a
         mass finish of chip crossings would pay for once per crossing."""
         self._append_log(line)
-        self._schedule_backup()  # a hand action backs up at once, in its place
+        self._schedule_backup()  # 2 s on; a hand action's own backup comes at once
         self._schedule_finish_upload()
         self._result_counts[line.split("#")[0]] += 1
         self._crossings.addItem(line)
