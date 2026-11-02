@@ -82,3 +82,15 @@ def test_empty_all_keeps_slots_it_cannot_back_up(win, monkeypatch):
     win._on_empty_all()
     assert win._time_edits[0].text() == "1 10:0:0.000#finish"
     assert "nothing emptied" in warnings[0]
+
+
+def test_a_number_given_to_a_stamped_slot_is_backed_up_however_the_judge_goes_on(
+    win, monkeypatch
+):
+    backups = _backups(win, monkeypatch)
+    win._time_edits[0].setText("1 10:0:0.000#finish")  # a beam break's stamp
+    win._number_edits[0].setText("12")  # then Down, Tab or a click away
+    assert win._backup_timer.isActive()
+    win._backup_timer.timeout.emit()
+    (backup,) = backups
+    assert backup["slots"][0] == ("12", "1 10:0:0.000#finish")
