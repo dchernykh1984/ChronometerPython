@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 import time
 import uuid
@@ -259,8 +258,9 @@ def save_backup(
     Port of C++ saveBackupFile logic.
     Returns True on success.
     """
+    from app.results_file import write_in_one_step  # that module imports this one
+
     target = app_path(path)
-    temporary = target.with_name(target.name + ".tmp")
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         lines: list[str] = []
@@ -269,18 +269,13 @@ def save_backup(
         action = "finish" if finish_mode else "nextLap"
         for number, time_str in slots:
             lines.append(f"{number}#{time_str}#{action}#")
-        with temporary.open("w", encoding="utf-8") as f:
-            for ln in lines:
-                f.write(ln + "\n")
-            f.flush()
-            os.fsync(f.fileno())  # on the disk before its name: a power cut too
-        temporary.replace(target)  # whole under its name, or no backup there at all
+        # Whole under its name, or no backup there at all. No fsync and no wait for a
+        # rename held up, as the results file has none: a hand stamp is taken when
+        # handled, on this thread; a backup that fails is tried again 2 s on.
+        text = "".join(ln + "\n" for ln in lines)
+        write_in_one_step(target, text, patience_s=0, sync=False)
         return True
     except OSError:
-        try:
-            temporary.unlink(missing_ok=True)
-        except OSError:
-            pass
         return False
 
 
