@@ -49,16 +49,43 @@ def test_adding_a_crossing_appends_it_after_a_backup(
     assert win._finish_upload_timer.isActive()
 
 
-def test_a_correction_is_backed_up_at_once(win, results, monkeypatch):
+@pytest.mark.parametrize(
+    ("correct", "said"),
+    [
+        ("_on_add_crossing", "added 23#1 10:1:2.300#nextLap#"),
+        ("_on_edit_crossing", f"changed {LINES[1]} to 23#1 10:1:2.300#nextLap#"),
+        ("_on_delete_crossing", f"deleted {LINES[1]}"),
+    ],
+)
+def test_a_correction_is_backed_up_at_once(win, results, monkeypatch, correct, said):
     backups = []
     monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    monkeypatch.setattr(
+        mw.QMessageBox, "question", lambda *a: mw.QMessageBox.StandardButton.Yes
+    )
     win._chk_disable_backup.setChecked(False)
     monkeypatch.setattr(
         win, "_ask_crossing", lambda *a: ("23", "1 10:1:2.300", "nextLap")
     )
-    win._on_add_crossing()
+    win._crossings.setCurrentRow(1)
+    getattr(win, correct)()
     (backup,) = backups
-    assert "added 23#1 10:1:2.300#nextLap#" in backup["log_items"][-1]
+    assert said in backup["log_items"][-1]
+
+
+def test_a_refused_correction_is_not_backed_up(win, results, monkeypatch):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: None)
+    win._chk_disable_backup.setChecked(False)
+    monkeypatch.setattr(win, "_ask_crossing", lambda *a: ("23", "1 10:1:2", "finish"))
+
+    def refuse(self, data):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(rf.Path, "write_bytes", refuse)
+    win._on_add_crossing()
+    assert backups == []
 
 
 def test_editing_changes_that_line_in_place(win, results, monkeypatch):
