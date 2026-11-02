@@ -202,6 +202,8 @@ class MainWindow(QMainWindow):
 
             time_edit = QLineEdit()
             time_edit.setMinimumWidth(200)
+            # A time typed or corrected by hand, backed up within 2 s like its number.
+            time_edit.textChanged.connect(lambda _text: self._schedule_backup())
             self._time_edits.append(time_edit)
             slots_layout.addWidget(time_edit, row, 2)
 
@@ -1570,10 +1572,11 @@ class MainWindow(QMainWindow):
                 'Check "Disable backup" to empty them without one.',
             )
             return
-        for i in range(_N_SLOTS):  # the time first: a number cleared beside no stamp
-            self._time_edits[i].clear()  # schedules no backup of empty slots
+        for i in range(_N_SLOTS):
+            self._time_edits[i].clear()
             self._number_edits[i].clear()
         self._next_number.clear()
+        self._backup_timer.stop()  # the slots just emptied: the backup before kept them
         self._update_crosses()
 
     def _on_start_group(self) -> None:
