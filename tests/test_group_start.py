@@ -104,3 +104,20 @@ def test_a_saved_group_is_backed_up_with_its_line(win, monkeypatch):
     (backup,) = backups
     assert backup["log_items"][-1] == "GroupA#0 12:00:00.000#"
     assert backup["group_number"] == "GroupA"
+
+
+def test_a_group_that_cannot_be_saved_is_backed_up(win, monkeypatch):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    monkeypatch.setattr(mw, "append_to_group_file", lambda *a: False)
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: None)
+    win._chk_disable_backup.setChecked(False)
+    _set_groups(win, "GroupA")
+    win._combo_group.setCurrentText("GroupA")
+    win._edit_group_time.setText("0 12:00:00.000")  # typed by hand
+    win._on_save_group()
+    (backup,) = backups
+    assert (backup["group_number"], backup["group_time"]) == (
+        "GroupA",
+        "0 12:00:00.000",
+    )

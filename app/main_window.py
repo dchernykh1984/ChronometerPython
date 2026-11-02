@@ -1577,6 +1577,7 @@ class MainWindow(QMainWindow):
         result_line = f"{group}#{time_str}#"
         ok = append_to_group_file(self._groups_path(), group, time_str)
         if not ok:
+            self._save_backup_if_enabled()  # the group and its time, kept unsaved
             QMessageBox.warning(
                 self, "File error", f"Cannot open groups file: {self._groups_path()}"
             )
