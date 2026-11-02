@@ -105,7 +105,8 @@ frozen (on macOS the folder holding the `.app`), the working directory in develo
   `rev_group`, as `key=value`. A device id is generated on first use. Never committed.
 - `temp/stc<unix time>.txt`: a backup after every slot action, DSQ and correction, and within 2 s
   of a burst of beam breaks or chip crossings, unless "Disable backup" is checked: the action log,
-  `group#time#`, then each slot as `number#time#action#`.
+  `group#time#`, then each slot as `number#time#action#`; a second one in the same second is
+  `stc<unix time>_1.txt`, and so on.
 - `data/sources.txt`: the event source, each connector's settings, the dead time and the start
   protocol path, as `key=value`.
 - The start protocol file: chosen in the Chips tab, `data/start.txt` by default. It is read when

@@ -123,6 +123,18 @@ def test_a_backup_left_out_while_backups_were_off_is_written_when_on_again(
     assert f"15#{format_time(T0)}#nextLap#" in backup["log_items"]
 
 
+def test_two_backups_in_one_second_are_both_kept(win, tmp_path, monkeypatch):
+    monkeypatch.setattr(mw, "app_path", lambda *parts: tmp_path.joinpath(*parts))
+    monkeypatch.setattr(mw.time, "time", lambda: 1_761_725_400.5)
+    win._chk_disable_backup.setChecked(False)
+    win._save_backup_if_enabled()
+    win._number_edits[0].setText("15")
+    win._save_backup_if_enabled()
+    first, second = (tmp_path / "temp" / f"stc1761725400{n}.txt" for n in ("", "_1"))
+    assert "15#" not in first.read_text(encoding="utf-8")
+    assert "15#" in second.read_text(encoding="utf-8")
+
+
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
     win._chk_finish.setChecked(True)
     win._on_source_event(Read("C", T0))
