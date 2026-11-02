@@ -240,6 +240,28 @@ def test_crossings_waiting_for_the_results_file_are_backed_up_each(
     assert f"22#{format_time(T0 + 100)}#nextLap#" in logged
 
 
+def test_crossings_still_waiting_from_the_run_before_are_backed_up(
+    win, chips_on, monkeypatch
+):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
+    event = chips_on / "event"
+    (event / "results.txt").mkdir(parents=True)  # still not writable on the start
+    line = f"15#{format_time(T0)}#nextLap#"
+    saved = {"version": 2, "processed_lines": 0, "passes": {}, "pending": {}}
+    (event / "results.chip_state.json").write_text(
+        json.dumps({**saved, "unwritten": [line]}), "utf-8"
+    )
+    win._edit_results_file.setText(str(event / "results.txt"))
+    win._chip_timing = None  # a start, with the state of the run before
+    win._timing()
+    assert win._chip_timing.unwritten == [line]
+    assert win._backup_timer.isActive()
+    win._backup_timer.timeout.emit()  # its tick, 2 s on
+    assert line in "\n".join(backups[-1]["log_items"])
+
+
 def test_reads_a_crash_left_unprocessed_are_replayed(win, chips_on):
     win._on_source_event(Read("A", T0))
     win._save_chip_state()  # within its second

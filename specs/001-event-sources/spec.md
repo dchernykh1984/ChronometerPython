@@ -296,7 +296,8 @@ nothing at the race depends on it.
   button or key, a DSQ and a correction write it at once, and Empty all before it clears the slots;
   a burst of beam breaks or chip crossings, a stamped slot's number, and a slot time or a start
   time typed by hand write it within 2 s. A chip crossing waiting for a results file that cannot
-  be written is logged as it waits, so it is in that backup too. Clearing "Disable backup" after a backup fell due writes one of the slots
+  be written, one restored as the program starts too, is logged once as it waits, so it is in
+  that backup. Clearing "Disable backup" after a backup fell due writes one of the slots
   as they are then. A backup that cannot be written is tried again, 2 s on and then less often up
   to once a minute, brought forward when crossings come, and said in the action log once, until
   one is written again; Empty all empties no slot it could not back up first.
