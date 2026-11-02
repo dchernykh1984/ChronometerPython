@@ -106,6 +106,7 @@ def test_a_backup_that_cannot_be_written_is_said_once(win, monkeypatch):
         win._save_backup_if_enabled()
     said = [win._log.item(i).text() for i in range(win._log.count())]
     assert len([s for s in said if s.startswith("backup not written: ")]) == 2
+    assert len([s for s in said if s.startswith("backup written again: ")]) == 1
 
 
 def test_a_backup_left_out_while_backups_were_off_is_written_when_on_again(
