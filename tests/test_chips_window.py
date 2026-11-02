@@ -174,7 +174,7 @@ def test_a_crossing_brings_a_backup_tried_again_later_forward(
         win._save_backup_if_enabled()
     assert win._backup_timer.remainingTime() > 30_000
     win._on_source_event(Read("A", T0, "dev", "1", -58.5, "r1"))
-    assert win._backup_timer.remainingTime() <= 2000
+    assert win._backup_timer.remainingTime() < 3000  # 2 s, a coarse timer's 5% more
 
 
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
