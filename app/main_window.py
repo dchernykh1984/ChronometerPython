@@ -1278,7 +1278,11 @@ class MainWindow(QMainWindow):
             return
         self._backup_left_out = False
         ts = int(time.time())
-        path = str(app_path("temp", f"stc{ts}.txt"))
+        found, n = app_path("temp", f"stc{ts}.txt"), 0
+        while found.exists():  # never over a backup taken this second
+            n += 1
+            found = app_path("temp", f"stc{ts}_{n}.txt")
+        path = str(found)
         log_items = [self._log.item(i).text() for i in range(self._log.count())]
         slots = [
             (self._number_edits[i].text(), self._time_edits[i].text())
