@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import time
+from unittest.mock import Mock
 
 import pytest
 
@@ -74,6 +75,21 @@ def test_a_backup_now_takes_the_place_of_a_waiting_one(win, chips_on, monkeypatc
     win._save_backup_if_enabled()  # a hand action's backup
     assert not win._backup_timer.isActive()
     assert len(backups) == 1
+
+
+def test_a_waiting_backup_is_written_before_the_window_closes(
+    win, chips_on, monkeypatch
+):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    monkeypatch.setattr(
+        mw.QMessageBox, "question", lambda *a, **k: mw.QMessageBox.StandardButton.Yes
+    )
+    win._chk_disable_backup.setChecked(False)
+    win._on_source_event(Read("A", T0, "dev", "1", -58.5, "r1"))
+    win.closeEvent(Mock())  # within the 2 s
+    (backup,) = backups
+    assert f"15#{format_time(T0)}#nextLap#" in backup["log_items"]
 
 
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
