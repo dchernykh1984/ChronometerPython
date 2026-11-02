@@ -1297,11 +1297,13 @@ class MainWindow(QMainWindow):
             slots=slots,
             finish_mode=self._chk_finish.isChecked(),
         )
-        if not written and not self._backup_failing:
-            self._append_log(f"backup not written: {path}")
-        self._backup_failing = not written
-        if not written:
+        if written and self._backup_failing:
+            self._append_log(f"backup written again: {path}")
+        elif not written:
+            if not self._backup_failing:  # said once, not at every try
+                self._append_log(f"backup not written: {path}")
             self._schedule_backup()  # tried again 2 s on: a held folder lets go
+        self._backup_failing = not written
         return written
 
     def _load_config(self, path: str) -> None:
