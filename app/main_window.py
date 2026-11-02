@@ -143,6 +143,7 @@ class MainWindow(QMainWindow):
         self._backup_timer.setSingleShot(True)
         self._backup_timer.timeout.connect(self._save_backup_if_enabled)
         self._backup_failing = False  # said once, until a backup is written again
+        self._backup_retry_ms = 2000  # doubled while backups keep failing, to a minute
         self._backup_left_out = False  # while backups were off: written once on
         # The event source: by hand, or a connector process for a beam or chips.
         # A connector starts only on Start, also after a restart of the program.
@@ -1284,7 +1285,7 @@ class MainWindow(QMainWindow):
         found, n = app_path("temp", f"stc{ts}.txt"), 0
         while found.exists():  # never over a backup taken this second
             n += 1
-            found = app_path("temp", f"stc{ts}_{n:02d}.txt")  # sorts by name
+            found = app_path("temp", f"stc{ts}_{n:02d}.txt")  # 01-99 sort by name
         path = str(found)
         log_items = [self._log.item(i).text() for i in range(self._log.count())]
         slots = [
@@ -1304,7 +1305,10 @@ class MainWindow(QMainWindow):
         elif not written:
             if not self._backup_failing:  # said once, not at every try
                 self._append_log(f"backup not written: {path}")
-            self._schedule_backup()  # tried again 2 s on: a held folder lets go
+            self._backup_timer.start(self._backup_retry_ms)  # a held folder lets go
+        self._backup_retry_ms = (
+            2000 if written else min(2 * self._backup_retry_ms, 60_000)
+        )
         self._backup_failing = not written
         return written
 
