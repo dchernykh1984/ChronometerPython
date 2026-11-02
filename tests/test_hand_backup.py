@@ -68,6 +68,7 @@ def test_empty_all_backs_the_slots_up_before_it_clears_them(win, monkeypatch):
     (backup,) = backups
     assert backup["slots"][0] == ("12", "1 10:0:0.000#finish")
     assert not win._number_edits[0].text()
+    assert not win._backup_timer.isActive()  # no second one, of empty slots
 
 
 def test_empty_all_keeps_slots_it_cannot_back_up(win, monkeypatch):
