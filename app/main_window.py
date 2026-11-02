@@ -1682,7 +1682,7 @@ class MainWindow(QMainWindow):
         self._update_crosses()
         return True
 
-    def _check_possibility_to_empty_upper(self, quiet: bool = False) -> None:
+    def _check_possibility_to_empty_upper(self, quiet: bool = False) -> bool:
         # A device's stamp moves the slots only while the judge types in one: the
         # slot typed in last, long ago maybe, says nothing about slot 1 being done,
         # and the focus must stay in any other field the judge types in. Nor does
@@ -1691,12 +1691,14 @@ class MainWindow(QMainWindow):
             self.focusWidget() not in self._number_edits
             or not self._number_edits[0].text().strip()
         ):
-            return
+            return False
         if self._focused_slot != 0 and self._time_edits[0].text():
             shifted = self._shift_fields_up(get_next_competitor=False, quiet=quiet)
             if shifted:
                 self._focused_slot = max(0, self._focused_slot - 1)
                 self._number_edits[self._focused_slot].setFocus()
+            return shifted
+        return False
 
     def _on_select_results_file(self) -> None:
         if self._chk_freeze.isChecked():
@@ -1798,9 +1800,11 @@ class MainWindow(QMainWindow):
                         self._number_edits[next_idx].setFocus()
                     else:
                         self._next_number.setFocus()
-                    if self._chk_second_user.isChecked():
-                        self._check_possibility_to_empty_upper()
-                        self._save_backup_if_enabled()
+                    if (
+                        self._chk_second_user.isChecked()
+                        and self._check_possibility_to_empty_upper()
+                    ):
+                        self._save_backup_if_enabled()  # slot 1 written: as a button
                     return True
                 if key == Qt.Key.Key_Up and idx > 0:
                     self._number_edits[idx - 1].setFocus()
