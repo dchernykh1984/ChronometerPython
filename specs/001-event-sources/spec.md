@@ -294,10 +294,11 @@ nothing at the race depends on it.
 - **FR-018**: Every crossing leaves the backup a hand crossing leaves: `temp/stc<unix time>.txt`,
   with the action log and the slots, unless "Disable backup" is checked. A hand crossing, by any
   button or key, a DSQ and a correction write it at once, and Empty all before it clears the slots;
-  a burst of beam breaks or chip crossings writes it once, within 2 s of the first. A backup left
-  out while "Disable backup" is checked is written when it is cleared. A backup that cannot be
-  written is tried again, 2 s on and then less often up to once a minute, and said in the action
-  log once, until one is written again; Empty all empties no slot it could not back up first.
+  a burst of beam breaks or chip crossings, a stamped slot's number and a start time typed by hand
+  write it within 2 s. Clearing "Disable backup" after a backup fell due writes one of the slots
+  as they are then. A backup that cannot be written is tried again, 2 s on and then less often up
+  to once a minute, brought forward when crossings come, and said in the action log once, until
+  one is written again; Empty all empties no slot it could not back up first.
 
 ### Key Entities
 
