@@ -1264,6 +1264,7 @@ class MainWindow(QMainWindow):
             self._backup_timer.start(2000)
 
     def _save_backup_if_enabled(self) -> None:
+        self._backup_timer.stop()  # a backup now takes the place of a waiting one
         if self._chk_disable_backup.isChecked():
             return
         ts = int(time.time())

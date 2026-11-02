@@ -60,6 +60,17 @@ def test_a_burst_of_chip_crossings_is_backed_up_once(win, chips_on, monkeypatch)
     assert f"22#{format_time(T0 + 100)}#nextLap#" in backup["log_items"]
 
 
+def test_a_backup_now_takes_the_place_of_a_waiting_one(win, chips_on, monkeypatch):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
+    win._on_source_event(Read("A", T0, "dev", "1", -58.5, "r1"))
+    assert win._backup_timer.isActive()
+    win._save_backup_if_enabled()  # a hand action's backup
+    assert not win._backup_timer.isActive()
+    assert len(backups) == 1
+
+
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
     win._chk_finish.setChecked(True)
     win._on_source_event(Read("C", T0))
