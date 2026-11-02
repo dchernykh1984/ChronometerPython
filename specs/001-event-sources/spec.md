@@ -293,10 +293,10 @@ nothing at the race depends on it.
 - **FR-017**: "Chip report" writes the report of Story 6 to a text file next to the results file.
 - **FR-018**: Every crossing leaves the backup a hand crossing leaves: `temp/stc<unix time>.txt`,
   with the action log and the slots, unless "Disable backup" is checked. A hand crossing, by any
-  button or key, a DSQ and a correction write it at once; a burst of beam breaks or chip crossings
-  writes it once, within 2 s of the first. A backup left out while "Disable backup" is checked is
-  written when it is cleared. A backup that cannot be written is said in the action log once,
-  until one is written again.
+  button or key, a DSQ and a correction write it at once, and Empty all before it clears the slots;
+  a burst of beam breaks or chip crossings writes it once, within 2 s of the first. A backup left
+  out while "Disable backup" is checked is written when it is cleared. A backup that cannot be
+  written is tried again 2 s on and said in the action log once, until one is written again.
 
 ### Key Entities
 

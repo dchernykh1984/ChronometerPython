@@ -35,7 +35,9 @@ Finder may launch a macOS app with `/` as its working directory.
   competition token: never commit it, never paste its contents anywhere.
 - results / groups files - paths chosen in the UI, one line per record,
   `number#time#action#` and `group#time#`.
-- `temp/stc<timestamp>.txt` - action backups, unless backup is disabled.
+- `temp/stc<timestamp>[_n].txt` - backups of the action log and the slots:
+  after every hand action, DSQ and correction, before Empty all, and within
+  2 s of beam breaks or chip crossings, unless backup is disabled.
 
 ## Site upload (three streams, one snapshot each)
 
