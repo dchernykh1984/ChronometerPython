@@ -258,19 +258,26 @@ def save_backup(
     Port of C++ saveBackupFile logic.
     Returns True on success.
     """
+    target = app_path(path)
+    temporary = target.with_name(target.name + ".tmp")
     try:
-        app_path(path).parent.mkdir(parents=True, exist_ok=True)
+        target.parent.mkdir(parents=True, exist_ok=True)
         lines: list[str] = []
         lines.extend(log_items)
         lines.append(f"{group_number}#{group_time}#")
         action = "finish" if finish_mode else "nextLap"
         for number, time_str in slots:
             lines.append(f"{number}#{time_str}#{action}#")
-        with app_path(path).open("w", encoding="utf-8") as f:
+        with temporary.open("w", encoding="utf-8") as f:
             for ln in lines:
                 f.write(ln + "\n")
+        temporary.replace(target)  # whole under its name, or no backup there at all
         return True
     except OSError:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
         return False
 
 

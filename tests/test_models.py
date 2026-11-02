@@ -211,6 +211,34 @@ class TestSaveBackup:
         content = Path(path).read_text(encoding="utf-8")
         assert "finish#" in content
 
+    def test_a_write_cut_short_leaves_no_backup_under_its_name(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        real_open = Path.open
+
+        class Full:  # the disk fills a few bytes in
+            def __init__(self, f):
+                self.f = f
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                self.f.close()
+
+            def write(self, text):
+                self.f.write(text[:3])
+                raise OSError("No space left on device")
+
+        monkeypatch.setattr(
+            Path, "open", lambda self, *a, **k: Full(real_open(self, *a, **k))
+        )
+        path = tmp_path / "stc1761725400.txt"
+        ok = save_backup(str(path), ["1#T0#nextLap#"], "", "", [("", "")] * 5, False)
+        monkeypatch.undo()
+        assert ok is False
+        assert list(tmp_path.iterdir()) == []  # nothing a judge could take for one
+
     def test_invalid_path_returns_false(self) -> None:
         ok = save_backup(
             "/nonexistent_root/file.txt", [], "", "", [("", "")] * 5, False
