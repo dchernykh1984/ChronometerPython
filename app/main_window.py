@@ -792,6 +792,7 @@ class MainWindow(QMainWindow):
         # Chip state belongs to one results file; loaded when that file is in use.
         self._chip_timing: ChipTiming | None = None
         self._chip_timing_for = ""
+        self._waiting_said = 0  # the waiting crossings first in line, already logged
         self._chip_state_dirty = False  # never write a state nothing changed
         self._chip_state_timer = QTimer(self)
         self._chip_state_timer.setSingleShot(True)
@@ -952,6 +953,7 @@ class MainWindow(QMainWindow):
                 )
                 self._chip_state_dirty = True
         self._chip_timing, self._chip_timing_for = timing, path
+        self._waiting_said = 0  # its waiting crossings, restored too, logged once
         # The map may have changed while the program was closed.
         made = timing.set_map(self._chip_map)
         for line in raw[timing.processed_lines :]:
@@ -1026,15 +1028,12 @@ class MainWindow(QMainWindow):
     def _write_chip_crossings(self, made: list[tuple[str, int]]) -> None:
         if not made or self._chip_timing is None:
             return
-        lines = [crossing_line(bib, scale_time(at), self._action()) for bib, at in made]
-        self._chip_timing.unwritten.extend(lines)
+        for bib, at in made:
+            self._chip_timing.unwritten.append(
+                crossing_line(bib, scale_time(at), self._action())
+            )
         self._schedule_chip_state_save()
         self._retry_unwritten()
-        waiting = [line for line in lines if line in self._chip_timing.unwritten]
-        for line in waiting:  # in the log, so in a backup: its drive may be gone
-            self._append_log(f"chip crossing waits: {line}")
-        if waiting:
-            self._schedule_backup()
 
     def _retry_unwritten(self) -> None:
         """Write waiting chip crossings in order; never a dialog (constitution III).
@@ -1055,9 +1054,16 @@ class MainWindow(QMainWindow):
                     self._unwritten_timer.start()
                 break
             timing.unwritten.pop(0)
+            self._waiting_said = max(self._waiting_said - 1, 0)
             self._chip_state_dirty = True
             written = True
             self._note_written(line)
+        if own and self._waiting_said < len(timing.unwritten):
+            # Each in the log as it waits, so in a backup: its drive may be gone.
+            for line in timing.unwritten[self._waiting_said :]:
+                self._append_log(f"chip crossing waits: {line}")
+            self._waiting_said = len(timing.unwritten)
+            self._schedule_backup()
         if written:
             self._update_crosses()
             self._schedule_chip_state_save()
