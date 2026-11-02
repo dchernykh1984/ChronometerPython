@@ -103,8 +103,9 @@ frozen (on macOS the folder holding the `.app`), the working directory in develo
 - Results file and groups file: paths chosen in the UI (frozen by default), appended line by line.
 - `data/http_config.txt`: `site_url`, `token`, `device_id`, `point_number`, `rev_finish`,
   `rev_group`, as `key=value`. A device id is generated on first use. Never committed.
-- `temp/stc<unix time>.txt`: a backup after every slot action unless "Disable backup" is checked:
-  the action log, `group#time#`, then each slot as `number#time#action#`.
+- `temp/stc<unix time>.txt`: a backup after every slot action and every correction, and within 2 s
+  of a burst of beam breaks or chip crossings, unless "Disable backup" is checked: the action log,
+  `group#time#`, then each slot as `number#time#action#`.
 - `data/sources.txt`: the event source, each connector's settings, the dead time and the start
   protocol path, as `key=value`.
 - The start protocol file: chosen in the Chips tab, `data/start.txt` by default. It is read when

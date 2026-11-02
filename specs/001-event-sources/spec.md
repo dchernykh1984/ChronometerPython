@@ -291,6 +291,9 @@ nothing at the race depends on it.
   no longer from the action log, which an edit or a deletion does not change.
 - **FR-016**: Closing the window stops every connector process.
 - **FR-017**: "Chip report" writes the report of Story 6 to a text file next to the results file.
+- **FR-018**: Every crossing leaves the backup a hand crossing leaves: `temp/stc<unix time>.txt`,
+  with the action log and the slots, unless "Disable backup" is checked. A correction writes it at
+  once; a burst of beam breaks or chip crossings writes it once, within 2 s of the first.
 
 ### Key Entities
 
@@ -318,6 +321,8 @@ nothing at the race depends on it.
   Proven by the existing tests; only those that count from the action log change.
 - **SC-005**: Nothing reaches the site without a button press or a results change; nothing is
   downloaded on start-up.
+- **SC-006**: Every crossing, by hand, from the beam or from chips, and every correction is in a
+  `temp/stc*.txt` backup within 2 s, proven by tests (FR-018).
 
 ## Assumptions
 
