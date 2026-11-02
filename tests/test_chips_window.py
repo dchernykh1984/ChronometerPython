@@ -92,6 +92,16 @@ def test_a_waiting_backup_is_written_before_the_window_closes(
     assert f"15#{format_time(T0)}#nextLap#" in backup["log_items"]
 
 
+def test_a_backup_that_cannot_be_written_is_said_once(win, monkeypatch):
+    written = iter([False, False, True, False])
+    monkeypatch.setattr(mw, "save_backup", lambda **k: next(written))
+    win._chk_disable_backup.setChecked(False)
+    for _ in range(4):
+        win._save_backup_if_enabled()
+    said = [win._log.item(i).text() for i in range(win._log.count())]
+    assert len([s for s in said if s.startswith("backup not written: ")]) == 2
+
+
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
     win._chk_finish.setChecked(True)
     win._on_source_event(Read("C", T0))

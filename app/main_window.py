@@ -142,6 +142,7 @@ class MainWindow(QMainWindow):
         self._backup_timer = QTimer(self)
         self._backup_timer.setSingleShot(True)
         self._backup_timer.timeout.connect(self._save_backup_if_enabled)
+        self._backup_failing = False  # said once, until a backup is written again
         # The event source: by hand, or a connector process for a beam or chips.
         # A connector starts only on Start, also after a restart of the program.
         self._sources: dict[str, str] = load_sources()
@@ -1274,7 +1275,7 @@ class MainWindow(QMainWindow):
             (self._number_edits[i].text(), self._time_edits[i].text())
             for i in range(_N_SLOTS)
         ]
-        save_backup(
+        written = save_backup(
             path=path,
             log_items=log_items,
             group_number=self._combo_group.currentText(),
@@ -1282,6 +1283,9 @@ class MainWindow(QMainWindow):
             slots=slots,
             finish_mode=self._chk_finish.isChecked(),
         )
+        if not written and not self._backup_failing:
+            self._append_log(f"backup not written: {path}")
+        self._backup_failing = not written
 
     def _load_config(self, path: str) -> None:
         groups, results_file, group_start_file = load_config(path)
