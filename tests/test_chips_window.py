@@ -131,7 +131,7 @@ def test_two_backups_in_one_second_are_both_kept(win, tmp_path, monkeypatch):
     win._save_backup_if_enabled()
     win._number_edits[0].setText("15")
     win._save_backup_if_enabled()
-    first, second = (tmp_path / "temp" / f"stc1761725400{n}.txt" for n in ("", "_1"))
+    first, second = (tmp_path / "temp" / f"stc1761725400{n}.txt" for n in ("", "_01"))
     assert "15#" not in first.read_text(encoding="utf-8")
     assert "15#" in second.read_text(encoding="utf-8")
 

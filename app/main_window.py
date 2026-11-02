@@ -1282,7 +1282,7 @@ class MainWindow(QMainWindow):
         found, n = app_path("temp", f"stc{ts}.txt"), 0
         while found.exists():  # never over a backup taken this second
             n += 1
-            found = app_path("temp", f"stc{ts}_{n}.txt")
+            found = app_path("temp", f"stc{ts}_{n:02d}.txt")  # sorts by name
         path = str(found)
         log_items = [self._log.item(i).text() for i in range(self._log.count())]
         slots = [
