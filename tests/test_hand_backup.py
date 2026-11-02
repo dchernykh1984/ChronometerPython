@@ -59,3 +59,17 @@ def test_empty_all_backs_the_slots_up_before_it_clears_them(win, monkeypatch):
     (backup,) = backups
     assert backup["slots"][0] == ("12", "1 10:0:0.000#finish")
     assert not win._number_edits[0].text()
+
+
+def test_empty_all_keeps_slots_it_cannot_back_up(win, monkeypatch):
+    monkeypatch.setattr(mw, "save_backup", lambda **k: False)
+    warnings = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warnings.append(a[2]))
+    monkeypatch.setattr(
+        mw.QMessageBox, "question", lambda *a, **k: mw.QMessageBox.StandardButton.Yes
+    )
+    win._chk_disable_backup.setChecked(False)
+    win._time_edits[0].setText("1 10:0:0.000#finish")  # stamped, not yet saved
+    win._on_empty_all()
+    assert win._time_edits[0].text() == "1 10:0:0.000#finish"
+    assert "nothing emptied" in warnings[0]
