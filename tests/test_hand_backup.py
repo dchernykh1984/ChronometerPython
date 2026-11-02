@@ -46,3 +46,16 @@ def test_enter_for_a_second_judge_is_backed_up_once_it_writes_slot_1(win, monkey
     win._focused_slot = 1
     _enter(win, win._number_edits[1])  # slot 1 goes to the results file
     assert len(backups) == 1
+
+
+def test_empty_all_backs_the_slots_up_before_it_clears_them(win, monkeypatch):
+    backups = _backups(win, monkeypatch)
+    monkeypatch.setattr(
+        mw.QMessageBox, "question", lambda *a, **k: mw.QMessageBox.StandardButton.Yes
+    )
+    win._number_edits[0].setText("12")
+    win._time_edits[0].setText("1 10:0:0.000#finish")  # stamped, not yet saved
+    win._on_empty_all()
+    (backup,) = backups
+    assert backup["slots"][0] == ("12", "1 10:0:0.000#finish")
+    assert not win._number_edits[0].text()

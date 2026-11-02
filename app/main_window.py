@@ -1544,6 +1544,7 @@ class MainWindow(QMainWindow):
         )
         if reply != QMessageBox.StandardButton.Yes:
             return
+        self._save_backup_if_enabled()  # the slots as they were, before they go
         for i in range(_N_SLOTS):
             self._number_edits[i].clear()
             self._time_edits[i].clear()
