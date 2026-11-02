@@ -1809,11 +1809,12 @@ class MainWindow(QMainWindow):
                         self._number_edits[next_idx].setFocus()
                     else:
                         self._next_number.setFocus()
-                    if (
+                    shifted = (
                         self._chk_second_user.isChecked()
                         and self._check_possibility_to_empty_upper()
-                    ):
-                        self._save_backup_if_enabled()  # slot 1 written: as a button
+                    )
+                    if shifted or not no_time:  # slot 1 written, or a stamp's number
+                        self._save_backup_if_enabled()
                     return True
                 if key == Qt.Key.Key_Up and idx > 0:
                     self._number_edits[idx - 1].setFocus()

@@ -48,6 +48,15 @@ def test_enter_for_a_second_judge_is_backed_up_once_it_writes_slot_1(win, monkey
     assert len(backups) == 1
 
 
+def test_a_number_given_to_a_stamped_slot_is_backed_up_at_once(win, monkeypatch):
+    backups = _backups(win, monkeypatch)
+    win._time_edits[0].setText("1 10:0:0.000#finish")  # a beam break's stamp
+    win._number_edits[0].setText("12")
+    _enter(win, win._number_edits[0])
+    (backup,) = backups
+    assert backup["slots"][0] == ("12", "1 10:0:0.000#finish")
+
+
 def test_empty_all_backs_the_slots_up_before_it_clears_them(win, monkeypatch):
     backups = _backups(win, monkeypatch)
     monkeypatch.setattr(
