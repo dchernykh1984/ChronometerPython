@@ -95,3 +95,13 @@ def test_a_number_given_to_a_stamped_slot_is_backed_up_however_the_judge_goes_on
     win._backup_timer.timeout.emit()
     (backup,) = backups
     assert backup["slots"][0] == ("12", "1 10:0:0.000#finish")
+
+
+def test_a_time_typed_into_a_slot_is_backed_up(win, monkeypatch):
+    backups = _backups(win, monkeypatch)
+    win._number_edits[0].setText("12")  # the number first, then the time
+    win._time_edits[0].setText("1 10:0:0.000#finish")  # a stopwatch's, by hand
+    assert win._backup_timer.isActive()
+    win._backup_timer.timeout.emit()
+    (backup,) = backups
+    assert backup["slots"][0] == ("12", "1 10:0:0.000#finish")
