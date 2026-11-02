@@ -296,7 +296,8 @@ nothing at the race depends on it.
   button or key, a DSQ and a correction write it at once, and Empty all before it clears the slots;
   a burst of beam breaks or chip crossings writes it once, within 2 s of the first. A backup left
   out while "Disable backup" is checked is written when it is cleared. A backup that cannot be
-  written is tried again 2 s on and said in the action log once, until one is written again.
+  written is tried again, 2 s on and then less often up to once a minute, and said in the action
+  log once, until one is written again; Empty all empties no slot it could not back up first.
 
 ### Key Entities
 
