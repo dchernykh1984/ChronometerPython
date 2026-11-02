@@ -1266,9 +1266,11 @@ class MainWindow(QMainWindow):
 
     def _schedule_backup(self) -> None:
         """The slots backup within 2 s, once for a whole burst of device events; a
-        try again of a failed one, further off, is brought forward to it."""
+        failed one tried again much later is brought forward to it. Not one already
+        due in about 2 s: a coarse timer reports up to 5% more, and starting it again
+        at each event of a steady stream would put the backup off for ever."""
         timer = self._backup_timer
-        if not timer.isActive() or timer.remainingTime() > _BACKUP_DELAY_MS:
+        if not timer.isActive() or timer.remainingTime() > 2 * _BACKUP_DELAY_MS:
             timer.start(_BACKUP_DELAY_MS)
 
     def _on_backup_toggled(self, disabled: bool) -> None:
