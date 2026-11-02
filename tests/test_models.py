@@ -239,6 +239,17 @@ class TestSaveBackup:
         assert ok is False
         assert list(tmp_path.iterdir()) == []  # nothing a judge could take for one
 
+    def test_a_backup_is_on_the_disk_before_it_has_its_name(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        import os
+
+        path = tmp_path / "stc1761725400.txt"
+        synced = []
+        monkeypatch.setattr(os, "fsync", lambda fd: synced.append(path.exists()))
+        assert save_backup(str(path), ["1#T0#nextLap#"], "", "", [("", "")] * 5, False)
+        assert synced == [False]  # synced while it still had no name
+
     def test_invalid_path_returns_false(self) -> None:
         ok = save_backup(
             "/nonexistent_root/file.txt", [], "", "", [("", "")] * 5, False
