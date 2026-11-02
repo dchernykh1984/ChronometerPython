@@ -121,3 +121,15 @@ def test_a_group_that_cannot_be_saved_is_backed_up(win, monkeypatch):
         "GroupA",
         "0 12:00:00.000",
     )
+
+
+def test_a_start_time_typed_by_hand_is_backed_up(win, monkeypatch):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
+    assert not win._backup_timer.isActive()  # none for the window's own start value
+    win._edit_group_time.setText("0 12:00:00.000")  # typed, not yet saved
+    assert win._backup_timer.isActive()
+    win._backup_timer.timeout.emit()  # 2 s on
+    (backup,) = backups
+    assert backup["group_time"] == "0 12:00:00.000"
