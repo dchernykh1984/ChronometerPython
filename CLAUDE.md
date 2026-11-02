@@ -32,6 +32,9 @@ it, so one copied folder per event keeps its own settings, results and counters.
   competition token: never commit it, never paste its contents anywhere.
 - results / groups files - paths chosen in the UI, one line per record,
   `number#time#action#` and `group#time#`.
+- `temp/stc<timestamp>[_nn].txt` - backups of the action log and the slots:
+  after every hand action, DSQ and correction, before Empty all, and within
+  2 s of beam breaks or chip crossings, unless backup is disabled.
 
 ## Site upload (three streams, one snapshot each)
 
