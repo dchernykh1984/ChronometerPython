@@ -1554,7 +1554,10 @@ class MainWindow(QMainWindow):
             return
         if not self._save_backup_if_enabled():  # the slots as they were, kept first
             QMessageBox.warning(
-                self, "Empty all", "The slots cannot be backed up: nothing emptied."
+                self,
+                "Empty all",
+                "The slots cannot be backed up: nothing emptied.\n"
+                'Check "Disable backup" to empty them without one.',
             )
             return
         for i in range(_N_SLOTS):
