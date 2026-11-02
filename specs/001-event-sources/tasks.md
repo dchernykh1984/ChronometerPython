@@ -84,7 +84,16 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
 - [x] T017 `specs/app/chronometer.md`: sources, Crossings and Chips tabs, the new files, the
   download; README's user section. -- `docs: describe event sources, corrections and the chip files`
 
+## Phase 7: the slots backup for every crossing (FR-018)
+
+- [ ] T018 [US1] Chip crossings written start the slots backup timer, as beam breaks do: one
+  backup for a burst, within 2 s. Qt-level test.
+  -- `fix(chips): back the log and the slots up after chip crossings`
+- [ ] T019 [US3] A correction in the Crossings tab writes the slots backup at once, as a hand
+  crossing does. Qt-level test. -- `fix(crossings): back the log and the slots up after a correction`
+
 ## Dependencies
 
 T001 -> T002 -> T003 -> T004. T005 -> T006 -> T007, T006 -> T008 -> T009 -> T010.
 T009 and T001 -> T011 -> T012 -> T013 -> T014. T012 -> T015. T016 after T006. T017 last.
+Phase 7, after the rest: T010 and T012 -> T018, T003 -> T019.
