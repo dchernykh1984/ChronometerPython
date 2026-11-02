@@ -86,7 +86,7 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
 
 ## Phase 7: the slots backup for every crossing (FR-018)
 
-- [ ] T018 [US1] Chip crossings written start the slots backup timer, as beam breaks do: one
+- [x] T018 [US1] Chip crossings written start the slots backup timer, as beam breaks do: one
   backup for a burst, within 2 s. Qt-level test.
   -- `fix(chips): back the log and the slots up after chip crossings`
 - [ ] T019 [US3] A correction in the Crossings tab writes the slots backup at once, as a hand
