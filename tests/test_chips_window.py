@@ -55,7 +55,8 @@ def test_a_burst_of_chip_crossings_is_backed_up_once(win, chips_on, monkeypatch)
         win._on_source_event(Read(chip, T0 + offset, "dev", "1", -58.5, "r1"))
     assert backups == []
     assert win._backup_timer.isActive()
-    win._save_backup_if_enabled()  # the timer's tick, 2 s on
+    win._backup_timer.timeout.emit()  # its tick, 2 s on
+    assert not win._backup_timer.isActive()
     (backup,) = backups
     assert f"15#{format_time(T0)}#nextLap#" in backup["log_items"]
     assert f"22#{format_time(T0 + 100)}#nextLap#" in backup["log_items"]
