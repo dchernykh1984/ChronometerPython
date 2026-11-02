@@ -1,5 +1,59 @@
 # Changelog
 
+## [0.2.1](https://github.com/dchernykh1984/ChronometerPython/compare/v0.2.0...v0.2.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* back a DSQ and every key that writes a crossing up at once ([2452279](https://github.com/dchernykh1984/ChronometerPython/commit/24522799cee15db334b62dae89183d5b6ff9d4ec))
+* back a group start time typed by hand up within 2 s ([ab6161b](https://github.com/dchernykh1984/ChronometerPython/commit/ab6161be77cd409b47266c862604b5ebeeae49ca))
+* back a group up that the groups file refused ([1938583](https://github.com/dchernykh1984/ChronometerPython/commit/1938583cb3b7e69b3a883bd8dd8a6155e5cd74e3))
+* back a number given to a stamped slot up as Enter is pressed ([013049c](https://github.com/dchernykh1984/ChronometerPython/commit/013049c5dceb324d7760681062dff27c0e1c11b9))
+* back a saved group up with its line, not before it is written ([fbd2c49](https://github.com/dchernykh1984/ChronometerPython/commit/fbd2c496a5c82b316016a425b7fc585be3f981a8))
+* back a second judge's Enter up only when it writes slot 1 ([6793d65](https://github.com/dchernykh1984/ChronometerPython/commit/6793d65c19d2460dc3e8146045f425db0b65073d))
+* back a slot time typed or corrected by hand up within 2 s ([6c5f0a8](https://github.com/dchernykh1984/ChronometerPython/commit/6c5f0a8ce99dcd5a6dbbfaef18a29ed1affc47dd))
+* back a stamped slot's number up however the judge leaves the field ([29aad73](https://github.com/dchernykh1984/ChronometerPython/commit/29aad73760b1a2055a003ef930733fb797e00cd1))
+* back the slots up before Empty all clears them ([2259658](https://github.com/dchernykh1984/ChronometerPython/commit/2259658b969dc3a3c35ca7397205354517fa637b))
+* bring a failed backup's later try forward when crossings come ([a3503d3](https://github.com/dchernykh1984/ChronometerPython/commit/a3503d36da565284b5116f0d86105ac9eb056238))
+* bring forward only a try much later than a burst's own wait, so a stream never puts it off ([2ee169d](https://github.com/dchernykh1984/ChronometerPython/commit/2ee169d44443c4b5d2e5e002c803943de5900559))
+* **chips:** back the log and the slots up after chip crossings ([2ea51e4](https://github.com/dchernykh1984/ChronometerPython/commit/2ea51e40cbdda23a55f728f9d0d31c30a0c65ae5))
+* **chips:** log and back up every chip crossing that waits for the results file ([862220d](https://github.com/dchernykh1984/ChronometerPython/commit/862220de2ce7c46d8bd82391d2479ad696ccd566))
+* **chips:** log once and back up every waiting crossing, one restored at a start too ([d4bab46](https://github.com/dchernykh1984/ChronometerPython/commit/d4bab467f0fdf22535f4642722f1b6dbf35782cc))
+* **crossings:** back the log and the slots up after a correction ([01b763b](https://github.com/dchernykh1984/ChronometerPython/commit/01b763bc9590d4d293e747221ef05c0a221b20e2))
+* empty no slots that could not be backed up first ([3dbee13](https://github.com/dchernykh1984/ChronometerPython/commit/3dbee13122e455934adb70d5c32f785e139d41eb))
+* keep a second backup taken in the same second beside the first ([6bda49b](https://github.com/dchernykh1984/ChronometerPython/commit/6bda49bc8e6e124db46c6b16066b89e926f613e9))
+* let Empty all schedule no backup of the slots it has just emptied ([c36c1fe](https://github.com/dchernykh1984/ChronometerPython/commit/c36c1fe2e52f03deb909f2c1d2a344f02b0ab4bc))
+* **models:** put the slots backup on the disk before it takes its name ([bd7b056](https://github.com/dchernykh1984/ChronometerPython/commit/bd7b056ea06eaa9b778c44394dbf5c01b6c7866d))
+* **models:** write the slots backup in one step, so a cut write leaves no backup ([44703cb](https://github.com/dchernykh1984/ChronometerPython/commit/44703cb36de6ccd2ae7ce33d875b8d89f2ed3c6e))
+* **models:** write the slots backup unsynced and unwaited, so no hand stamp is late ([6937f99](https://github.com/dchernykh1984/ChronometerPython/commit/6937f9933ad0c73b133eccb582b283d1555ff0c5))
+* number backups of one second so their names sort as they were taken ([0e86af8](https://github.com/dchernykh1984/ChronometerPython/commit/0e86af8d2b704cceb6cdaa85f68a6f06d957f262))
+* say a backup that cannot be written in the action log ([4f4b0f1](https://github.com/dchernykh1984/ChronometerPython/commit/4f4b0f1260acb103c6b544053fc3602d79eb77ec))
+* say how to empty slots that cannot be backed up ([620a224](https://github.com/dchernykh1984/ChronometerPython/commit/620a2241eeba7c4c5c984e81054be7792dea7691))
+* say in the action log when backups are written again ([a02a696](https://github.com/dchernykh1984/ChronometerPython/commit/a02a696c951e77094221f53d56965a972d86f7b1))
+* try a backup that could not be written again 2 s on ([0a4c167](https://github.com/dchernykh1984/ChronometerPython/commit/0a4c167f9347f00cfabfa63499aecde2459fd738))
+* try a backup that keeps failing less often, up to once a minute ([f6423a2](https://github.com/dchernykh1984/ChronometerPython/commit/f6423a23d291098bf80f91a7fdffc1e1857afd17))
+* try a failed backup again on a timer of its own, so no burst waits for it ([1613025](https://github.com/dchernykh1984/ChronometerPython/commit/161302520e3eb203fce4bdec499457e6c2ab5e06))
+* write a backup waiting for its 2 s before the window closes ([2fe3529](https://github.com/dchernykh1984/ChronometerPython/commit/2fe352963918f1c6ca2dc9dfea0daeb9a467b8db))
+* write the backup left out while backups were off once they are on again ([4c2aa38](https://github.com/dchernykh1984/ChronometerPython/commit/4c2aa386158569dd366e5ddf97aec1045774bb04))
+* write the waiting backup on exit after the uploads have logged ([4da9886](https://github.com/dchernykh1984/ChronometerPython/commit/4da98863d0714272b104649cc8ef7f02077423f9))
+* write the waiting backup on exit before the uploads, which log nothing more ([ab0df86](https://github.com/dchernykh1984/ChronometerPython/commit/ab0df864438a52dca972c9c4903d752039e427af))
+
+
+### Performance Improvements
+
+* let a backup written now take the place of one waiting to be ([c020f6b](https://github.com/dchernykh1984/ChronometerPython/commit/c020f6b94d725ee5e6bc087380f3d64eac6e0215))
+
+
+### Documentation
+
+* describe the slots backup as it now is: retried, before Empty all, numbered ([d561cea](https://github.com/dchernykh1984/ChronometerPython/commit/d561ceae0e5e8ea4ffedc52f2d85e41accbac750))
+* list the review's backup work in the tasks and the backups in CLAUDE.md ([e05b339](https://github.com/dchernykh1984/ChronometerPython/commit/e05b339a2f34027bc428b339279b6e474a56b844))
+* **models:** say what a power cut can leave of an unsynced backup ([6d9570b](https://github.com/dchernykh1984/ChronometerPython/commit/6d9570b9c0d709b0e79d7595fb4835b8dee102c6))
+* say what the shared write point's backup is, and what a hand action adds ([7231e21](https://github.com/dchernykh1984/ChronometerPython/commit/7231e21994bbe8c4db287aefaeb6945561fa42fa))
+* **specs:** back every crossing up as a hand crossing is ([0bc8839](https://github.com/dchernykh1984/ChronometerPython/commit/0bc88394962e0e0c0895e2b13fff9e77ee926042))
+* **specs:** say how a failing backup is tried again and what Empty all keeps ([be87a3d](https://github.com/dchernykh1984/ChronometerPython/commit/be87a3d6daebb06ded8142d716fa4550f314d174))
+* **specs:** say what clearing Disable backup writes and what typing backs up ([5c87fa2](https://github.com/dchernykh1984/ChronometerPython/commit/5c87fa2d8dcea8585ea99a133d9d01215e020d39))
+
 ## [0.2.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.1.9...v0.2.0) (2026-10-30)
 
 
