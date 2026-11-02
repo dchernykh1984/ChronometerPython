@@ -1299,6 +1299,8 @@ class MainWindow(QMainWindow):
         if not written and not self._backup_failing:
             self._append_log(f"backup not written: {path}")
         self._backup_failing = not written
+        if not written:
+            self._schedule_backup()  # tried again 2 s on: a held folder lets go
 
     def _load_config(self, path: str) -> None:
         groups, results_file, group_start_file = load_config(path)

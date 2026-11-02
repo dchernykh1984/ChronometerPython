@@ -135,6 +135,20 @@ def test_two_backups_in_one_second_are_both_kept(win, tmp_path, monkeypatch):
     assert "15#" in second.read_text(encoding="utf-8")
 
 
+def test_a_backup_that_could_not_be_written_is_tried_again(win, monkeypatch):
+    written = iter([False, True])
+    backups = []
+    monkeypatch.setattr(
+        mw, "save_backup", lambda **k: backups.append(k) or next(written)
+    )
+    win._chk_disable_backup.setChecked(False)
+    win._save_backup_if_enabled()  # temp/ held by a virus scanner
+    assert win._backup_timer.isActive()
+    win._backup_timer.timeout.emit()  # 2 s on
+    assert len(backups) == 2
+    assert not win._backup_timer.isActive()
+
+
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
     win._chk_finish.setChecked(True)
     win._on_source_event(Read("C", T0))
