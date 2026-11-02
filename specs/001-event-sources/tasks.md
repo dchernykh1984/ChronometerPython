@@ -91,6 +91,13 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
   -- `fix(chips): back the log and the slots up after chip crossings`
 - [x] T019 [US3] A correction in the Crossings tab writes the slots backup at once, as a hand
   crossing does. Qt-level test. -- `fix(crossings): back the log and the slots up after a correction`
+- [x] T020 [US3] From review: every hand path backs up at once, DSQ, Ctrl+Enter in Next, a
+  second judge's Enter that writes slot 1, a number given to a stamped slot, Save group with
+  its line; Empty all backs up first and empties nothing it cannot back up. Qt-level tests.
+- [x] T021 [US1] From review: the backup scheduled where every line reaches the results file;
+  a backup now takes the place of a waiting one; one waiting is written on exit; one left out
+  while backups were off is written when they are on again; one that fails is said once,
+  tried again 2 s on and said again when written; two in one second get `_01`, `_02`.
 
 ## Dependencies
 
