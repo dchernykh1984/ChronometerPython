@@ -1044,6 +1044,7 @@ class MainWindow(QMainWindow):
         if written:
             self._update_crosses()
             self._schedule_chip_state_save()
+            self._schedule_backup()  # as a hand crossing is backed up
         if not own or not timing.unwritten:
             self._unwritten_timer.stop()  # tried again once that file is in use again
         waiting = self._waiting_crossings()
@@ -1255,6 +1256,11 @@ class MainWindow(QMainWindow):
         self._append_log(f"{what} (previous file kept as {backup.name})")
         self._refresh_crossings()
         self._schedule_finish_upload()
+
+    def _schedule_backup(self) -> None:
+        """The slots backup within 2 s, once for a whole burst of device events."""
+        if not self._backup_timer.isActive():
+            self._backup_timer.start(2000)
 
     def _save_backup_if_enabled(self) -> None:
         if self._chk_disable_backup.isChecked():
@@ -1619,8 +1625,8 @@ class MainWindow(QMainWindow):
                     self._number_edits[self._focused_slot].setFocus()
         if not quiet:
             self._save_backup_if_enabled()
-        elif not self._backup_timer.isActive():
-            self._backup_timer.start(2000)
+        else:
+            self._schedule_backup()
         self._update_crosses()
         return why
 

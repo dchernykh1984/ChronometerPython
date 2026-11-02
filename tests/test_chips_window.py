@@ -46,6 +46,20 @@ def test_reads_of_one_pass_make_one_crossing_at_the_first_read(win, chips_on):
     assert win._crossings.count() == 2
 
 
+def test_a_burst_of_chip_crossings_is_backed_up_once(win, chips_on, monkeypatch):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
+    for chip, offset in (("A", 0), ("C", 100)):
+        win._on_source_event(Read(chip, T0 + offset, "dev", "1", -58.5, "r1"))
+    assert backups == []
+    assert win._backup_timer.isActive()
+    win._save_backup_if_enabled()  # the timer's tick, 2 s on
+    (backup,) = backups
+    assert f"15#{format_time(T0)}#nextLap#" in backup["log_items"]
+    assert f"22#{format_time(T0 + 100)}#nextLap#" in backup["log_items"]
+
+
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
     win._chk_finish.setChecked(True)
     win._on_source_event(Read("C", T0))
