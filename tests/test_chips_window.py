@@ -150,6 +150,20 @@ def test_a_backup_that_could_not_be_written_is_tried_again(win, monkeypatch):
     assert not win._backup_timer.isActive()
 
 
+def test_a_backup_that_keeps_failing_is_tried_less_often(win, monkeypatch):
+    written = iter([False] * 7 + [True])
+    monkeypatch.setattr(mw, "save_backup", lambda **k: next(written))
+    win._chk_disable_backup.setChecked(False)
+    waits = []
+    for _ in range(7):
+        win._save_backup_if_enabled()
+        waits.append(win._backup_timer.interval())
+    assert waits == [2000, 4000, 8000, 16000, 32000, 60000, 60000]
+    win._save_backup_if_enabled()  # written at last
+    win._schedule_backup()
+    assert win._backup_timer.interval() == 2000
+
+
 def test_finish_mode_gives_chip_crossings_the_finish_action(win, chips_on):
     win._chk_finish.setChecked(True)
     win._on_source_event(Read("C", T0))
