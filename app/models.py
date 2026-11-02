@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import time
 import uuid
@@ -271,6 +272,8 @@ def save_backup(
         with temporary.open("w", encoding="utf-8") as f:
             for ln in lines:
                 f.write(ln + "\n")
+            f.flush()
+            os.fsync(f.fileno())  # on the disk before its name: a power cut too
         temporary.replace(target)  # whole under its name, or no backup there at all
         return True
     except OSError:
