@@ -269,8 +269,9 @@ def save_backup(
         action = "finish" if finish_mode else "nextLap"
         for number, time_str in slots:
             lines.append(f"{number}#{time_str}#{action}#")
-        # Whole under its name, or no backup there at all. No fsync and no wait for a
-        # rename held up, as the results file has none: a hand stamp is taken when
+        # A program that dies leaves it whole under its name, or not there; a power
+        # cut can leave it empty, as it can the results file. No fsync and no wait
+        # for a rename held up, as that file has none: a hand stamp is taken when
         # handled, on this thread; a backup that fails is tried again 2 s on.
         text = "".join(ln + "\n" for ln in lines)
         write_in_one_step(target, text, patience_s=0, sync=False)
