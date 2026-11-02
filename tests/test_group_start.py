@@ -91,3 +91,16 @@ def test_saving_without_a_time_does_nothing(win):
     win._on_save_group()
     win._start_upload.assert_not_called()
     assert _group_lines(win) == []
+
+
+def test_a_saved_group_is_backed_up_with_its_line(win, monkeypatch):
+    backups = []
+    monkeypatch.setattr(mw, "save_backup", lambda **k: backups.append(k) or True)
+    win._chk_disable_backup.setChecked(False)
+    _set_groups(win, "GroupA")
+    win._combo_group.setCurrentText("GroupA")
+    win._edit_group_time.setText("0 12:00:00.000")
+    win._on_save_group()
+    (backup,) = backups
+    assert backup["log_items"][-1] == "GroupA#0 12:00:00.000#"
+    assert backup["group_number"] == "GroupA"

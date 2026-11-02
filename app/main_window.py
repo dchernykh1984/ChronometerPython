@@ -1562,7 +1562,6 @@ class MainWindow(QMainWindow):
         time_str = self._edit_group_time.text()
         if not group or not time_str:
             return
-        self._save_backup_if_enabled()
         result_line = f"{group}#{time_str}#"
         ok = append_to_group_file(self._groups_path(), group, time_str)
         if not ok:
@@ -1571,6 +1570,7 @@ class MainWindow(QMainWindow):
             )
             return
         self._append_log(result_line)
+        self._save_backup_if_enabled()  # with its line, the group still chosen
         self._upload_group_stream()
         self._combo_group.removeItem(self._combo_group.currentIndex())
         self._combo_group.setCurrentText("")
