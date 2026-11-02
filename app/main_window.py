@@ -1583,8 +1583,8 @@ class MainWindow(QMainWindow):
             )
             return
         for i in range(_N_SLOTS):
-            self._time_edits[i].clear()
             self._number_edits[i].clear()
+            self._time_edits[i].clear()
         self._next_number.clear()
         self._backup_timer.stop()  # the slots just emptied: the backup before kept them
         self._update_crosses()
