@@ -149,6 +149,7 @@ class MainWindow(QMainWindow):
         self._backup_retry_timer.setSingleShot(True)
         self._backup_retry_timer.timeout.connect(self._save_backup_if_enabled)
         self._backup_retry_ms = _BACKUP_DELAY_MS  # doubled while backups fail, to 1 min
+        self._backup_failing = False  # the last one failed: said once, until one is not
         self._backup_left_out = False  # while backups were off: written once on
         # The event source: by hand, or a connector process for a beam or chips.
         # A connector starts only on Start, also after a restart of the program.
@@ -1311,13 +1312,13 @@ class MainWindow(QMainWindow):
             slots=slots,
             finish_mode=self._chk_finish.isChecked(),
         )
-        failing = self._backup_retry_ms != _BACKUP_DELAY_MS  # one failed before this
-        if written and failing:
+        if written and self._backup_failing:
             self._append_log(f"backup written again: {path}")
         elif not written:
-            if not failing:  # said once, not at every try
+            if not self._backup_failing:  # said once, not at every try
                 self._append_log(f"backup not written: {path}")
             self._backup_retry_timer.start(self._backup_retry_ms)  # a held one lets go
+        self._backup_failing = not written
         self._backup_retry_ms = (
             _BACKUP_DELAY_MS if written else min(2 * self._backup_retry_ms, 60_000)
         )
