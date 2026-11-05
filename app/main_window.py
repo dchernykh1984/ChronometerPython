@@ -122,7 +122,6 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(str(Path(__file__).parent / "app.ico")))
         self._results_file: str = ""
         self._group_start_file: str = ""
-        self._show_time: bool = False
         self._focused_slot: int = 0
         # Site-upload state: settings persisted in a key=value file; running upload
         # threads are kept alive until they finish (a GC'd running QThread would crash).
@@ -1390,8 +1389,13 @@ class MainWindow(QMainWindow):
 
     def _start_timer(self) -> None:
         self._timer = QTimer(self)
+        # Precise, and set again at each tick: Qt moves a coarse one up to 5% a tick
+        # toward a round moment of its own clock, and the label then showed the
+        # second before for most of each second.
+        self._timer.setTimerType(Qt.TimerType.PreciseTimer)
+        self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._on_timer_tick)
-        self._timer.start(1)
+        self._on_timer_tick()
 
     # ------------------------------------------------------------------
     # site upload (HTTP)
@@ -1497,14 +1501,13 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _on_timer_tick(self) -> None:
-        if self._show_time:
-            summer = self._chk_summer_time.isChecked()
-            self._lbl_timer.setText(get_current_time(accuracy=0, summer_time=summer))
-        else:
-            ms = int((time.time() - int(time.time())) * 1000)
-            if ms == 0:
-                self._timer.setInterval(1000)
-                self._show_time = True
+        """Show the clock's second and set the next tick for the start of the next
+        one, by the clock itself: the label flips when a stamp's second does, also
+        after the clock is set."""
+        now_ms = int(time.time() * 1000)  # read once: the label and the next tick agree
+        summer = self._chk_summer_time.isChecked() and time.localtime().tm_isdst
+        self._lbl_timer.setText(format_time(now_ms, accuracy=0, dst=bool(summer)))
+        self._timer.start(1000 - now_ms % 1000)
 
     def _on_number_changed(self, slot: int) -> None:
         self._update_crosses()
