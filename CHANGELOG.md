@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.2](https://github.com/dchernykh1984/ChronometerPython/compare/v0.2.1...v0.2.2) (2026-11-05)
+
+
+### Bug Fixes
+
+* flip the clock as each second starts, so it shows the second a stamp gets ([0de6f54](https://github.com/dchernykh1984/ChronometerPython/commit/0de6f54d2f0c398f91c4608adeea837ff480ed97))
+* keep the clock ticking after a tick that fails, as it sets each next tick itself ([b4a5bb4](https://github.com/dchernykh1984/ChronometerPython/commit/b4a5bb4304cf0c5ed36ccf3a38dc591bf36da28f))
+* show a clock that cannot be read as such, and say so in the log once ([6a1cbd5](https://github.com/dchernykh1984/ChronometerPython/commit/6a1cbd5ab2178f725996900d23533c0425727750))
+* show the summer hour on the clock as soon as it is checked, as stamps get it ([280b4b0](https://github.com/dchernykh1984/ChronometerPython/commit/280b4b08c530a78624cde26233c017fcb00ec814))
+
+
+### Documentation
+
+* say the clock comes back within a tick after the clock is set, not at once ([b5b08f1](https://github.com/dchernykh1984/ChronometerPython/commit/b5b08f13ca2e3b95cf7b2e911e72b469377587e1))
+* say the clock shows a hand stamp's second, a device's own rounded as before ([751c9a4](https://github.com/dchernykh1984/ChronometerPython/commit/751c9a44af06bf5d90b1d79f77070b16c5bc6eec))
+* say why the summer box is connected to the clock where the clock's timer is made ([a165a69](https://github.com/dchernykh1984/ChronometerPython/commit/a165a693363c45dff405ac762fcede2191f2e86b))
+* **skills:** say the clock ticks on a precise timer at each second, not a 1 ms one ([02e87a8](https://github.com/dchernykh1984/ChronometerPython/commit/02e87a83dc01db781750d541fc3b629d48291b8a))
+
 ## [0.2.1](https://github.com/dchernykh1984/ChronometerPython/compare/v0.2.0...v0.2.1) (2026-11-02)
 
 
