@@ -148,15 +148,6 @@ def get_current_time(accuracy: int = 3, summer_time: bool = False) -> str:
     return format_time(int(time.time() * 1000), accuracy, dst)
 
 
-def format_elapsed(seconds_since_start: float) -> str:
-    """Format elapsed seconds as 'HH:MM:SS' for the timer label."""
-    t = int(seconds_since_start)
-    h = t // 3600
-    m = (t % 3600) // 60
-    s = t % 60
-    return f"{h:02d}:{m:02d}:{s:02d}"
-
-
 def dsq_status(reason: str = "") -> str:
     """Build the DSQ status field written into ``number#time#<status>#``.
 

@@ -9,7 +9,6 @@ from app.models import (
     append_to_finish_file,
     append_to_group_file,
     dsq_status,
-    format_elapsed,
     get_current_time,
     load_config,
     save_backup,
@@ -107,25 +106,6 @@ class TestGetCurrentTime:
         result = get_current_time(0, summer_time=True)
         # DST not active -> no extra hour, stays at day 1, 01:00:00
         assert result == "1 1:0:0"
-
-
-# ---------------------------------------------------------------------------
-# format_elapsed
-# ---------------------------------------------------------------------------
-
-
-class TestFormatElapsed:
-    def test_zero(self) -> None:
-        assert format_elapsed(0) == "00:00:00"
-
-    def test_one_hour(self) -> None:
-        assert format_elapsed(3600) == "01:00:00"
-
-    def test_complex(self) -> None:
-        assert format_elapsed(3661) == "01:01:01"
-
-    def test_two_hours(self) -> None:
-        assert format_elapsed(7200) == "02:00:00"
 
 
 # ---------------------------------------------------------------------------
