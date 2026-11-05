@@ -1507,10 +1507,14 @@ class MainWindow(QMainWindow):
         """Show the time a stamp taken now gets, to the second, and set the next tick
         for the start of the next second by the clock itself: the label flips as a
         stamp's second does, also after the clock is set."""
-        stamp = get_current_time(summer_time=self._chk_summer_time.isChecked())
-        shown, ms = stamp.rsplit(".", 1)  # one reading: the label and next tick agree
-        self._lbl_timer.setText(shown)
-        self._timer.start(1000 - int(ms))
+        delay = 1000  # a tick that fails still sets the next: the clock never stops
+        try:
+            stamp = get_current_time(summer_time=self._chk_summer_time.isChecked())
+            shown, ms = stamp.rsplit(".", 1)  # one reading: label and next tick agree
+            self._lbl_timer.setText(shown)
+            delay = 1000 - int(ms)
+        finally:
+            self._timer.start(delay)
 
     def _on_number_changed(self, slot: int) -> None:
         self._update_crosses()
