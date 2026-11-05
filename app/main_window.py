@@ -1501,13 +1501,13 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _on_timer_tick(self) -> None:
-        """Show the clock's second and set the next tick for the start of the next
-        one, by the clock itself: the label flips when a stamp's second does, also
-        after the clock is set."""
-        now_ms = int(time.time() * 1000)  # read once: the label and the next tick agree
-        summer = self._chk_summer_time.isChecked() and time.localtime().tm_isdst
-        self._lbl_timer.setText(format_time(now_ms, accuracy=0, dst=bool(summer)))
-        self._timer.start(1000 - now_ms % 1000)
+        """Show the time a stamp taken now gets, to the second, and set the next tick
+        for the start of the next second by the clock itself: the label flips as a
+        stamp's second does, also after the clock is set."""
+        stamp = get_current_time(summer_time=self._chk_summer_time.isChecked())
+        shown, ms = stamp.rsplit(".", 1)  # one reading: the label and next tick agree
+        self._lbl_timer.setText(shown)
+        self._timer.start(1000 - int(ms))
 
     def _on_number_changed(self, slot: int) -> None:
         self._update_crosses()
