@@ -1396,7 +1396,7 @@ class MainWindow(QMainWindow):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._on_timer_tick)
         # A stamp takes the summer hour as soon as it is checked: the label too.
-        self._chk_summer_time.toggled.connect(lambda _on: self._on_timer_tick())
+        self._chk_summer_time.toggled.connect(self._on_timer_tick)
         self._on_timer_tick()
 
     # ------------------------------------------------------------------
