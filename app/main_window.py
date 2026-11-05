@@ -1395,7 +1395,8 @@ class MainWindow(QMainWindow):
         self._timer.setTimerType(Qt.TimerType.PreciseTimer)
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._on_timer_tick)
-        # A stamp takes the summer hour as soon as it is checked: the label too.
+        # A stamp takes the summer hour as soon as it is checked: the label too. Here,
+        # not by the box in _setup_ui: the tick sets this timer, made only now.
         self._chk_summer_time.toggled.connect(self._on_timer_tick)
         self._on_timer_tick()
 
