@@ -42,8 +42,11 @@ def test_the_summer_hour_is_on_the_label_as_soon_as_it_is_checked(win, monkeypat
 
 
 def test_on_the_event_loop_the_label_shows_the_second_of_the_clock(win):
-    """Looked at mid-second, as a referee does: a tick held up on a busy machine, or
-    one a hair early while the clock is slewed, is not what this looks at."""
+    """What only the real event loop shows: the tick wired to the timer, firing and
+    setting itself again. Looked at mid-second, as a referee does, so a tick held up
+    on a busy machine, or one a hair early while the clock is slewed, is not what this
+    looks at. A coarse timer drifts over more ticks than this runs: the first test's
+    timer type and interval guard that."""
     win._chk_summer_time.setChecked(False)
     looked: list[tuple[float, str]] = []
     probe = QTimer()
