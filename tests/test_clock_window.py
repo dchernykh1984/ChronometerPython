@@ -27,6 +27,20 @@ def test_a_stamp_gets_the_second_the_label_shows(win, monkeypatch):
     assert win._time_edits[0].text().startswith(win._lbl_timer.text() + ".999#")
 
 
+def test_the_summer_hour_is_on_the_label_as_soon_as_it_is_checked(win, monkeypatch):
+    win._chk_summer_time.setChecked(False)
+    monkeypatch.setattr(time, "time", lambda: 1_700_000_000.250)
+    real = time.localtime
+    monkeypatch.setattr(
+        time, "localtime", lambda *at: time.struct_time((*real(*at)[:8], 1))
+    )  # daylight saving on
+    win._on_timer_tick()
+    win._chk_summer_time.setChecked(True)  # stamps get the hour at once: the label too
+    assert win._lbl_timer.text() == format_time(1_700_000_000_250, 0, dst=True)
+    win._on_finish(0)
+    assert win._time_edits[0].text().startswith(win._lbl_timer.text() + ".250#")
+
+
 def test_the_label_flips_as_each_second_of_the_clock_starts(win):
     win._chk_summer_time.setChecked(False)
     ticks: list[tuple[float, str]] = []
