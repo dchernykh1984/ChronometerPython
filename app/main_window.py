@@ -341,7 +341,7 @@ class MainWindow(QMainWindow):
         self._spin_max_laps.setValue(99)
         laps_row.addWidget(self._spin_max_laps)
         laps_row.addStretch()
-        self._lbl_timer = QLabel("00:00:00")
+        self._lbl_timer = QLabel()  # the time is put in as the window is built
         self._lbl_timer.setStyleSheet("font-size: 16pt; font-weight: bold;")
         laps_row.addWidget(self._lbl_timer)
         right.addLayout(laps_row)
