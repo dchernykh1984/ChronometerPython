@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import time
 
-import pytest
 from PySide6.QtCore import QEventLoop, Qt, QTimer
 
 from app import main_window as mw
@@ -43,21 +42,33 @@ def test_the_summer_hour_is_on_the_label_as_soon_as_it_is_checked(win, monkeypat
     assert win._time_edits[0].text().startswith(win._lbl_timer.text() + ".250#")
 
 
-def test_a_tick_that_fails_still_sets_the_next_so_the_clock_never_stops(
+def test_a_clock_not_read_goes_on_ticking_shows_as_such_and_is_said_once(
     win, monkeypatch
 ):
     """Each tick sets the next: one that failed and set none would stop the clock for
-    the rest of the race, on one second, with nothing to show it."""
+    the rest of the race. And a clock that cannot be read shows as such, never as the
+    last second it read, and the log says so once, and again once it is read."""
+    read = mw.get_current_time
 
     def unread(**_kwargs):
         raise OSError("the clock could not be read")
 
+    def said() -> list[str]:
+        lines = (win._log.item(i).text() for i in range(win._log.count()))
+        return [line for line in lines if line.startswith("clock")]
+
     monkeypatch.setattr(mw, "get_current_time", unread)
     win._timer.stop()
-    with pytest.raises(OSError):
-        win._on_timer_tick()
+    win._on_timer_tick()
+    win._on_timer_tick()
     assert win._timer.isActive()
     assert win._timer.interval() == 1000
+    assert win._lbl_timer.text() == "--:--:--"
+    assert said() == ["clock not read: the clock could not be read"]
+    monkeypatch.setattr(mw, "get_current_time", read)
+    win._on_timer_tick()
+    assert win._lbl_timer.text() != "--:--:--"
+    assert said()[-1] == "clock read again"
 
 
 def test_on_the_event_loop_the_label_shows_the_second_of_the_clock(win):

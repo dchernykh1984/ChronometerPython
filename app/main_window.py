@@ -149,6 +149,7 @@ class MainWindow(QMainWindow):
         self._backup_retry_timer.timeout.connect(self._save_backup_if_enabled)
         self._backup_retry_ms = _BACKUP_DELAY_MS  # doubled while backups fail, to 1 min
         self._backup_failing = False  # the last one failed: said once, until one is not
+        self._clock_failing = False  # the last tick read no clock: said once, too
         self._backup_left_out = False  # while backups were off: written once on
         # The event source: by hand, or a connector process for a beam or chips.
         # A connector starts only on Start, also after a restart of the program.
@@ -1512,8 +1513,18 @@ class MainWindow(QMainWindow):
         try:
             stamp = get_current_time(summer_time=self._chk_summer_time.isChecked())
             shown, ms = stamp.rsplit(".", 1)  # one reading: label and next tick agree
-            self._lbl_timer.setText(shown)
             delay = 1000 - int(ms)
+        except (OSError, OverflowError, ValueError) as error:
+            # Shown as a clock not read, never as the last second it read.
+            self._lbl_timer.setText("--:--:--")
+            if not self._clock_failing:
+                self._append_log(f"clock not read: {error}")
+            self._clock_failing = True
+        else:
+            self._lbl_timer.setText(shown)
+            if self._clock_failing:
+                self._append_log("clock read again")
+            self._clock_failing = False
         finally:
             self._timer.start(delay)
 
