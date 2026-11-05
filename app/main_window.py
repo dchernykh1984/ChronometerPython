@@ -1506,7 +1506,8 @@ class MainWindow(QMainWindow):
     def _on_timer_tick(self) -> None:
         """Show the time a stamp taken now gets, to the second, and set the next tick
         for the start of the next second by the clock itself: the label flips as a
-        stamp's second does, also after the clock is set."""
+        stamp's second does. A clock set, or a wake from sleep, can leave it a second
+        apart only until the next tick, at most a second later."""
         delay = 1000  # a tick that fails still sets the next: the clock never stops
         try:
             stamp = get_current_time(summer_time=self._chk_summer_time.isChecked())
