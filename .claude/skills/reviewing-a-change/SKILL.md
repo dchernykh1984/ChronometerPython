@@ -25,8 +25,11 @@ a dialog; upload errors are appended to the action log on purpose, because the
 network is best effort and a modal dialog mid-race is worse than a missed
 upload.
 
-**Does anything slow down or block the UI thread?** Timing runs on a 1ms
-`QTimer`. Uploads live on a `QThread` for exactly this reason, and
+**Does anything slow down or block the UI thread?** A hand stamp reads the
+clock when its event is handled, and the clock label ticks on a precise
+`QTimer` at the start of each second, both on that thread: a handler that blocks
+makes the next stamp late and holds the label back. Uploads live on a
+`QThread` for exactly this reason, and
 `closeEvent` waits for the running ones because destroying a live `QThread`
 aborts the app. Never move network or disk-heavy work back onto the handler.
 
