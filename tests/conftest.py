@@ -58,6 +58,8 @@ def win(monkeypatch, tmp_path):
     w._config_path = str(tmp_path / "groupsList.txt")  # keep config writes out of repo
     w._edit_results_file.setText(str(tmp_path / "results.txt"))
     w._edit_groups_file.setText(str(tmp_path / "groups.txt"))
+    # Saved, as a window opened on its race config is: closing asks only to exit.
+    mw.save_config(w._config_path, *w._race_config())
     yield w
     w._stop_source(wait=True)  # no connector process outlives its test
     # deleteLater waits for an event loop: a later test would run these timers,

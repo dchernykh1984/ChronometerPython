@@ -1838,9 +1838,27 @@ class MainWindow(QMainWindow):
         self._append_log(f"race config {state}: {self._config_path}")
         return saved
 
+    def _may_close(self) -> bool:
+        """Whether to close: a race config that differs from the one saved is offered
+        to be saved first, and one that cannot be saved keeps the window open."""
+        if self._race_config_saved():
+            reply = QMessageBox.question(self, "Warning", "Are you sure to exit?")
+            return reply == QMessageBox.StandardButton.Yes
+        buttons = QMessageBox.StandardButton
+        reply = QMessageBox.question(
+            self,
+            "Race config not saved",
+            "The groups and file paths are not saved in the race config "
+            f"{self._config_path}, read at the next start. Save them before exiting?",
+            buttons.Save | buttons.Discard | buttons.Cancel,
+            buttons.Save,
+        )
+        if reply == buttons.Save:
+            return self._on_save_config()
+        return reply == buttons.Discard
+
     def closeEvent(self, event) -> None:  # noqa: N802
-        reply = QMessageBox.question(self, "Warning", "Are you sure to exit?")
-        if reply == QMessageBox.StandardButton.Yes:
+        if self._may_close():
             self._stop_source(wait=True)
             self._save_chip_state()
             # The last crossings, kept before the waits below: an upload, its signal
