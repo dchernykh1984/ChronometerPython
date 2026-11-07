@@ -1854,7 +1854,7 @@ class MainWindow(QMainWindow):
             "The groups and file paths are not saved in the race config "
             f"{self._config_path}, read at the next start. Save them before exiting?",
             buttons.Save | buttons.Discard | buttons.Cancel,
-            buttons.Save,
+            buttons.Cancel,  # Enter after a close by mistake keeps the timing going
         )
         if reply == buttons.Save:
             return self._on_save_config()
