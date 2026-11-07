@@ -146,6 +146,22 @@ def test_closing_with_the_race_config_not_saved_offers_to_save_it_first(
     assert win._race_config_saved() is saved
 
 
+def test_enter_on_are_you_sure_to_exit_keeps_the_window_open(win, monkeypatch):
+    """With the config saved, the usual case mid-race: a close by mistake, then Enter,
+    must not end the timing either."""
+    defaults = []
+
+    def enter(_parent, _title, _text, _buttons, default):
+        defaults.append(default)
+        return default
+
+    monkeypatch.setattr(mw.QMessageBox, "question", enter)
+    event = Mock()
+    win.closeEvent(event)
+    assert defaults == [Buttons.No]
+    event.ignore.assert_called_once()
+
+
 def test_enter_on_the_reminder_keeps_the_window_open(win, tmp_path, monkeypatch):
     """It stands in for "Are you sure to exit?": a close by mistake, then Enter, must
     not end the timing, nor write the config without a choice made."""

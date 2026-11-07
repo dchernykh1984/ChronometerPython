@@ -1851,10 +1851,16 @@ class MainWindow(QMainWindow):
     def _may_close(self) -> bool:
         """Whether to close: a race config that differs from the one saved is offered
         to be saved first, and one that cannot be saved keeps the window open."""
-        if self._race_config_saved():
-            reply = QMessageBox.question(self, "Warning", "Are you sure to exit?")
-            return reply == QMessageBox.StandardButton.Yes
         buttons = QMessageBox.StandardButton
+        if self._race_config_saved():
+            reply = QMessageBox.question(
+                self,
+                "Warning",
+                "Are you sure to exit?",
+                buttons.Yes | buttons.No,
+                buttons.No,  # Enter after a close by mistake keeps the timing too
+            )
+            return reply == buttons.Yes
         reply = QMessageBox.question(
             self,
             "Race config not saved",
