@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/dchernykh1984/ChronometerPython/compare/v0.2.2...v0.2.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **ci:** restore the macos release asset, lost to a retired runner label ([eb4ca40](https://github.com/dchernykh1984/ChronometerPython/commit/eb4ca402aa441d42b1df3eaa9c94b1fd160123ed))
+
 ## [0.2.2](https://github.com/dchernykh1984/ChronometerPython/compare/v0.2.1...v0.2.2) (2026-11-05)
 
 
