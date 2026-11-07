@@ -1894,9 +1894,9 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(
                 self,
                 "Race config not saved",
-                f"The race config was not saved to {self._config_path}, and the "
-                "action log says why: the window stays open. Close it again and "
-                "choose Discard to exit without it.",
+                f"The race config could not be saved to {self._config_path}, so "
+                "the window stays open. Close it again and choose Discard to exit "
+                "without it.",
             )
             return False
         return reply == buttons.Discard
