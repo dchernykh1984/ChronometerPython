@@ -122,6 +122,17 @@ def test_closing_with_the_race_config_not_saved_offers_to_save_it_first(
     assert win._race_config_saved() is saved
 
 
+def test_a_race_config_that_cannot_be_read_at_exit_counts_as_not_saved(
+    win, tmp_path, monkeypatch
+):
+    """Read from inside the close: an error there would skip the closing's own steps,
+    the backup and the waits for uploads among them."""
+    win._config_path = str(tmp_path)  # a folder: it cannot be read as a file
+    asked, event = _closing(win, monkeypatch, Buttons.Cancel)
+    assert asked == ["Race config not saved"]
+    event.ignore.assert_called_once()
+
+
 def test_a_race_config_not_saved_at_exit_keeps_the_window_open(
     win, tmp_path, monkeypatch
 ):
