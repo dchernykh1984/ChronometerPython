@@ -160,6 +160,9 @@ class MainWindow(QMainWindow):
         self._setup_ui()
         self._reload_chip_map()  # the file used last; the site is never asked here
         self._config_path: str = _CONFIG_PATH
+        # The race config's groups: the dropdown drops one once started, and takes one
+        # typed in, so it is not the list to keep.
+        self._race_groups: list[str] = []
         self._load_config(self._config_path)
         self._apply_http_config_to_ui()
         if self._results_path():
@@ -1337,6 +1340,7 @@ class MainWindow(QMainWindow):
 
     def _load_config(self, path: str) -> None:
         groups, results_file, group_start_file = load_config(path)
+        self._race_groups = list(groups)
         self._combo_group.clear()
         for g in groups:
             self._combo_group.addItem(g)
@@ -1368,12 +1372,8 @@ class MainWindow(QMainWindow):
         idx = self._combo_group.findText(current)
         if idx >= 0:
             self._combo_group.setCurrentIndex(idx)
-        saved = save_config(
-            self._config_path,
-            groups,
-            self._results_path(),
-            self._groups_path(),
-        )
+        self._race_groups = list(groups)
+        saved = save_config(self._config_path, *self._race_config())
         if not saved:
             self._site_said(
                 self._lbl_groups_state,
@@ -1817,11 +1817,9 @@ class MainWindow(QMainWindow):
             self._load_config(path)
 
     def _race_config(self) -> tuple[list[str], str, str]:
-        """The groups and the two file paths, as the race config file keeps them."""
-        groups = [
-            self._combo_group.itemText(i) for i in range(self._combo_group.count())
-        ]
-        return groups, self._results_path(), self._groups_path()
+        """The groups and the two file paths, as the race config file keeps them: the
+        groups it was given, every one, not the dropdown that drops one once started."""
+        return list(self._race_groups), self._results_path(), self._groups_path()
 
     def _race_config_saved(self) -> bool:
         """The window's groups and paths are what the race config file read at the next
