@@ -1826,7 +1826,12 @@ class MainWindow(QMainWindow):
         start holds; its paths are read with forward slashes."""
         groups, results, group_starts = self._race_config()
         here = (groups, results.replace("\\", "/"), group_starts.replace("\\", "/"))
-        return here == load_config(self._config_path)
+        try:
+            return here == load_config(self._config_path)
+        except (
+            OSError
+        ):  # unreadable: not saved, and the close goes on through its steps
+            return False
 
     def _on_save_config(self) -> bool:
         """Keep the groups and the two file paths in the race config read at the next
