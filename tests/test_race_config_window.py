@@ -77,6 +77,17 @@ def test_loading_a_race_config_leaves_the_default_one_as_it_was(
     assert not win._race_config_saved()  # read in: not yet what the next start reads
 
 
+def test_a_race_config_with_a_space_after_a_path_reads_as_saved(win, tmp_path):
+    """The window strips a path. A file written by hand may keep a space after it:
+    the same path all the same, not one to ask about at every exit."""
+    loaded = tmp_path / "race.txt"
+    results, groups = tmp_path / "r.txt", tmp_path / "g.txt"
+    loaded.write_text(f"M40\nconfigFiles\n{results} \n{groups}\n", encoding="utf-8")
+    win._config_path = str(loaded)
+    win._load_config(str(loaded))
+    assert win._race_config_saved()
+
+
 def test_groups_from_the_site_are_saved_with_the_paths_as_before(win):
     win._on_groups(["A", "B"])
     assert win._race_config_saved()
