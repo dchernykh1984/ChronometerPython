@@ -94,6 +94,17 @@ _N_SLOTS = 5
 _BACKUP_DELAY_MS = 2000  # a device burst's backup, and a failed one tried again
 
 
+def _kept(path: str) -> str:
+    """A path as the race config reads it back: stripped, with forward slashes."""
+    return path.strip().replace("\\", "/")
+
+
+def _same_file(first: str, second: str) -> bool:
+    """Two spellings of one file, as the config would read them back, case aside as
+    Windows and macOS put it aside; an empty path is no file."""
+    return bool(_kept(first)) and _kept(first).casefold() == _kept(second).casefold()
+
+
 class _Worker(QThread):
     """Runs one site request off the UI thread, so a slow network never blocks timing.
 
@@ -1772,7 +1783,7 @@ class MainWindow(QMainWindow):
         if self._chk_freeze.isChecked():
             return
         path, _ = QFileDialog.getSaveFileName(self, "Select results file")
-        if path and path != self._edit_groups_file.text():
+        if path and not _same_file(path, self._edit_groups_file.text()):
             self._edit_results_file.setText(path)
         elif path:
             QMessageBox.warning(
@@ -1785,7 +1796,7 @@ class MainWindow(QMainWindow):
         if self._chk_freeze.isChecked():
             return
         path, _ = QFileDialog.getSaveFileName(self, "Select groups file")
-        if path and path != self._edit_results_file.text():
+        if path and not _same_file(path, self._edit_results_file.text()):
             self._edit_groups_file.setText(path)
         elif path:
             QMessageBox.warning(
@@ -1827,18 +1838,18 @@ class MainWindow(QMainWindow):
         are. One that cannot be read is not saved, and the close goes on all the
         same."""
         groups, results, group_starts = self._race_config()
-        here = (groups, results.replace("\\", "/"), group_starts.replace("\\", "/"))
         try:
             kept, kept_results, kept_group_starts = load_config(self._config_path)
         except OSError:
             return False
-        return here == (kept, kept_results.strip(), kept_group_starts.strip())
+        here = (groups, _kept(results), _kept(group_starts))
+        return here == (kept, _kept(kept_results), _kept(kept_group_starts))
 
     def _on_save_config(self) -> bool:
         """Keep the groups and the two file paths in the race config read at the next
         start, the default one: "Load race config" only reads another one in."""
         groups, results, group_starts = self._race_config()
-        if results and results == group_starts:  # as the file pickers refuse it
+        if _same_file(results, group_starts):  # as the file pickers refuse it
             self._append_log(
                 "race config not saved: the results and groups files are the same"
             )

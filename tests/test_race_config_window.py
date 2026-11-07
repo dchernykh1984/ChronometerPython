@@ -75,6 +75,27 @@ def test_a_race_config_with_one_file_for_both_is_not_saved(win, tmp_path):
     assert _said(win)[-1] == said
 
 
+def test_one_file_spelled_two_ways_is_one_file_for_save_and_the_pickers(
+    win, monkeypatch
+):
+    """The config reads a path back with forward slashes, and Windows and macOS do
+    not mind case: two spellings of one file are one file, for Save and the pickers
+    alike, by one rule."""
+    win._chk_freeze.setChecked(False)
+    win._edit_results_file.setText("C:\\race\\Finish.txt")
+    win._edit_groups_file.setText("c:/race/finish.txt ")
+    assert not win._on_save_config()
+    warned: list[str] = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warned.append(a[2]))
+    monkeypatch.setattr(
+        mw.QFileDialog, "getSaveFileName", lambda *a: ("C:/Race/Finish.txt", "")
+    )
+    win._edit_results_file.setText("C:/race/results.txt")
+    win._on_select_results_file()
+    assert win._results_path() == "C:/race/results.txt"
+    assert warned == ["Output files for groups and results must not be the same!"]
+
+
 def test_loading_a_race_config_leaves_the_default_one_as_it_was(
     win, tmp_path, monkeypatch
 ):
