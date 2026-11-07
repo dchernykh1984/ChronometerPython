@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.2.3...v0.3.0) (2026-11-07)
+
+
+### Features
+
+* offer to save the race config when closing with groups or paths not saved ([ff5d4dd](https://github.com/dchernykh1984/ChronometerPython/commit/ff5d4ddadc7c75ca3a93b47503fe4e6f0d6af5aa))
+* save the race config to data/groupsList.txt with a button beside Load race config ([d260e42](https://github.com/dchernykh1984/ChronometerPython/commit/d260e4218970a334b8577db03dd461cb073e6b58))
+
+
+### Bug Fixes
+
+* keep Get groups from saving a race config with one file for both, by Save's rule ([76ff034](https://github.com/dchernykh1984/ChronometerPython/commit/76ff034037ebad4fdfa4b02ad95e542e367a9d45))
+* keep the race config's groups apart from the start dropdown, which drops a group once started ([8a636f6](https://github.com/dchernykh1984/ChronometerPython/commit/8a636f620f8b55f409c69677654f0edb5ea7106a))
+* make Cancel the reminder's default, so Enter after a close by mistake keeps the timing ([bc62469](https://github.com/dchernykh1984/ChronometerPython/commit/bc624693bcd387b907a0bcae77eac7c89462f1a7))
+* make No the default of Are you sure to exit, so Enter after a close by mistake keeps the timing ([1ef0ede](https://github.com/dchernykh1984/ChronometerPython/commit/1ef0edeb705fa4b79e0d746c4459ee3c50a87304))
+* read a race config path with a space after it as the same path the window shows ([c2ef0e5](https://github.com/dchernykh1984/ChronometerPython/commit/c2ef0e51174214822390481be16e854ca11d7cf2))
+* refuse to save a race config with one file for both results and group starts ([307c3a8](https://github.com/dchernykh1984/ChronometerPython/commit/307c3a80baddd67efa70df7fa255e4a6740257fa))
+* say only what is known when the race config cannot be saved at exit, no reason promised ([7d11866](https://github.com/dchernykh1984/ChronometerPython/commit/7d11866c5ddea15a5e4e6847a34d0077a96cda78))
+* say why the window stays open when the race config cannot be saved at exit ([31e6f04](https://github.com/dchernykh1984/ChronometerPython/commit/31e6f0451943b712b21b4020bd85f9f69549a616))
+* take a race config that cannot be read at exit as not saved, so the close goes on ([c2c3ec9](https://github.com/dchernykh1984/ChronometerPython/commit/c2c3ec97d13f7b4d49f9aa4e7e0580230c2c3663))
+* tell one file spelled two ways by one rule, as the config reads paths back, for Save and the pickers ([fe6f1fc](https://github.com/dchernykh1984/ChronometerPython/commit/fe6f1fc30868489019e31bc2711ccdfa77bfd4a9))
+
 ## [0.2.3](https://github.com/dchernykh1984/ChronometerPython/compare/v0.2.2...v0.2.3) (2026-11-07)
 
 
