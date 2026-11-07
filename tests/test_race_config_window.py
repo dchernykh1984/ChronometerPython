@@ -156,6 +156,9 @@ def test_a_race_config_not_saved_at_exit_keeps_the_window_open(
 ):
     win._edit_results_file.setText(str(tmp_path / "another.txt"))
     monkeypatch.setattr(mw, "save_config", lambda *a: False)
+    warned: list[str] = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warned.append(a[1]))
     _asked, event = _closing(win, monkeypatch, Buttons.Save)
     event.ignore.assert_called_once()
+    assert warned == ["Race config not saved"]  # why the window stayed open
     assert _said(win)[-1] == f"race config not saved: {win._config_path}"
