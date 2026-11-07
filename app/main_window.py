@@ -1857,7 +1857,16 @@ class MainWindow(QMainWindow):
             buttons.Cancel,  # Enter after a close by mistake keeps the timing going
         )
         if reply == buttons.Save:
-            return self._on_save_config()
+            if self._on_save_config():
+                return True
+            QMessageBox.warning(
+                self,
+                "Race config not saved",
+                f"The race config could not be written to {self._config_path}, so "
+                "the window stays open. Close it again and choose Discard to exit "
+                "without it.",
+            )
+            return False
         return reply == buttons.Discard
 
     def closeEvent(self, event) -> None:  # noqa: N802
