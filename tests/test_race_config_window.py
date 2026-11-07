@@ -39,8 +39,9 @@ def _closing(win, monkeypatch, answer) -> tuple[list[str], Mock]:
 
 
 def test_save_race_config_keeps_the_groups_and_paths_for_the_next_start(win, tmp_path):
-    win._combo_group.clear()
-    win._combo_group.addItems(["M40", "W30"])
+    loaded = tmp_path / "race.txt"
+    save_config(str(loaded), ["M40", "W30"], "", "")
+    win._load_config(str(loaded))
     finish = str(tmp_path / "race" / "finish.txt")
     win._edit_results_file.setText(finish)
     save = next(
@@ -79,6 +80,21 @@ def test_loading_a_race_config_leaves_the_default_one_as_it_was(
 def test_groups_from_the_site_are_saved_with_the_paths_as_before(win):
     win._on_groups(["A", "B"])
     assert win._race_config_saved()
+
+
+def test_starting_groups_leaves_the_race_config_saved_with_every_group(win):
+    """A group's start drops it from the dropdown, and a name typed there joins it:
+    the race config keeps the groups it was given, not that working list."""
+    win._start_upload = Mock()  # a start goes to the site too: not what this covers
+    win._on_groups(["M40", "W30", "M50"])
+    for group in ("M40", "W30"):
+        win._combo_group.setCurrentText(group)
+        win._edit_group_time.setText("0 12:00:00.000")
+        win._on_save_group()
+    win._combo_group.addItem("typed once")
+    assert win._race_config_saved()
+    assert win._on_save_config()
+    assert load_config(win._config_path)[0] == ["M40", "W30", "M50"]
 
 
 def test_closing_with_the_race_config_saved_asks_only_whether_to_exit(win, monkeypatch):
