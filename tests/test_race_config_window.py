@@ -42,13 +42,13 @@ def test_save_race_config_keeps_the_groups_and_paths_for_the_next_start(win, tmp
     loaded = tmp_path / "race.txt"
     save_config(str(loaded), ["M40", "W30"], "", "")
     win._load_config(str(loaded))
-    finish = str(tmp_path / "race" / "finish.txt")
+    finish = (tmp_path / "race" / "finish.txt").as_posix()  # as the config reads back
     win._edit_results_file.setText(finish)
     save = next(
         b for b in win.findChildren(QPushButton) if b.text() == "Save race config"
     )
     save.click()
-    groups = str(tmp_path / "groups.txt")
+    groups = (tmp_path / "groups.txt").as_posix()
     assert load_config(win._config_path) == (["M40", "W30"], finish, groups)
     assert _said(win)[-1] == f"race config saved: {win._config_path}"
     win._edit_results_file.clear()
@@ -102,7 +102,7 @@ def test_loading_a_race_config_leaves_the_default_one_as_it_was(
     assert win._on_save_config()
     default = Path(win._config_path).read_bytes()
     other = tmp_path / "race.txt"
-    results, groups = str(tmp_path / "r.txt"), str(tmp_path / "g.txt")
+    results, groups = (tmp_path / "r.txt").as_posix(), (tmp_path / "g.txt").as_posix()
     save_config(str(other), ["Open"], results, groups)
     monkeypatch.setattr(mw.QFileDialog, "getOpenFileName", lambda *a: (str(other), ""))
     win._on_load_config()
