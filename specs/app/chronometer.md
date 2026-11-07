@@ -99,7 +99,9 @@ All runtime paths resolve against `app/paths.py:base_dir()`: the folder holding 
 frozen (on macOS the folder holding the `.app`), the working directory in development.
 
 - `data/groupsList.txt`: group names, one per line, then `configFiles`, the results file path and
-  the groups file path. "Load race config" reads another one.
+  the groups file path, read at the start. "Save race config" writes the window's groups and paths
+  there, as "Get groups" does with the groups the site sent; "Load race config" reads another one
+  into the window and leaves this one as it is.
 - Results file and groups file: paths chosen in the UI (frozen by default), appended line by line.
 - `data/http_config.txt`: `site_url`, `token`, `device_id`, `point_number`, `rev_finish`,
   `rev_group`, as `key=value`. A device id is generated on first use. Never committed.
