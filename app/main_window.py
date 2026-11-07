@@ -1837,7 +1837,13 @@ class MainWindow(QMainWindow):
     def _on_save_config(self) -> bool:
         """Keep the groups and the two file paths in the race config read at the next
         start, the default one: "Load race config" only reads another one in."""
-        saved = save_config(self._config_path, *self._race_config())
+        groups, results, group_starts = self._race_config()
+        if results and results == group_starts:  # as the file pickers refuse it
+            self._append_log(
+                "race config not saved: the results and groups files are the same"
+            )
+            return False
+        saved = save_config(self._config_path, groups, results, group_starts)
         state = "saved" if saved else "not saved"
         self._append_log(f"race config {state}: {self._config_path}")
         return saved
@@ -1863,9 +1869,9 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(
                 self,
                 "Race config not saved",
-                f"The race config could not be written to {self._config_path}, so "
-                "the window stays open. Close it again and choose Discard to exit "
-                "without it.",
+                f"The race config was not saved to {self._config_path}, and the "
+                "action log says why: the window stays open. Close it again and "
+                "choose Discard to exit without it.",
             )
             return False
         return reply == buttons.Discard

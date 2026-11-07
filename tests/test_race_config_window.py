@@ -62,6 +62,19 @@ def test_a_race_config_that_cannot_be_saved_is_said(win, monkeypatch):
     assert _said(win)[-1] == f"race config not saved: {win._config_path}"
 
 
+def test_a_race_config_with_one_file_for_both_is_not_saved(win, tmp_path):
+    """The file pickers refuse one file for results and group starts, and so does
+    Save: every later start would write both kinds of line into it."""
+    same = str(tmp_path / "one.txt")
+    win._edit_results_file.setText(same)
+    win._edit_groups_file.setText(same)
+    before = Path(win._config_path).read_bytes()
+    assert not win._on_save_config()
+    assert Path(win._config_path).read_bytes() == before
+    said = "race config not saved: the results and groups files are the same"
+    assert _said(win)[-1] == said
+
+
 def test_loading_a_race_config_leaves_the_default_one_as_it_was(
     win, tmp_path, monkeypatch
 ):
