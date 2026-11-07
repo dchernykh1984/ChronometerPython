@@ -142,6 +142,18 @@ def test_starting_groups_leaves_the_race_config_saved_with_every_group(win):
     assert load_config(win._config_path)[0] == ["M40", "W30", "M50"]
 
 
+def test_groups_from_the_site_are_not_saved_with_one_file_for_both(win, tmp_path):
+    """Get groups saves the config too, and by the same rule as Save."""
+    same = str(tmp_path / "one.txt")
+    win._edit_results_file.setText(same)
+    win._edit_groups_file.setText(same)
+    before = Path(win._config_path).read_bytes()
+    win._on_groups(["A", "B"])
+    assert Path(win._config_path).read_bytes() == before
+    said = "loaded 2 group(s), but not saved: the results and groups files are the same"
+    assert win._lbl_groups_state.text() == said
+
+
 def test_closing_with_the_race_config_saved_asks_only_whether_to_exit(win, monkeypatch):
     asked, event = _closing(win, monkeypatch, Buttons.Yes)
     assert asked == ["Warning"]

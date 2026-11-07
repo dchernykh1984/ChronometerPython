@@ -1384,6 +1384,14 @@ class MainWindow(QMainWindow):
         if idx >= 0:
             self._combo_group.setCurrentIndex(idx)
         self._race_groups = list(groups)
+        _groups, results, group_starts = self._race_config()
+        if _same_file(results, group_starts):  # by Save's rule
+            self._site_said(
+                self._lbl_groups_state,
+                f"loaded {len(groups)} group(s), but not saved: the results and "
+                "groups files are the same",
+            )
+            return
         saved = save_config(self._config_path, *self._race_config())
         if not saved:
             self._site_said(
