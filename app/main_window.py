@@ -375,9 +375,14 @@ class MainWindow(QMainWindow):
         file_layout.addWidget(self._chk_disable_backup, 3, 0, 1, 3)
         self._chk_summer_time = QCheckBox("Summer time (+1h)")
         file_layout.addWidget(self._chk_summer_time, 4, 0, 1, 3)
+        configs = QHBoxLayout()
         btn_load_config = QPushButton("Load race config")
         btn_load_config.clicked.connect(self._on_load_config)
-        file_layout.addWidget(btn_load_config, 5, 0, 1, 3)
+        configs.addWidget(btn_load_config)
+        btn_save_config = QPushButton("Save race config")
+        btn_save_config.clicked.connect(self._on_save_config)
+        configs.addWidget(btn_save_config)
+        file_layout.addLayout(configs, 5, 0, 1, 3)
         right.addWidget(file_box)
 
         # HTTP (site upload) section
@@ -1810,6 +1815,28 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, "Load groups list")
         if path:
             self._load_config(path)
+
+    def _race_config(self) -> tuple[list[str], str, str]:
+        """The groups and the two file paths, as the race config file keeps them."""
+        groups = [
+            self._combo_group.itemText(i) for i in range(self._combo_group.count())
+        ]
+        return groups, self._results_path(), self._groups_path()
+
+    def _race_config_saved(self) -> bool:
+        """The window's groups and paths are what the race config file read at the next
+        start holds; its paths are read with forward slashes."""
+        groups, results, group_starts = self._race_config()
+        here = (groups, results.replace("\\", "/"), group_starts.replace("\\", "/"))
+        return here == load_config(self._config_path)
+
+    def _on_save_config(self) -> bool:
+        """Keep the groups and the two file paths in the race config read at the next
+        start, the default one: "Load race config" only reads another one in."""
+        saved = save_config(self._config_path, *self._race_config())
+        state = "saved" if saved else "not saved"
+        self._append_log(f"race config {state}: {self._config_path}")
+        return saved
 
     def closeEvent(self, event) -> None:  # noqa: N802
         reply = QMessageBox.question(self, "Warning", "Are you sure to exit?")
