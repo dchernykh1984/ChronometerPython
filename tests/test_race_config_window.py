@@ -1,22 +1,41 @@
 """Qt-level tests for the race config: the groups and the two file paths a start reads.
 
 "Save race config" keeps them in the default file, data/groupsList.txt, read at the
-next start; "Load race config" only reads another file in. main_window is excluded
-from coverage, so these are what guard it.
+next start; "Load race config" only reads another file in. Closing with groups or
+paths that differ from the file saved offers to save them first. main_window is
+excluded from coverage, so these are what guard it.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import Mock
 
+import pytest
 from PySide6.QtWidgets import QPushButton
 
 from app import main_window as mw
 from app.models import load_config, save_config
 
+Buttons = mw.QMessageBox.StandardButton
+
 
 def _said(win) -> list[str]:
     return [win._log.item(i).text() for i in range(win._log.count())]
+
+
+def _closing(win, monkeypatch, answer) -> tuple[list[str], Mock]:
+    """Close the window, the question answered with ``answer``: the titles asked."""
+    asked: list[str] = []
+
+    def question(_parent, title, *_rest):
+        asked.append(title)
+        return answer
+
+    monkeypatch.setattr(mw.QMessageBox, "question", question)
+    event = Mock()
+    win.closeEvent(event)
+    return asked, event
 
 
 def test_save_race_config_keeps_the_groups_and_paths_for_the_next_start(win, tmp_path):
@@ -60,3 +79,38 @@ def test_loading_a_race_config_leaves_the_default_one_as_it_was(
 def test_groups_from_the_site_are_saved_with_the_paths_as_before(win):
     win._on_groups(["A", "B"])
     assert win._race_config_saved()
+
+
+def test_closing_with_the_race_config_saved_asks_only_whether_to_exit(win, monkeypatch):
+    asked, event = _closing(win, monkeypatch, Buttons.Yes)
+    assert asked == ["Warning"]
+    event.accept.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    ("answer", "closes", "saved"),
+    [
+        (Buttons.Save, True, True),
+        (Buttons.Discard, True, False),
+        (Buttons.Cancel, False, False),
+    ],
+    ids=["save", "discard", "cancel"],
+)
+def test_closing_with_the_race_config_not_saved_offers_to_save_it_first(
+    win, tmp_path, monkeypatch, answer, closes, saved
+):
+    win._edit_results_file.setText(str(tmp_path / "another.txt"))
+    asked, event = _closing(win, monkeypatch, answer)
+    assert asked == ["Race config not saved"]
+    assert (event.accept.called, event.ignore.called) == (closes, not closes)
+    assert win._race_config_saved() is saved
+
+
+def test_a_race_config_not_saved_at_exit_keeps_the_window_open(
+    win, tmp_path, monkeypatch
+):
+    win._edit_results_file.setText(str(tmp_path / "another.txt"))
+    monkeypatch.setattr(mw, "save_config", lambda *a: False)
+    _asked, event = _closing(win, monkeypatch, Buttons.Save)
+    event.ignore.assert_called_once()
+    assert _said(win)[-1] == f"race config not saved: {win._config_path}"
