@@ -189,6 +189,7 @@ class Connector:
         self.link: Any = None
         self.next_ping = self.reopen = 0.0
         self.status: tuple[str, str] | None = None  # the last said
+        self.unknown: set[str] = set()  # commands not known, each said once
 
     def send(self, message: dict[str, Any]) -> None:
         if message["type"] == "status":
@@ -204,9 +205,11 @@ class Connector:
             try:
                 command = json.loads(raw)
             except ValueError:
-                continue
+                command = None
             if isinstance(command, dict):
                 self.inbox.put(("command", command))
+            else:  # the protocol: logged and ignored, the log the chronometer's
+                print(f"not a JSON object, ignored: {raw[:80]!r}", file=sys.stderr)
         self.inbox.put(("eof", None))
 
     def listen(self, link: Any) -> None:
@@ -262,16 +265,27 @@ class Connector:
                 detail += f": {BLOCKED}"
             self.send({"type": "status", "state": "connected", "detail": detail})
 
+    def obey(self, command: dict[str, Any]) -> bool:
+        """One of the chronometer's commands; False for stop."""
+        cmd = command.get("cmd")
+        if cmd == "stop":
+            return False
+        if cmd == "ping":
+            self.send({"type": "pong", "id": command.get("id")})
+        elif cmd == "start":
+            self.started = True
+        elif repr(cmd) not in self.unknown:  # the protocol: logged once, ignored
+            self.unknown.add(repr(cmd))
+            print(f"unknown cmd {cmd!r}: ignored", file=sys.stderr)
+        return True
+
     def handle(self, kind: str, item: Any) -> bool:
         """Act on one inbox item; False once the chronometer has said stop."""
-        command = item.get("cmd") if kind == "command" else None
-        if kind == "eof" or command == "stop":
+        if kind == "eof":
             return False
-        if command == "ping":
-            self.send({"type": "pong", "id": item.get("id")})
-        elif command == "start":
-            self.started = True
-        elif kind == "board":
+        if kind == "command":
+            return self.obey(item)
+        if kind == "board":
             for event in self.bridge.from_board(*item):
                 self.send(event)
         elif kind == "lost" and item[0] is self.link:

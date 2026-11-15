@@ -484,6 +484,27 @@ def test_a_second_program_on_the_board_is_refused_not_given_half_its_lines(seria
     _until(lambda: ended == also_ended == [0])
 
 
+def test_a_command_not_understood_is_logged_once_and_ignored(ports, serial, capfd):
+    """As the protocol has it; the chronometer shows its error output in its log."""
+    chronometer = Chronometer()
+    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    chronometer.commands.put(b"[1, 2]\n")
+    chronometer.commands.put(b"not json\n")
+    for _ in range(2):
+        chronometer.tell({"cmd": "calibrate", "id": 3})
+    chronometer.tell({"cmd": ["odd"]})
+    chronometer.tell({"cmd": "ping", "id": 9})
+    assert chronometer.next() == {"type": "pong", "id": 9}  # and it goes on
+    chronometer.tell({"cmd": "stop"})
+    _until(lambda: ended == [0])
+    assert capfd.readouterr().err.splitlines() == [
+        "not a JSON object, ignored: b'[1, 2]\\n'",
+        "not a JSON object, ignored: b'not json\\n'",
+        "unknown cmd 'calibrate': ignored",
+        "unknown cmd ['odd']: ignored",
+    ]
+
+
 def test_a_board_missing_is_said_once_not_at_every_retry(monkeypatch):
     monkeypatch.setattr(c, "REOPEN_AFTER_S", 0.0)
     tries: list[str] = []
