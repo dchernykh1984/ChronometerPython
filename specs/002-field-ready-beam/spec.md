@@ -1,0 +1,282 @@
+# Feature Specification: A beam ready for real races
+
+**Feature Branch**: `002-field-ready-beam`
+
+**Created**: 2026-11-15
+
+**Status**: Draft
+
+**Input**: User description: "The laser beam made ready for real races. The time of a break is taken
+on the board's own chip, so no Bluetooth delay moves it; the beam works over a USB cable and over
+Bluetooth, on the desktop and on the phone; it rides out a laser wavering in the wind (a lens?);
+the emitter and the receiver are sealed against the weather (epoxy?); 3D models of the enclosures
+are designed; the repository keeps each kind of thing in a folder of its own next to the code
+(models apart, firmware for each chip apart). Plus what was decided before about the beam."
+
+## Context
+
+The RP2040 beam board works today over a USB cable: on the desktop chronometer (v0.5.0, device
+"Beam board RP2040 (USB)") and on the Android app (v0.9.0, "USB beam"). It times each break with its
+own clock, and both apps read it by one contract, `specs/001-event-sources/contracts/
+beam-board-protocol.md`. A judge's finger over its sensor stamps cutoffs in both apps. What it is
+not yet is a beam for a real race: it needs a cable to the laptop or phone, a bare sensor that a
+wavering laser misses, and no protection from rain. Spec 001 already asks for a beam that rides out
+the wind (FR-019, SC-007, research 11, task T023); this spec takes that over with the rest.
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - The board's own time, whatever the link (Priority: P1)
+
+A rider crosses the beam; the judge's laptop or phone may get the news late -- over Bluetooth some
+10 to 50 ms late, and not the same each time -- but the break's time is the moment the board saw
+it, by the board's own clock. The judge sees the same time for the same crossing whether the board
+is on a cable or on Bluetooth.
+
+**Why this priority**: A timing that depends on the link is no timing: Bluetooth would add tens of
+milliseconds of noise to every rider, more than separates riders at a sprint finish.
+
+**Independent Test**: Break the beam 200 times with a reference timer watching the same light, once
+over the cable and once over Bluetooth; each break's time is compared with the reference.
+
+**Acceptance Scenarios**:
+
+1. **Given** a board on Bluetooth, **When** a rider crosses, **Then** the break's time is the board's
+   first edge mapped onto the host's clock, within 2 ms of the reference, however late its message
+   came.
+2. **Given** the same crossing seen by one board over the cable and the same board over Bluetooth,
+   **When** both times are compared, **Then** they differ by no more than 2 ms.
+3. **Given** a break whose message reaches the host before the board's clock is mapped, **When**
+   the mapping comes, **Then** the break is timed by the board's clock, never by when its message
+   arrived over Bluetooth.
+
+---
+
+### User Story 2 - The beam over a cable or over Bluetooth, on the desktop and on the phone (Priority: P1)
+
+The judge chooses how the board is linked: a USB cable, as now, or Bluetooth, with no cable across
+the finish. Both the desktop chronometer and the Android app offer both. A board on Bluetooth runs
+on its own power for a whole race day and keeps timing when the link drops: what it saw meanwhile
+reaches the judge once the link is back.
+
+**Why this priority**: A cable across a finish line is a trip hazard and ties the judge to the
+line; the wired version stays for whoever has it, and as the fallback.
+
+**Independent Test**: Run a race of breaks through a board on Bluetooth to the desktop and to the
+phone; cut the link for a minute mid-race; every break arrives, each with its right time.
+
+**Acceptance Scenarios**:
+
+1. **Given** the desktop chronometer or the Android app, **When** the judge chooses the beam device,
+   **Then** both the USB board and the Bluetooth board are offered, and the choice is kept.
+2. **Given** several boards in Bluetooth range (a start and a finish, say), **When** the judge picks
+   one, **Then** it is picked by a name or id the board shows, and the app never reads another.
+3. **Given** a board on Bluetooth whose link drops for 60 s, **When** the link is back, **Then**
+   every break it saw meanwhile reaches the app, each with its board time, and the app says that
+   the link was down and for how long.
+4. **Given** a board on its own power, **When** its power runs low, **Then** the app tells the judge
+   well before it runs out.
+
+---
+
+### User Story 3 - A beam that rides out the wind (Priority: P2)
+
+At 10 m a tilt of 0.06 degrees moves a laser's spot by 1 cm, more than a bare sensor is wide: the
+wind on a stand, or a metal ramp flexing under riders, would break the beam at every gust. The
+field-ready beam reports no break when only the beam wavers, and still sees every rider.
+
+**Why this priority**: Without it the beam fails its first windy race; it needs the board of
+Story 1 to be tested with.
+
+**Independent Test**: Spec 001's SC-007, at 10 m: shake the stands for 5 minutes, the spot moving
+up to 2 cm, and sweep a hand through the beam 50 times.
+
+**Acceptance Scenarios**:
+
+1. **Given** the beam set up at 10 m, **When** its stands are shaken so that the spot moves up to
+   2 cm, **Then** no break is reported.
+2. **Given** the same beam, **When** a hand or a wheel at 60 km/h crosses it, **Then** a break is
+   reported every time.
+3. **Given** the sun low in the receiver's view, **When** a rider crosses, **Then** the break is seen
+   and the sun alone makes none.
+
+---
+
+### User Story 4 - An emitter and a receiver that stand the weather (Priority: P2)
+
+Races go on in rain, dust and morning dew. The emitter and the receiver are sealed against them,
+and still let the beam through a clear window, let the judge aim them, and let the battery be
+charged and the firmware be updated without breaking the seal.
+
+**Why this priority**: One wet race would end a board that is not sealed; a sealed one that cannot
+be charged or updated is no better.
+
+**Independent Test**: Spray each part with water from every side for 10 minutes, leave it out over
+a night, then time a race of breaks with it.
+
+**Acceptance Scenarios**:
+
+1. **Given** a sealed emitter and receiver, **When** they are sprayed from every side for 10
+   minutes, **Then** no water is inside and the beam works after.
+2. **Given** rain on the parts during a race, **When** a rider crosses, **Then** the break is seen,
+   and drops on the window make no break of their own.
+3. **Given** a sealed board, **When** its battery is low or its firmware is to be updated, **Then**
+   both can be done without opening or breaking the seal.
+
+---
+
+### User Story 5 - Enclosures and mounts anyone can print (Priority: P3)
+
+Every part has an enclosure and a mount designed for a hobby 3D printer: the emitter, the receiver,
+the board with its battery, and a stand or a stake mount that keeps the beam off a flexing ramp,
+with a way to aim. The models are in the repository, as editable sources and as files ready to
+print.
+
+**Why this priority**: The parts need a body to be used at a race at all; printing them makes the
+kit cheap and repeatable.
+
+**Independent Test**: Print every part from the repository's files with its stated settings, and
+assemble a kit with them.
+
+**Acceptance Scenarios**:
+
+1. **Given** the repository alone, **When** someone prints every part with the settings stated,
+   **Then** the parts fit the electronics and each other with no change.
+2. **Given** a part to change, **When** it is opened from its source model, **Then** it can be
+   edited and exported to a new print file.
+
+---
+
+### User Story 6 - Everything for a kit in its own folder (Priority: P3)
+
+The repository keeps each kind of thing in a folder of its own next to the code: the enclosure
+models in one, the firmware in another with a subfolder for each chip or board (the RP2040 now, the
+Bluetooth board next), each with its README and its versions pinned. One copy of the repository is
+enough to build the whole kit, the same way every time.
+
+**Why this priority**: The kit is built again by others and for other races; a scattered or
+unpinned kit is built differently each time.
+
+**Independent Test**: Someone new to the project builds a working kit from the repository alone.
+
+**Acceptance Scenarios**:
+
+1. **Given** the repository, **When** someone looks for a chip's firmware or a part's model, **Then**
+   it is in that chip's or that part's folder, with a README that says how to build or print it.
+2. **Given** two kits built from one version of the repository, **When** they are compared, **Then**
+   they run the same firmware and have the same parts.
+
+---
+
+### Edge Cases
+
+- The Bluetooth link drops while a rider crosses: the break is kept on the board and comes once the
+  link is back, with its board time.
+- The board restarts (power lost): its count and clock start anew; the app says so, as it does over
+  USB today.
+- Two boards in range, a start and a finish: each app reads only the board it was told to.
+- The battery runs low mid-race: the judge is told well before the board stops.
+- Rain on the optical window, condensation inside after a cold night: neither makes a break of its
+  own nor hides a rider.
+- The sun low in the receiver's view, or a reflection from a car: no break of its own.
+- A sealed board must be re-flashed for a new firmware: it can be, without opening it.
+- The judge aims the beam alone at 12 m: the board shows when the light reaches the receiver.
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+- **FR-001**: A break's time MUST be the moment of its first edge by the board's own clock, mapped
+  onto the host's clock; no link delay, USB or Bluetooth, may move it.
+- **FR-002**: The mapping of the board's clock onto the host's MUST stay within 2 ms of the truth
+  over Bluetooth, although a round trip there takes 15 to 60 ms (the contract's 20 ms limit on
+  round trips is for USB), and within 1 ms over USB as today.
+- **FR-003**: A break over Bluetooth MUST never be stamped by when its message arrived: one that
+  comes before the clock is mapped waits for the mapping, and the judge is told while it waits.
+- **FR-004**: The beam MUST work over a USB cable and over Bluetooth alike, on the desktop
+  chronometer and on the Android app; the judge chooses the link, and the choice is kept.
+- **FR-005**: The board MUST speak the same lines of the one contract over both links; anything new
+  the Bluetooth link needs (a battery level, breaks kept while the link was down) is added to the
+  contract first, for both apps and every board.
+- **FR-006**: A board on Bluetooth MUST keep timing when its link drops, keep at least the last 100
+  breaks it saw meanwhile, and send them with their board times once the link is back; the app
+  says the link was down and for how long.
+- **FR-007**: With several boards in range, the judge MUST pick a board by a name or id the board
+  shows; an app MUST never read a board it was not told to.
+- **FR-008**: A board on Bluetooth MUST run on its own power (a battery or a power bank) for at least
+  10 hours, report its power level, and warn the judge when 20% is left.
+- **FR-009**: The beam MUST report no break when only the beam wavers -- the spot moving up to 2 cm
+  at 10 m -- and MUST report every crossing of a rider (spec 001, FR-019).
+- **FR-010**: The receiver MUST NOT be blinded by the sun nor make breaks of its own from sunlight
+  or reflections.
+- **FR-011**: The beam MUST work with its parts 10 to 12 m apart.
+- **FR-012**: The way the beam rides out the wind MUST be chosen and built: [NEEDS CLARIFICATION:
+  a laser with a lens of 3-5 cm and the sensor at its focus in a black tube, or an industrial
+  retroreflective sensor with a prism reflector, modulated so the sun does not blind it?]
+- **FR-013**: The emitter and the receiver MUST withstand rain, dust and dew as an IP65 class at
+  least, IP67 aimed, while keeping a clear optical window, a way to aim, and a way to charge and
+  re-flash without breaking the seal. [NEEDS CLARIFICATION: sealed by epoxy potting of the
+  electronics, by conformal coating, or by a gasketed enclosure?]
+- **FR-014**: The board MUST help aiming: its light shows whether the beam reaches the receiver, and
+  it tells the app the light's state, as `STATUS` does today.
+- **FR-015**: On request the board MUST light a light the PhotoFinish cameras see at 10 m in
+  daylight, and report the moment on its clock (the contract's `FLASH`), so a video frame can be tied
+  to the board's clock (ChronometerPython#49, comment 5).
+- **FR-016**: Every part MUST have a 3D-printable enclosure and mount -- the emitter, the receiver,
+  the board with its battery, and a stand or a stake mount that keeps the beam off a ramp with a way
+  to aim -- kept in the repository as editable source models, print-ready files, and the print
+  settings (material fit for sun and rain, for example PETG or ASA).
+- **FR-017**: The repository MUST keep each kind of thing in a folder of its own next to the code:
+  enclosure models in one, firmware in another with a subfolder for each chip or board; each folder
+  with a README and its versions pinned, so the whole kit is built the same way from the repository
+  alone.
+- **FR-018**: The Bluetooth board MUST be chosen and its firmware kept beside the RP2040's:
+  [NEEDS CLARIFICATION: an ESP32-C3 SuperMini, a Raspberry Pi Pico W, or an HM-10 module wired to the
+  RP2040-Zero?]
+- **FR-019**: The beam MUST keep the uses it has today: riders crossing one at a time (time trials,
+  downhill), each break a rider's cutoff, and group starts; a crossing is never lost, and every
+  break stays in the beam's raw file first.
+
+### Key Entities *(include if feature involves data)*
+
+- **Beam board**: a board the apps read; its name or id, firmware version, link (USB or Bluetooth),
+  power level, and the breaks it keeps while its link is down.
+- **Break**: a crossing as the board saw it -- its count, its time on the board's clock, its time on
+  the host's clock.
+- **Firmware variant**: the firmware for one chip or board; its version, its pinned build, its
+  README.
+- **Enclosure part**: one printed part; its source model, its print file, its print settings, the
+  electronics it holds.
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: Over either link, 99% of 200 test breaks are within 2 ms of a reference timer watching
+  the same light; one crossing over the cable and over Bluetooth differs by at most 2 ms.
+- **SC-002**: With the Bluetooth link cut for 60 s mid-race and restored, every break seen meanwhile
+  appears in the app with its right time; none is lost.
+- **SC-003**: A board on its own power runs a 10-hour race day with its link up, and the judge is
+  warned at 20% power left.
+- **SC-004**: Spec 001's SC-007 at 10 m: 5 minutes of shaking the stands, the spot moving up to 2 cm,
+  no break; 50 hand sweeps, 50 breaks.
+- **SC-005**: With the sun low in the receiver's view for 10 minutes, no break of its own, and a hand
+  sweep still seen every time.
+- **SC-006**: After 10 minutes of water spray from every side and a night outdoors, no water is
+  inside and the beam times a race of breaks with no miss.
+- **SC-007**: One person aims the emitter and the receiver 12 m apart within 5 minutes.
+- **SC-008**: A FLASH is seen on every camera at 10 m in daylight, tying a frame to the board's clock
+  within one frame.
+- **SC-009**: Someone new to the project builds a working kit -- firmware flashed, parts printed and
+  assembled, wired -- from the repository alone, with no question asked.
+
+## Assumptions
+
+- Bluetooth means Bluetooth Low Energy, carrying the contract's lines over the Nordic UART Service,
+  as ChronometerPython#49 (comment 3) proposed; the desktop runs on a computer with Bluetooth.
+- The USB cable version stays as it is, the fallback and the choice of whoever has no Bluetooth.
+- Parts are printed on a hobby FDM printer.
+- The hardware choices marked for clarification are made in this PR, before planning; the rest
+  of the spec does not depend on which is chosen.
+- Chips and video analysis are out of scope: their own specs cover them.
+- This spec takes over spec 001's FR-019, SC-007 and task T023; once it is planned, 001 points
+  here.
