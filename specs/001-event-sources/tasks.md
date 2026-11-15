@@ -106,7 +106,7 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
 
 - [x] T024 [US4] The beam board, built again from the repository alike: its MicroPython
   firmware, the connector the chronometer starts as a custom command, and how to wire, flash and
-  start it, every version pinned (`firmware/beam_rp2040/`, `tests/test_beam_connector.py`).
+  start it, every version pinned (`beam/firmware/rp2040/`, `tests/test_beam_connector.py`).
   Done when a finger over the sensor stamps a slot in the chronometer.
 - [x] T025 [US4] A beam break and the second judge's stamp come in at the bottom slot with the
   number in Next, as a hand cutoff (FR-012). -- `feat(beam): bring a beam break and the second

@@ -81,7 +81,7 @@ set of files. Use real copies.
 Crossings are typed by hand by default. The **Event source** group switches to a
 light beam or to timing chips, through a small program the chronometer starts on
 **Start** and stops on **Stop** or on exit. Its devices: the beam board
-(`Beam board RP2040 (USB)`, built from `firmware/beam_rp2040/`), test devices
+(`Beam board RP2040 (USB)`, built from `beam/firmware/rp2040/`), test devices
 ("Test beam", "Test chips", replaying a chip reads file) and a command of your
 own; chip readers and the Bluetooth beam are listed as not available yet.
 

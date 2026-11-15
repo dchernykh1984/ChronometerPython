@@ -4,7 +4,7 @@
 
 ## Phase 1: Layout and contract
 
-- [ ] T001 Move `firmware/beam_rp2040/` into `beam/firmware/rp2040/` and point every reference at it
+- [x] T001 Move `firmware/beam_rp2040/` into `beam/firmware/rp2040/` and point every reference at it
 - [ ] T002 Contract 0.4 in `specs/001-event-sources/contracts/beam-board-protocol.md`: Bluetooth
   (FFE0/FFE1), `PONG <n> <got_us> <sent_us>`, `RESEND <seq>`, the ESP32-C3's ids, the answers to the
   asker (FR-005)

@@ -1,4 +1,4 @@
-"""The beam board's firmware, firmware/beam_rp2040/main.py, run on the computer.
+"""The beam board's firmware, beam/firmware/rp2040/main.py, run on the computer.
 
 MicroPython's modules are faked: its 30-bit microsecond ticks are a counter the
 test moves on, the sensor's pin a level the test sets, and the pin's IRQ is called
@@ -109,8 +109,8 @@ def make_rig(monkeypatch: pytest.MonkeyPatch, start_us: int) -> Rig:
     vars(neopixel).update(NeoPixel=NeoPixel)
     for module in (machine, micropython, neopixel):
         monkeypatch.setitem(sys.modules, module.__name__, module)
-    monkeypatch.delitem(sys.modules, "firmware.beam_rp2040.main", raising=False)
-    firmware = importlib.import_module("firmware.beam_rp2040.main")
+    monkeypatch.delitem(sys.modules, "beam.firmware.rp2040.main", raising=False)
+    firmware = importlib.import_module("beam.firmware.rp2040.main")
     monkeypatch.setattr(firmware, "print", said.append, raising=False)
     return Rig(firmware, ticks, said)
 

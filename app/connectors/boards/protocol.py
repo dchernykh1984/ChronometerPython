@@ -116,7 +116,7 @@ class Bridge:
                     "type": "error",
                     "message": f"the board runs firmware {runs}, the chronometer "
                     f"reads {self.spec.firmware}: flash the board again "
-                    "(firmware/ in the repository)",
+                    "(beam/firmware/ in the repository)",
                 }
             )
         return said

@@ -134,7 +134,8 @@ def test_a_board_on_another_firmware_than_the_chronometer_reads_is_said():
         {
             "type": "error",
             "message": "the board runs firmware 0.1, the chronometer reads "
-            f"{rp2040.FIRMWARE}: flash the board again (firmware/ in the repository)",
+            f"{rp2040.FIRMWARE}: flash the board again "
+            "(beam/firmware/ in the repository)",
         },
     ]
     same = p.Bridge(rp2040.BOARD).from_board(HELLO, 0.0)
@@ -158,7 +159,7 @@ def test_a_hello_short_of_words_is_taken_without_falling_over(line, runs):
 
 
 def test_the_connector_expects_the_firmware_beside_it():
-    main = Path(__file__).parents[1] / "firmware" / "beam_rp2040" / "main.py"
+    main = Path(__file__).parents[1] / "beam" / "firmware" / "rp2040" / "main.py"
     main = main.read_text(encoding="utf-8")
     assert f'\nFIRMWARE = "{rp2040.FIRMWARE}"\n' in main
 
