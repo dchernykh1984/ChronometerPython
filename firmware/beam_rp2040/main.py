@@ -25,7 +25,7 @@ import machine
 import micropython
 import neopixel
 
-FIRMWARE = "0.1"
+FIRMWARE = "0.2"
 SENSOR_PIN = 2  # DO of the light sensor module: high while its light is gone
 LED_PIN = 16  # the board's colour LED
 HOLD_OFF_MS = 1000  # one rider, one break: a bike's wheels and body pass within it
@@ -77,7 +77,9 @@ class Clock:
 class Board:
     def __init__(self):
         self.clock = Clock()
-        self.sensor = machine.Pin(SENSOR_PIN, machine.Pin.IN)
+        # Pulled up: a loose wire reads as a blocked beam, which the computer says,
+        # not as noise, which would be phantom breaks, nor as light, none at all.
+        self.sensor = machine.Pin(SENSOR_PIN, machine.Pin.IN, machine.Pin.PULL_UP)
         self.led = neopixel.NeoPixel(machine.Pin(LED_PIN), 1)
         self.hold_off_us = HOLD_OFF_MS * 1000
         self.seq = 0
