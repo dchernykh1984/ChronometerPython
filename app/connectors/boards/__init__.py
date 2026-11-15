@@ -30,5 +30,5 @@ def boards() -> dict[str, Board]:
     """Every board the chronometer reads, by connector name."""
     from app.connectors.boards import esp32c3, rp2040
 
-    every = (rp2040.BOARD, esp32c3.BOARD)
+    every = (rp2040.BOARD, rp2040.RADIO, esp32c3.BOARD, esp32c3.RADIO)
     return {board.name: board for board in every}

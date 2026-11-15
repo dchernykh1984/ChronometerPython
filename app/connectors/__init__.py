@@ -59,14 +59,20 @@ CONNECTORS = (
     ConnectorInfo("llrp", "chips", "LLRP reader (Impinj, Zebra)", available=False),
     ConnectorInfo("raceresult", "chips", "RaceResult decoder", available=False),
     ConnectorInfo("r2000", "chips", "R2000 reader (serial or TCP)", available=False),
-    # The beam boards the chronometer reads itself (app/connectors/boards/).
+    # The beam boards the chronometer reads itself (app/connectors/boards/): on USB
+    # a port, else the first with the board's ids; on Bluetooth the board's name.
     *(
         ConnectorInfo(
-            b.name, "beam", b.label, settings={"port": "", "hold_off_ms": 1000}
+            b.name,
+            "beam",
+            b.label,
+            settings={
+                "device" if b.transport == "ble" else "port": "",
+                "hold_off_ms": 1000,
+            },
         )
         for b in boards().values()
     ),
-    ConnectorInfo("beam-ble", "beam", "Bluetooth beam", available=False),
 )
 
 
