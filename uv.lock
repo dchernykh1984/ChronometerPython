@@ -688,7 +688,7 @@ wheels = [
 
 [[package]]
 name = "windows-chronometer"
-version = "0.4.1"
+version = "0.5.0"
 source = { virtual = "." }
 default-groups = "all"
 dependencies = [
