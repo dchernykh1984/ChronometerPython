@@ -67,7 +67,8 @@ phone; cut the link for a minute mid-race; every break arrives, each with its ri
 **Acceptance Scenarios**:
 
 1. **Given** the desktop chronometer or the Android app, **When** the judge chooses the beam device,
-   **Then** both the USB board and the Bluetooth board are offered, and the choice is kept.
+   **Then** each board is offered on each of its links -- the RP2040-Zero over USB or through its
+   HM-10 over Bluetooth, the ESP32-C3 over USB or over Bluetooth -- and the choice is kept.
 2. **Given** several boards in Bluetooth range (a start and a finish, say), **When** the judge picks
    one, **Then** it is picked by a name or id the board shows, and the app never reads another.
 3. **Given** a board on Bluetooth whose link drops for 60 s, **When** the link is back, **Then**
@@ -229,9 +230,11 @@ unpinned kit is built differently each time.
   enclosure models in one, firmware in another with a subfolder for each chip or board; each folder
   with a README and its versions pinned, so the whole kit is built the same way from the repository
   alone.
-- **FR-018**: The Bluetooth board MUST be chosen and its firmware kept beside the RP2040's:
-  [NEEDS CLARIFICATION: an ESP32-C3 SuperMini, a Raspberry Pi Pico W, or an HM-10 module wired to the
-  RP2040-Zero?]
+- **FR-018**: Bluetooth MUST come from two boards, both read by both apps, over Bluetooth and over
+  the cable alike: an ESP32-C3 SuperMini, whose own chip has Bluetooth, and the RP2040-Zero with an
+  HM-10 module wired to it (or a clone on the same CC2541 chip, such as the AT-09 or MLT-BT05). Each
+  chip's firmware lives in its own folder (FR-017): a new one for the ESP32-C3, the RP2040's
+  extended to drive the HM-10. Both boards are in the apps' device list.
 - **FR-019**: The beam MUST keep the uses it has today: riders crossing one at a time (time trials,
   downhill), each break a rider's cutoff, and group starts; a crossing is never lost, and every
   break stays in the beam's raw file first.
@@ -268,11 +271,17 @@ unpinned kit is built differently each time.
   within one frame.
 - **SC-009**: Someone new to the project builds a working kit -- firmware flashed, parts printed and
   assembled, wired -- from the repository alone, with no question asked.
+- **SC-010**: Two kits, one beam 0.5 m under the other, time a weight dropped from rest above them:
+  over 20 drops, the interval between their breaks matches free fall from the measured heights
+  within 2 ms with both boards on the cable, within 4 ms with both on Bluetooth.
 
 ## Assumptions
 
-- Bluetooth means Bluetooth Low Energy, carrying the contract's lines over the Nordic UART Service,
-  as ChronometerPython#49 (comment 3) proposed; the desktop runs on a computer with Bluetooth.
+- Bluetooth means Bluetooth Low Energy carrying the contract's lines as a serial stream; the desktop
+  runs on a computer with Bluetooth. The HM-10 has a serial service of its own (FFE0, characteristic
+  FFE1), not the Nordic UART Service ChronometerPython#49 (comment 3) proposed: the plan settles
+  whether the ESP32-C3's firmware offers the HM-10's service as well, so the apps read one, or the
+  apps read both.
 - The USB cable version stays as it is, the fallback and the choice of whoever has no Bluetooth.
 - Parts are printed on a hobby FDM printer.
 - The hardware choices marked for clarification are made in this PR, before planning; the rest
