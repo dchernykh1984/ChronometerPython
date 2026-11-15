@@ -47,3 +47,5 @@
 - [ ] T017 An external LED for FLASH on the ESP32-C3 (FR-015)
 - [ ] T018 The way of sealing (FR-013), after the first printed enclosures
 - [ ] T019 The knowledge-base article on the site (FR-021), once a kit has worked at a race
+- [ ] T020 Say how long a link was down when it comes back (FR-006): today the action log's
+  "disconnected" and "connected" lines show it by their times only; both apps
