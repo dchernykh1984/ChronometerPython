@@ -97,6 +97,8 @@ class Bridge:
     next_ping: int = 1
     board: str = ""  # what its HELLO said: nothing counts before it
     dark: str | None = None  # STATUS blocked or unsteady: no break can be seen
+    seqs: dict[str, int] = field(default_factory=dict)  # last BREAK, by board id
+    board_id: str = ""
     dark_since: float = 0.0
 
     def ping(self, sent_ms: float) -> str:
@@ -128,6 +130,7 @@ class Bridge:
     def hello(self, rest: list[str]) -> list[dict[str, Any]]:
         """HELLO: from now on the board counts, and runs this folder's main.py."""
         self.board = " ".join(rest)
+        self.board_id = rest[2] if len(rest) > 2 else ""
         said = [{"type": "status", "state": "connected", "detail": self.board}]
         runs = rest[1] if len(rest) > 1 else "?"
         if runs != FIRMWARE:
@@ -139,6 +142,21 @@ class Bridge:
                 }
             )
         return said
+
+    def missing(self, seq: int) -> list[dict[str, Any]]:
+        """Breaks the board counted that never came: its link was down meanwhile,
+        though not its power. A count begun again is the board started again."""
+        last, self.seqs[self.board_id] = self.seqs.get(self.board_id, 0), seq
+        if not 0 < last < seq - 1:
+            return []
+        span = f"{last + 1}" if last + 2 == seq else f"{last + 1} to {seq - 1}"
+        return [
+            {
+                "type": "error",
+                "message": f"the board's break(s) {span} did not arrive: its link "
+                "was down as they came; check that finish by other means",
+            }
+        ]
 
     def from_board(self, line: str, got_ms: float) -> list[dict[str, Any]]:
         """Events for the chronometer from one board line, received at ``got_ms``."""
@@ -153,14 +171,13 @@ class Bridge:
             return []
         if word == "BREAK" and numbers is not None:
             at = self.sync.to_host_ms(numbers[1])
-            return [
-                {
-                    "type": "beam",
-                    "seq": numbers[0],
-                    "time_ms": round(got_ms) if at is None else at,
-                    "device_time": rest[1],
-                }
-            ]
+            beam = {
+                "type": "beam",
+                "seq": numbers[0],
+                "time_ms": round(got_ms) if at is None else at,
+                "device_time": rest[1],
+            }
+            return [beam, *self.missing(numbers[0])]
         if word == "STATUS":
             dark = rest[0] if rest in (["blocked"], ["unsteady"]) else None
             if dark != self.dark:  # said again when asked: since the first
@@ -251,7 +268,7 @@ class Connector:
             return
         # The board may have started again: its clock with it, so no old round
         # trip counts, and a ping number once used is not used again.
-        self.bridge = Bridge(next_ping=self.bridge.next_ping)
+        self.bridge = Bridge(next_ping=self.bridge.next_ping, seqs=self.bridge.seqs)
         threading.Thread(target=self.listen, args=(self.link,), daemon=True).start()
         self.send({"type": "status", "state": "connecting", "detail": port})
         self.write(f"\nHOLDOFF {self.hold_off_ms}\nHELLO\nSTATUS\n")
