@@ -27,8 +27,9 @@
 
 ## Phase 4: Android (US2) - ChronometerAndroid, its own pull request
 
-- [ ] T010 The 0.4 bridge: PONG, the Bluetooth clock, RESEND
-- [ ] T011 The Bluetooth beam source, its permissions, the device in the settings; the ESP32-C3 on USB
+- [x] T010 The 0.4 bridge: PONG, the Bluetooth clock, RESEND (ChronometerAndroid#67)
+- [x] T011 The Bluetooth beam source, its permissions, the device in the settings; the ESP32-C3 on USB
+  (ChronometerAndroid#67)
 
 ## Phase 5: Enclosures and docs (US5, US6)
 
@@ -40,7 +41,8 @@
 ## Later (needs the parts, or a decision)
 
 - [ ] T015 Field test on the hardware: SC-001 (cable against Bluetooth), SC-010 (the falling weight);
-  calibrate the BT05's lopsided trip if it shows
+  calibrate the BT05's lopsided trip if it shows; check the BT05 takes its name and 115200 baud,
+  and that opening the ESP32-C3's USB port does not reset it into its bootloader
 - [ ] T016 The power level (FR-008), once the power is chosen
 - [ ] T017 An external LED for FLASH on the ESP32-C3 (FR-015)
 - [ ] T018 The way of sealing (FR-013), after the first printed enclosures

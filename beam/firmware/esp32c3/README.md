@@ -68,6 +68,14 @@ The blue LED is lit while the light reaches the sensor, for aiming, and for `FLA
    STATUS beam
    ```
 
+## Over USB
+
+In the chronometer: Device `Beam board ESP32-C3 (USB)`. Both apps open its port with DTR
+and RTS off, DTR first: on the chip's own USB, RTS holds it in reset, and DTR as RTS goes off
+starts its bootloader. On macOS and Linux, opening a port may still raise both for a moment
+and restart the board once: its count then starts again, which the chronometer handles. That
+is to be checked on the board (spec 002, task T015).
+
 ## Over Bluetooth
 
 The board advertises itself as `beam-` and the last 4 hex digits of its board id

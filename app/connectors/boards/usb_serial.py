@@ -117,6 +117,9 @@ class Connector:
             self.link = self.serial.Serial(
                 port, timeout=None, exclusive=True, write_timeout=1
             )
+            if not self.spec.lines:  # DTR first: RTS off with DTR on is the bootloader
+                self.link.dtr = False
+                self.link.rts = False
         except (OSError, ValueError, self.serial.SerialException) as error:
             self.reopen = now + REOPEN_AFTER_S
             self.send({"type": "status", "state": "disconnected", "detail": str(error)})
