@@ -86,10 +86,20 @@ def test_a_beam_blocked_longer_than_a_rider_takes_is_blocked_until_it_is_back():
     bridge = _connected()
     bridge.from_board("STATUS blocked", 1_000.0)
     bridge.from_board("STATUS blocked", 1_500.0)  # said again when asked
-    assert not bridge.blocked(1_000.0 + c.BLOCKED_MS)
-    assert bridge.blocked(1_000.0 + c.BLOCKED_MS + 1)
+    assert bridge.unseeing(1_000.0 + c.BLOCKED_MS) is None
+    assert bridge.unseeing(1_000.0 + c.BLOCKED_MS + 1) == c.BLOCKED
     bridge.from_board("STATUS beam", 4_000.0)
-    assert not bridge.blocked(10**12)
+    assert bridge.unseeing(10**12) is None
+
+
+def test_a_light_that_flickers_on_the_sensor_is_said_as_no_break_can_be_seen():
+    """The board arms its IRQ only once the light has held: one that flickers on
+    the sensor's edge never does."""
+    bridge = _connected()
+    bridge.from_board("STATUS unsteady", 1_000.0)
+    assert bridge.unseeing(1_000.0 + c.BLOCKED_MS + 1) == c.UNSTEADY
+    bridge.from_board("STATUS blocked", 5_000.0)  # held dark: blocked, from now
+    assert bridge.unseeing(5_000.0 + c.BLOCKED_MS + 1) == c.BLOCKED
 
 
 def test_a_board_on_another_firmware_than_main_py_here_is_said():
@@ -450,7 +460,7 @@ def test_a_beam_blocked_from_the_start_is_said_and_so_is_its_return(
         "connecting",
         "connected",
     ]
-    _until(lambda: connector.bridge.blocked_since is not None)  # its STATUS taken
+    _until(lambda: connector.bridge.dark is not None)  # its STATUS taken
     clock[0] += c.BLOCKED_MS + 1
     assert chronometer.next() == {
         "type": "status",

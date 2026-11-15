@@ -20,7 +20,7 @@ repository gives the same board, every time.
 | --- | --- | --- |
 | MicroPython | v1.29.0, build `RPI_PICO` | this file, with its SHA-256 |
 | mpremote (copies files to the board) | 1.29.0 | the commands below |
-| Firmware | 0.2 | `FIRMWARE` in `main.py`; the board says it in its `HELLO` |
+| Firmware | 0.3 | `FIRMWARE` in `main.py`; the board says it in its `HELLO` |
 | Python for the connector | 3.14 | the script block at the top of `connector.py` |
 | pyserial | 3.5 | the script block and `connector.py.lock` |
 
@@ -85,7 +85,7 @@ see (the room's, or the laser's spot), and goes out when the sensor is covered.
    should say:
 
    ```text
-   HELLO beam-rp2040 0.2 5054316551247c1c
+   HELLO beam-rp2040 0.3 5054316551247c1c
    BREAK 1 18734215
    STATUS blocked
    STATUS beam
@@ -115,7 +115,7 @@ again starts it.
    race needs none.
 
 4. Start. The action log says `source connecting /dev/cu.usbmodem101`, then
-   `source connected beam-rp2040 0.2 <board id>`. Cover the sensor: a slot takes
+   `source connected beam-rp2040 0.3 <board id>`. Cover the sensor: a slot takes
    the time.
 
 The connector's options go after `connector.py`:
@@ -123,7 +123,7 @@ The connector's options go after `connector.py`:
 | Option | Default | What |
 | --- | --- | --- |
 | `--port P` | the first MicroPython RP2040 port (USB 2E8A:0005) | `/dev/cu.usbmodem101`, `COM5`: for two boards on one computer. |
-| `--hold-off-ms N` | 1000 | After a break, edges this soon are the same rider's: a bike's wheels and body. 1 to 60000. |
+| `--hold-off-ms N` | 1000 | After a break, edges this soon are the same rider's: a bike's wheels and body. 1 to 60000. The next break also waits for the light to be back for 50 ms, so light coming back after a long block, or a laser being aimed, is no break. |
 
 | The log says | Why |
 | --- | --- |
@@ -131,7 +131,8 @@ The connector's options go after `connector.py`:
 | `source disconnected ... Could not exclusively lock port ...` | Another chronometer has the board: one board, one chronometer. |
 | Breaks missing, lines garbled | Another program has the port open too: an `mpremote` window, a serial monitor. Close it. |
 | `source connected ...: the beam is blocked: no break can be seen until the light is back` | Blocked for over 2 s, longer than any rider takes: the laser is off the sensor, someone stands in the beam, or a sensor wire is loose. The same line without it follows once the light is back. |
-| `source error: the board runs firmware 0.1, main.py here is 0.2: ...` | The board has another `main.py` than this folder: copy it (Flashing, step 3). |
+| `source connected ...: the light flickers on the sensor: no break can be seen; aim it again` | For over 2 s no state of the light has held: the spot sits on the sensor's edge. |
+| `source error: the board runs firmware 0.2, main.py here is 0.3: ...` | The board has another `main.py` than this folder: copy it (Flashing, step 3). |
 | `source disconnected the board answers no PING: is main.py running on it?` | The board runs no `main.py`, or it has stopped: unplug the board and plug it in again; if it says so again, copy `main.py` again (Flashing, step 3). |
 
 ## What the board says
@@ -144,6 +145,7 @@ started, on its own clock.
 | `HELLO beam-rp2040 <firmware> <board id>` | At start, and when asked `HELLO`. |
 | `BREAK <seq> <t_us>` | The light went: its first edge, then none for the hold-off. |
 | `STATUS beam` or `STATUS blocked` | The light's state once it has held 50 ms, for aiming; and when asked `STATUS`, as the connector does as it connects. |
+| `STATUS unsteady` | No state has held for a second: the light flickers on the sensor, and no break can be seen until it holds. |
 | `PONG <n> <t_us>` | Asked `PING <n>`. |
 | `HOLDOFF <ms>` | Asked `HOLDOFF <ms>`: the hold-off is now that. |
 | `FLASH <n> <t_us>` | Asked `FLASH <n>`: the LED lit white for 100 ms, for the cameras. |
