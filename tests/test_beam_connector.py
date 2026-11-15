@@ -145,20 +145,27 @@ def test_a_hold_off_in_range_is_taken():
     assert (c.hold_off("1"), c.hold_off("60000")) == (1, 60_000)
 
 
-def test_the_port_named_is_used_else_the_first_raspberry_pi_one(monkeypatch):
+def _port(device: str, vid: int | None, pid: int | None) -> types.SimpleNamespace:
+    return types.SimpleNamespace(device=device, vid=vid, pid=pid)
+
+
+def test_the_port_named_is_used_else_the_first_micropython_rp2040_one(monkeypatch):
+    """Not just any Raspberry Pi device: its Debug Probe has a serial port too."""
     assert c.board_port("COM7") == "COM7"
+    pi, micropython = c.RASPBERRY_PI_USB, c.MICROPYTHON_RP2
     ports = [
-        types.SimpleNamespace(device="/dev/cu.usbmodem201", vid=c.RASPBERRY_PI_USB),
-        types.SimpleNamespace(device="/dev/cu.Bluetooth-Incoming-Port", vid=None),
-        types.SimpleNamespace(device="/dev/cu.usbmodem101", vid=c.RASPBERRY_PI_USB),
-        types.SimpleNamespace(device="/dev/cu.usbserial-10", vid=0x0403),
+        _port("/dev/cu.usbmodem201", pi, micropython),
+        _port("/dev/cu.Bluetooth-Incoming-Port", None, None),
+        _port("/dev/cu.usbmodem0001", pi, 0x000C),  # a Raspberry Pi Debug Probe
+        _port("/dev/cu.usbmodem101", pi, micropython),
+        _port("/dev/cu.usbserial-10", 0x0403, 0x6001),
     ]
     tools = types.ModuleType("serial.tools")
     tools.list_ports = types.SimpleNamespace(comports=lambda: ports)  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "serial", types.ModuleType("serial"))
     monkeypatch.setitem(sys.modules, "serial.tools", tools)
     assert c.board_port("") == "/dev/cu.usbmodem101"
-    del ports[0], ports[1]
+    del ports[3], ports[0]
     assert c.board_port("") is None
 
 
@@ -371,7 +378,7 @@ def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
 
 
 def test_a_second_program_on_the_board_is_refused_not_given_half_its_lines(serial):
-    """Two chronometers, one per event, both on the first Raspberry Pi port."""
+    """Two chronometers, one per event, both on the first MicroPython port."""
     first, second = Chronometer(), Chronometer()
     ended = _run(c.Connector(first, serial, "COM7", 1000), first)
     first.tell({"cmd": "start", "settings": {}})
