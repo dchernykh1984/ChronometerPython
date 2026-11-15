@@ -109,3 +109,24 @@
 - **Rationale**: the maintainer has no reader yet (decision 5 of 2026-10-28); the dummies exercise
   every path a real device will use, and the warning keeps a rehearsal from being uploaded as a race
   unnoticed.
+
+## 11. A beam that wavers
+
+- **Decision**: the receiver catches the beam over a few centimetres: a lens of 3 to 5 cm with the
+  sensor at its focus, in a black tube, or a retroreflective sensor with a prism reflector. It
+  stands on its own stake, off the ramp, where it can. The firmware and the connector report the
+  breaks the receiver gives; they do not filter wavering away.
+- **Rationale**: a tilt of the laser moves its spot by the distance times the tilt: 1 cm at 10 m
+  for 1 milliradian, 0.06 degrees. A stand in the wind, or a metal ramp flexing under riders,
+  tilts by more, and a 5 mm photoresistor then loses the spot at every gust: false breaks, many.
+  A lens of focal length f shrinks a shift of the beam across it to f / L of it at its focus, the
+  laser L away: 1/200 at f = 5 cm and L = 10 m, so 2 cm of wandering moves the light at the sensor
+  by 0.1 mm. A prism reflector sends the beam back parallel to itself whatever its tilt, within
+  some 15 degrees, so a reflector that shakes changes nothing at the sensor; such sensors also
+  modulate their light, so the sun does not blind them. A tube, and the narrow view of a lens,
+  keep stray light and the sun off the sensor.
+- **Alternatives considered**: a minimum break length in the firmware. A wheel at 60 km/h blocks a
+  narrow beam for some 3 ms, shorter than the flickers of a stand shaking a few times a second,
+  so such a filter would drop real crossings and keep false ones. A wider spot, a line laser or a
+  defocused one: less light at the receiver, and the photoresistor of the prototype is slow
+  already.
