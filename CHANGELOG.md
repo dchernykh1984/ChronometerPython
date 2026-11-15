@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.4.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.3.0...v0.4.0) (2026-11-15)
+
+
+### Features
+
+* **firmware:** bring the beam board's breaks to the chronometer as a custom command ([6a296fc](https://github.com/dchernykh1984/ChronometerPython/commit/6a296fc058bfee2bb7490bf427b9b32e891f7c80))
+* **firmware:** time each break of the light on the beam board itself ([83a62c4](https://github.com/dchernykh1984/ChronometerPython/commit/83a62c456daf6e8adb4716b35441ba57a0cd2e7e))
+
+
+### Bug Fixes
+
+* **firmware:** open the beam board's port exclusively, so a second program is refused, not given half its lines ([d5e9a2a](https://github.com/dchernykh1984/ChronometerPython/commit/d5e9a2a0cb532063873c63295e1f2d4c4d2491a2))
+* **firmware:** pull the beam sensor's input up, so a loose wire reads as a blocked beam, not as noise ([6322f87](https://github.com/dchernykh1984/ChronometerPython/commit/6322f877e8f5623a8f892c1ab706edfd6154216d))
+* **firmware:** refuse a beam hold-off outside 1 to 60000 ms at start, where the log shows it ([7ab8375](https://github.com/dchernykh1984/ChronometerPython/commit/7ab8375b53f5a4e298a7d6d5c0d8798c76cee668))
+* **firmware:** say the beam board is gone when it answers no ping, its port still open ([f91daa0](https://github.com/dchernykh1984/ChronometerPython/commit/f91daa0f75c84b983b68fd7dc7339dd5eef90281))
+* **firmware:** say when the beam board runs another firmware than the main.py beside the connector ([9bb04f4](https://github.com/dchernykh1984/ChronometerPython/commit/9bb04f46c47a7cd188476e75a1830cf196dfae70))
+* **firmware:** say when the beam has been blocked longer than a rider takes, no break then to be seen ([e17fe25](https://github.com/dchernykh1984/ChronometerPython/commit/e17fe25f015d91d6750d341fb5511221ec499d13))
+* **firmware:** take only a MicroPython RP2040 port for the beam board, not any Raspberry Pi device ([9ff6f29](https://github.com/dchernykh1984/ChronometerPython/commit/9ff6f29289524954bfb4ca60eeb5faf3a73ea2a9))
+
+
+### Documentation
+
+* **firmware:** fetch the beam connector's Python and pyserial once at home, so the race needs no network ([026ba5a](https://github.com/dchernykh1984/ChronometerPython/commit/026ba5a9162671476869a8b97a98751d88ac9057))
+* **firmware:** say how to wire, flash and start the beam board, every version pinned ([2aaa6ad](https://github.com/dchernykh1984/ChronometerPython/commit/2aaa6ad9586acbf3079057e9f07f1265577afed4))
+* **specs:** list the beam board this branch adds as a task, before the field test ([92c83d2](https://github.com/dchernykh1984/ChronometerPython/commit/92c83d21ace10dfbec3ed84c5b158a169aac8d43))
+* **specs:** require the real beam to ride out a laser wavering in the wind or on a flexing ramp ([889dcaa](https://github.com/dchernykh1984/ChronometerPython/commit/889dcaa3d6ea0d88d19d0d0210d2d0768f5d4f96))
+
 ## [0.3.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.2.3...v0.3.0) (2026-11-07)
 
 
