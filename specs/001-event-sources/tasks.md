@@ -104,10 +104,18 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
 
 ## Phase 8: the real beam (FR-019)
 
-- [ ] T024 [US4] The beam board, built again from the repository alike: its MicroPython
+- [x] T024 [US4] The beam board, built again from the repository alike: its MicroPython
   firmware, the connector the chronometer starts as a custom command, and how to wire, flash and
   start it, every version pinned (`firmware/beam_rp2040/`, `tests/test_beam_connector.py`).
   Done when a finger over the sensor stamps a slot in the chronometer.
+- [x] T025 [US4] A beam break and the second judge's stamp come in at the bottom slot with the
+  number in Next, as a hand cutoff (FR-012). -- `feat(beam): bring a beam break and the second
+  judge's stamp in at the bottom slot, as a hand cutoff`
+- [x] T026 [US4] Beam records: rider cutoffs or group starts (FR-020).
+  -- `feat(beam): let the beam stamp group starts, the first break after a group is chosen`
+- [x] T027 [US4] The RP2040 beam board in the device list, read by the chronometer itself, one
+  module per board under `app/connectors/boards/` (FR-003). -- `feat(beam): choose the RP2040
+  beam board from the device list, the chronometer reading it itself`
 - [ ] T023 [US4] The real beam's receiver catches a wavering beam: a lens and a tube, or a
   retroreflective sensor; stands on stakes, off the ramp. Field test SC-007 before the first race.
 
@@ -116,4 +124,4 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
 T001 -> T002 -> T003 -> T004. T005 -> T006 -> T007, T006 -> T008 -> T009 -> T010.
 T009 and T001 -> T011 -> T012 -> T013 -> T014. T012 -> T015. T016 after T006. T017 last.
 Phase 7, after the rest: T010 and T012 -> T018, T003 -> T019.
-Phase 8: T024 -> T023.
+Phase 8: T024 -> T025, T026, T027 -> T023.

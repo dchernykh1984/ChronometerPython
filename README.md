@@ -80,12 +80,16 @@ set of files. Use real copies.
 
 Crossings are typed by hand by default. The **Event source** group switches to a
 light beam or to timing chips, through a small program the chronometer starts on
-**Start** and stops on **Stop** or on exit. This release has test devices only
-("Test beam", "Test chips", replaying a chip reads file, or a command of your
-own); real readers and beams are listed as not available yet.
+**Start** and stops on **Stop** or on exit. Its devices: the beam board
+(`Beam board RP2040 (USB)`, built from `firmware/beam_rp2040/`), test devices
+("Test beam", "Test chips", replaying a chip reads file) and a command of your
+own; chip readers and the Bluetooth beam are listed as not available yet.
 
-- A beam break stamps the first empty slot, as the FINISH button does; you type
-  the number.
+- **Beam records** says what a break is. A rider's cutoff: it comes in at the
+  bottom slot with the number typed in Next, the slots above moving up, as a
+  hand cutoff does; a number not typed in time goes into its slot later. A
+  group's start: the first break after a group is chosen fills its time field,
+  the breaks of its riders after it are no start, and **Save group** keeps it.
 - A chip read becomes a crossing of the bib the start protocol gives that chip
   (its chips field, filled in by StartProtocolMaker). Reads of one bib less than the
   dead time apart (5 s, on the **Chips** tab) are one crossing, timed at the
