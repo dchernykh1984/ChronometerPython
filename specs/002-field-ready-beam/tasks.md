@@ -23,7 +23,7 @@
   counts taken once (FR-002, FR-003, FR-006)
 - [x] T008 `ble.py`: the Bluetooth transport through `bleak`; the boards in the device list (FR-004,
   FR-007)
-- [ ] T009 Builds: `bleak` in the portable apps, the macOS Bluetooth usage text, the smoke test
+- [x] T009 Builds: `bleak` in the portable apps, the macOS Bluetooth usage text, the smoke test
 
 ## Phase 4: Android (US2) - ChronometerAndroid, its own pull request
 
