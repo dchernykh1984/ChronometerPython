@@ -20,7 +20,7 @@ repository gives the same board, every time.
 | --- | --- | --- |
 | MicroPython | v1.29.0, build `RPI_PICO` | this file, with its SHA-256 |
 | mpremote (copies files to the board) | 1.29.0 | the commands below |
-| Firmware | 0.1 | `FIRMWARE` in `main.py`; the board says it in its `HELLO` |
+| Firmware | 0.2 | `FIRMWARE` in `main.py`; the board says it in its `HELLO` |
 | Python for the connector | 3.14 | the script block at the top of `connector.py` |
 | pyserial | 3.5 | the script block and `connector.py.lock` |
 
@@ -48,7 +48,7 @@ from the USB end: `GP0`, `GP1`, `GP2`, and on.
 | --- | --- | --- |
 | Sensor `VCC` | `3V3` | Not 5V: `DO` swings up to `VCC`, and a GP pin takes 3.3 V at most. |
 | Sensor `GND` | `GND` | |
-| Sensor `DO` | `GP2` (right row, third from USB) | High while the light is gone. |
+| Sensor `DO` | `GP2` (right row, third from USB) | High while the light is gone. Pulled up on the board: a loose wire reads as a blocked beam, which the log says. |
 | Sensor `AO` | - | Not used. |
 | Laser `S` | `5V` | The laser lights whenever the board has power. |
 | Laser `-` | `GND` | The board has one `GND` pin: share it with a Y wire, or power the laser from its own 5 V supply. |
@@ -85,7 +85,7 @@ see (the room's, or the laser's spot), and goes out when the sensor is covered.
    should say:
 
    ```text
-   HELLO beam-rp2040 0.1 5054316551247c1c
+   HELLO beam-rp2040 0.2 5054316551247c1c
    BREAK 1 18734215
    STATUS blocked
    STATUS beam
@@ -115,7 +115,7 @@ again starts it.
    race needs none.
 
 4. Start. The action log says `source connecting /dev/cu.usbmodem101`, then
-   `source connected beam-rp2040 0.1 <board id>`. Cover the sensor: a slot takes
+   `source connected beam-rp2040 0.2 <board id>`. Cover the sensor: a slot takes
    the time.
 
 The connector's options go after `connector.py`:
