@@ -16,6 +16,7 @@ the network is best effort.
 | `app/paths.py` | Resolves where data lives (see below). |
 | `tests/` | pytest; `conftest.py` holds the offscreen Qt `win` fixture. |
 | `data/` | Runtime data files. |
+| `firmware/beam_rp2040/` | The beam board: its MicroPython `main.py`, the `connector.py` the chronometer starts as a custom command, and the README to build one. Its tests (`tests/test_beam_*.py`) run with the rest, outside the coverage gate, which measures `app/` only. The board's lines are a contract: `specs/001-event-sources/contracts/beam-board-protocol.md`. |
 
 `app/models.py` is a port of an older C++ chronometer; several helpers say so in
 their docstrings. Keep the ported behaviour unless a change is asked for.
