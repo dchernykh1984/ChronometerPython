@@ -192,8 +192,10 @@ unpinned kit is built differently each time.
 - **FR-002**: The mapping of the board's clock onto the host's MUST stay within 2 ms of the truth
   over Bluetooth, although a round trip there takes 15 to 60 ms (the contract's 20 ms limit on
   round trips is for USB), and within 1 ms over USB as today.
-- **FR-003**: A break over Bluetooth MUST never be stamped by when its message arrived: one that
-  comes before the clock is mapped waits for the mapping, and the judge is told while it waits.
+- **FR-003**: A break over Bluetooth MUST be stamped by the board's clock, never by when its
+  message arrived, as long as the clock can be mapped: one that comes before the mapping waits
+  for it. Only when no mapping comes within 10 s is it stamped by its arrival, rather than held
+  and maybe lost, and the judge is told so.
 - **FR-004**: The beam MUST work over a USB cable and over Bluetooth alike, on the desktop
   chronometer and on the Android app; the judge chooses the link, and the choice is kept.
 - **FR-005**: The board MUST speak the same lines of the one contract over both links; anything new
