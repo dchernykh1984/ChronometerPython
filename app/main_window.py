@@ -309,6 +309,7 @@ class MainWindow(QMainWindow):
         self._edit_group_time.setText("0 00:00:00.000")
         # A start typed by hand, backed up within 2 s as a stamped slot's number is.
         self._edit_group_time.textChanged.connect(lambda _text: self._schedule_backup())
+        self._edit_group_time.textEdited.connect(self._on_group_time_typed)
         self._edit_group_time.setMinimumWidth(180)
         grp_btn_row.addWidget(self._edit_group_time)
         self._btn_start_group = QPushButton("Start")
@@ -1686,7 +1687,12 @@ class MainWindow(QMainWindow):
         self._edit_group_time.setText(
             get_current_time(summer_time=self._chk_summer_time.isChecked())
         )
+        self._group_armed = False  # the judge's own start: no break replaces it
         self._save_backup_if_enabled()
+
+    def _on_group_time_typed(self, _text: str) -> None:
+        """A start the judge types stays theirs: no break replaces it until Save."""
+        self._group_armed = False
 
     def _on_save_group(self) -> None:
         group = self._combo_group.currentText()
