@@ -207,6 +207,13 @@ def test_a_board_error_is_said_and_its_other_lines_are_its_own_business():
         assert bridge.from_board(line, 0.0) == []
 
 
+def test_the_connector_ends_once_the_program_that_started_it_is_gone():
+    parents = iter([41, 41, 1])  # its parent killed: the system takes it over
+    ended: list[int] = []
+    c.watch_parent(41, getppid=lambda: next(parents), end=ended.append, every_s=0)
+    assert ended == [1]
+
+
 @pytest.mark.parametrize("given", ["-5", "0", "60001", "1.5", "x"])
 def test_a_hold_off_out_of_range_is_refused_at_start(given, capsys):
     """Refused where the chronometer's log shows it, before any board is opened."""

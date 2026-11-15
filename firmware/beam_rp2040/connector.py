@@ -20,12 +20,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import queue
 import statistics
 import sys
 import threading
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from typing import IO, Any
 
@@ -339,6 +340,20 @@ class Connector:
                 return 0
 
 
+def watch_parent(
+    parent: int,
+    getppid: Callable[[], int] = os.getppid,
+    end: Callable[[int], object] = os._exit,
+    every_s: float = 1.0,
+) -> None:
+    """End this program once the one that started it is gone. Killed, `uv run`
+    leaves its Python running, and that would keep the board's port locked against
+    the next start, however hung it is. (Windows ends uv's child with it.)"""
+    while getppid() == parent:
+        time.sleep(every_s)
+    end(1)
+
+
 def hold_off(text: str) -> int:
     """A hold-off from the command line: whole milliseconds, 1 to 60000. The board
     would take 0, every edge of a chattering sensor then a break, or a typo's hours,
@@ -363,6 +378,7 @@ def main(argv: list[str] | None = None) -> int:
         help="after a break, edges this soon are the same rider's (default 1000)",
     )
     args = parser.parse_args(argv)
+    threading.Thread(target=watch_parent, args=(os.getppid(),), daemon=True).start()
     import serial  # pyserial, only where a board is used
 
     connector = Connector(sys.stdout, serial, args.port, args.hold_off_ms)
