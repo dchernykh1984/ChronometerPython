@@ -39,6 +39,8 @@ PING_EVERY_S = 2.0
 REOPEN_AFTER_S = 2.0
 SILENT_MS = 3 * PING_EVERY_S * 1000  # a PING unanswered this long: the board stopped
 SILENT = "the board answers no PING: is main.py running on it?"
+BLOCKED_MS = 2000.0  # longer than any rider takes to cross the beam
+BLOCKED = "the beam is blocked: no break can be seen until the light is back"
 
 
 def now_ms() -> float:
@@ -86,6 +88,7 @@ class Bridge:
     pings: dict[int, float] = field(default_factory=dict)  # sent at, by number
     next_ping: int = 1
     board: str = ""  # what its HELLO said: nothing counts before it
+    blocked_since: float | None = None  # when it said STATUS blocked
 
     def ping(self, sent_ms: float) -> str:
         """The next PING line for the board, its sending time kept."""
@@ -99,6 +102,19 @@ class Bridge:
         """A PING unanswered for SILENT_MS: the board has stopped, its port open."""
         return any(now_ms - sent > SILENT_MS for sent in self.pings.values())
 
+    def blocked(self, now_ms: float) -> bool:
+        """Blocked for BLOCKED_MS: no rider takes that long, so no break can be seen."""
+        since = self.blocked_since
+        return since is not None and now_ms - since > BLOCKED_MS
+
+    def answered(self, n: int, board_us: int, got_ms: float) -> None:
+        """PONG n: a round trip for the clock, and the board is there."""
+        sent = self.pings.pop(n, None)
+        for lost in [k for k in self.pings if k < n]:
+            del self.pings[lost]  # a later one answered: the board is there
+        if sent is not None:
+            self.sync.add(sent, got_ms, board_us)
+
     def from_board(self, line: str, got_ms: float) -> list[dict[str, Any]]:
         """Events for the chronometer from one board line, received at ``got_ms``."""
         word, rest = parse(line)
@@ -109,11 +125,7 @@ class Bridge:
         if not self.board:
             return []  # left from before the HELLO asked for, or another firmware's
         if word == "PONG" and numbers is not None:
-            sent = self.pings.pop(numbers[0], None)
-            for lost in [k for k in self.pings if k < numbers[0]]:
-                del self.pings[lost]  # a later one answered: the board is there
-            if sent is not None:
-                self.sync.add(sent, got_ms, numbers[1])
+            self.answered(*numbers, got_ms)
             return []
         if word == "BREAK" and numbers is not None:
             at = self.sync.to_host_ms(numbers[1])
@@ -125,9 +137,15 @@ class Bridge:
                     "device_time": rest[1],
                 }
             ]
+        if word == "STATUS":
+            if rest != ["blocked"]:
+                self.blocked_since = None
+            elif self.blocked_since is None:  # said again when asked: since the first
+                self.blocked_since = got_ms
+            return []
         if word == "ERROR":
             return [{"type": "error", "message": f"board: {' '.join(rest)}"}]
-        return []  # STATUS, FLASH, HOLDOFF: the board's own business
+        return []  # FLASH, HOLDOFF: the board's own business
 
 
 def board_port(chosen: str) -> str | None:
@@ -208,7 +226,7 @@ class Connector:
         self.bridge = Bridge(next_ping=self.bridge.next_ping)
         threading.Thread(target=self.listen, args=(self.link,), daemon=True).start()
         self.send({"type": "status", "state": "connecting", "detail": port})
-        self.write(f"\nHOLDOFF {self.hold_off_ms}\nHELLO\n")
+        self.write(f"\nHOLDOFF {self.hold_off_ms}\nHELLO\nSTATUS\n")
         self.next_ping = now
 
     def tick(self, now: float) -> None:
@@ -223,8 +241,11 @@ class Connector:
         if self.bridge.silent(now_ms()):
             self.send({"type": "status", "state": "disconnected", "detail": SILENT})
         elif self.bridge.board:
-            board = self.bridge.board
-            self.send({"type": "status", "state": "connected", "detail": board})
+            # A laser knocked off its sensor, or a loose wire: the beam sees nothing.
+            detail = self.bridge.board
+            if self.bridge.blocked(now_ms()):
+                detail += f": {BLOCKED}"
+            self.send({"type": "status", "state": "connected", "detail": detail})
 
     def handle(self, kind: str, item: Any) -> bool:
         """Act on one inbox item; False once the chronometer has said stop."""

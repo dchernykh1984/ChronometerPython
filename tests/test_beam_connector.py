@@ -81,6 +81,16 @@ def test_a_board_that_answers_no_ping_for_six_seconds_is_silent():
     assert not bridge.silent(10**12)
 
 
+def test_a_beam_blocked_longer_than_a_rider_takes_is_blocked_until_it_is_back():
+    bridge = _connected()
+    bridge.from_board("STATUS blocked", 1_000.0)
+    bridge.from_board("STATUS blocked", 1_500.0)  # said again when asked
+    assert not bridge.blocked(1_000.0 + c.BLOCKED_MS)
+    assert bridge.blocked(1_000.0 + c.BLOCKED_MS + 1)
+    bridge.from_board("STATUS beam", 4_000.0)
+    assert not bridge.blocked(10**12)
+
+
 def test_nothing_counts_before_the_board_says_its_hello():
     """Lines left from before the HELLO asked for, or a board that runs another
     firmware, stamp no slot."""
@@ -183,6 +193,7 @@ class Port:
 
     answers_at = 2_000_000
     answering = True  # False: main.py has stopped, the port is still open
+    light = "beam"  # what it answers STATUS
 
     def __init__(
         self, device: str, timeout: float | None, exclusive: bool | None
@@ -196,6 +207,8 @@ class Port:
             self.written.append(line)
             if line == "HELLO":
                 self.say(HELLO)
+            elif line == "STATUS":
+                self.say(f"STATUS {self.light}")
             elif line.startswith("PING ") and self.answering:
                 self.say(f"PONG {line.split()[1]} {self.answers_at}")
         return len(data)
@@ -298,7 +311,7 @@ def test_a_break_on_the_board_reaches_the_chronometer_on_its_clock(
     }
     assert chronometer.next()["state"] == "connected"
     [port] = ports
-    assert port.written[:4] == ["", "HOLDOFF 1000", "HELLO", "PING 1"]
+    assert port.written[:5] == ["", "HOLDOFF 1000", "HELLO", "STATUS", "PING 1"]
     port.say("BREAK 1 2500000")  # half a second after the board answered PING 1
     assert chronometer.next() == {
         "type": "beam",
@@ -337,7 +350,7 @@ def test_a_board_lost_is_said_and_opened_again_with_its_clock_anew(
         "connecting",
         "connected",
     ]
-    assert ports[1].written[3] == "PING 2"  # a number once used is not used again
+    assert ports[1].written[4] == "PING 2"  # a number once used is not used again
     ports[1].say("BREAK 1 501000")  # the old board's round trips count no more
     assert chronometer.next()["time_ms"] == 1_000_500
     chronometer.tell(None)  # the chronometer gone: its standard input ends
@@ -368,6 +381,37 @@ def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
         "detail": c.SILENT,
     }
     ports[0].answering = True
+    assert chronometer.next() == {
+        "type": "status",
+        "state": "connected",
+        "detail": HELLO[6:],
+    }
+    chronometer.tell({"cmd": "stop"})
+    _until(lambda: ended == [0])
+
+
+def test_a_beam_blocked_from_the_start_is_said_and_so_is_its_return(
+    monkeypatch, ports, serial
+):
+    """The laser not yet aimed, or knocked off the sensor: no break can be seen."""
+    clock = [1_000_000.0]
+    monkeypatch.setattr(c, "now_ms", lambda: clock[0])
+    monkeypatch.setattr(Port, "light", "blocked")
+    chronometer = Chronometer()
+    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    chronometer.tell({"cmd": "start", "settings": {}})
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    _until(lambda: ports[0].written[3:4] == ["STATUS"])
+    clock[0] += c.BLOCKED_MS + 1
+    assert chronometer.next() == {
+        "type": "status",
+        "state": "connected",
+        "detail": f"{HELLO[6:]}: {c.BLOCKED}",
+    }
+    ports[0].say("STATUS beam")  # aimed again
     assert chronometer.next() == {
         "type": "status",
         "state": "connected",
