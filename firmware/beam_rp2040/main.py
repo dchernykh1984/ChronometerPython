@@ -164,4 +164,5 @@ class Board:
             sleep_ms(1)
 
 
-Board().run()
+if __name__ == "__main__":  # on the board, as its main.py; a test imports it
+    Board().run()
