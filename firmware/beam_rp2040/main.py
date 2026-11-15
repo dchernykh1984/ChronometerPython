@@ -6,6 +6,7 @@ talks over its USB serial port, a line at a time; what it says:
     HELLO beam-rp2040 <firmware> <board id>
     BREAK <seq> <t_us>    the light lost: its first edge, then none for the hold-off
     STATUS beam|blocked   the light's state once it has held 50 ms, for aiming
+    STATUS unsteady       no state has held for a second: no break can be seen
     PONG <n> <t_us>       the answer to PING <n>
     FLASH <n> <t_us>      the LED lit white for FLASH <n>, for the cameras
     HOLDOFF <ms>          the hold-off in use, after HOLDOFF <ms>
@@ -25,11 +26,12 @@ import machine
 import micropython
 import neopixel
 
-FIRMWARE = "0.2"
+FIRMWARE = "0.3"
 SENSOR_PIN = 2  # DO of the light sensor module: high while its light is gone
 LED_PIN = 16  # the board's colour LED
 HOLD_OFF_MS = 1000  # one rider, one break: a bike's wheels and body pass within it
 SETTLE_US = 50_000  # a state said for aiming once it has held this long
+UNSTEADY_US = 1_000_000  # no state held this long: the light flickers on the sensor
 FLASH_US = 100_000
 GREEN, RED, WHITE = (0, 24, 0), (24, 0, 0), (60, 60, 60)
 
@@ -38,7 +40,7 @@ ticks_diff = time.ticks_diff  # type: ignore[attr-defined]
 sleep_ms = time.sleep_ms  # type: ignore[attr-defined]
 
 micropython.alloc_emergency_exception_buf(100)
-_armed = True  # the next edge is a break; the loop arms it again after the hold-off
+_armed = False  # the next edge is a break: the loop arms it once the light is back
 _at = 0  # the ticks of the last break, written in the IRQ
 _taken = 0  # breaks the IRQ has taken, ever
 
@@ -83,11 +85,12 @@ class Board:
         self.led = neopixel.NeoPixel(machine.Pin(LED_PIN), 1)
         self.hold_off_us = HOLD_OFF_MS * 1000
         self.seq = 0
-        self.last_break = 0
+        self.last_break = None
         self.read = 0  # breaks said
         self.shown = None  # the state last said
         self.seen = None  # the state seen, and since when
         self.seen_at = 0
+        self.held_at = 0  # when a state was last seen held
         self.flash_until = None
         self.id = "".join(f"{b:02x}" for b in machine.unique_id())
 
@@ -105,8 +108,17 @@ class Board:
             self.seq += 1
             self.last_break = self.clock.of(_at)
             self.say("BREAK", self.seq, self.last_break)
-        elif not armed and self.clock.now() - self.last_break >= self.hold_off_us:
+        elif not armed and self.ready():
             _armed = True
+
+    def ready(self):
+        """The next edge may be a break: the hold-off over, and the light back for
+        50 ms. The chatter of light coming back, after a rider who stopped in the
+        beam or onto a laser being aimed, is then no break."""
+        now = self.clock.now()
+        if self.last_break is not None and now - self.last_break < self.hold_off_us:
+            return False
+        return self.seen == "beam" and now - self.seen_at >= SETTLE_US
 
     def light(self):
         state = "blocked" if self.sensor.value() else "beam"
@@ -119,9 +131,15 @@ class Board:
             if self.flash_until is None:
                 self.led[0] = RED if state == "blocked" else GREEN
                 self.led.write()
-        elif state != self.shown and now - self.seen_at >= SETTLE_US:
-            self.shown = state
-            self.say("STATUS", state)
+        if now - self.seen_at >= SETTLE_US:
+            self.held_at, said = now, state
+        elif now - self.held_at >= UNSTEADY_US:
+            said = "unsteady"  # never armed: no break can be seen, so it is said
+        else:
+            return
+        if said != self.shown:
+            self.shown = said
+            self.say("STATUS", said)
 
     def answer(self, line):
         words = line.split()

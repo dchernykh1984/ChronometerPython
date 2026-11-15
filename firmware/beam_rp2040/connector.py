@@ -31,7 +31,7 @@ from typing import IO, Any
 
 PROTOCOL = 1
 NAME = "beam-rp2040"
-FIRMWARE = "0.2"  # main.py's, beside this file: a test keeps the two the same
+FIRMWARE = "0.3"  # main.py's, beside this file: a test keeps the two the same
 RASPBERRY_PI_USB = 0x2E8A  # the USB vendor of the RP2040's MicroPython port
 MICROPYTHON_RP2 = 0x0005  # its product: MicroPython's, not a debug probe's
 LONGEST_TRIP_MS = 20.0  # a round trip longer than this says nothing about the clock
@@ -42,6 +42,7 @@ SILENT_MS = 3 * PING_EVERY_S * 1000  # a PING unanswered this long: the board st
 SILENT = "the board answers no PING: is main.py running on it?"
 BLOCKED_MS = 2000.0  # longer than any rider takes to cross the beam
 BLOCKED = "the beam is blocked: no break can be seen until the light is back"
+UNSTEADY = "the light flickers on the sensor: no break can be seen; aim it again"
 
 
 def now_ms() -> float:
@@ -89,7 +90,8 @@ class Bridge:
     pings: dict[int, float] = field(default_factory=dict)  # sent at, by number
     next_ping: int = 1
     board: str = ""  # what its HELLO said: nothing counts before it
-    blocked_since: float | None = None  # when it said STATUS blocked
+    dark: str | None = None  # STATUS blocked or unsteady: no break can be seen
+    dark_since: float = 0.0
 
     def ping(self, sent_ms: float) -> str:
         """The next PING line for the board, its sending time kept."""
@@ -103,10 +105,11 @@ class Bridge:
         """A PING unanswered for SILENT_MS: the board has stopped, its port open."""
         return any(now_ms - sent > SILENT_MS for sent in self.pings.values())
 
-    def blocked(self, now_ms: float) -> bool:
-        """Blocked for BLOCKED_MS: no rider takes that long, so no break can be seen."""
-        since = self.blocked_since
-        return since is not None and now_ms - since > BLOCKED_MS
+    def unseeing(self, now_ms: float) -> str | None:
+        """Why no break can be seen, once it has lasted longer than a rider takes."""
+        if self.dark is None or now_ms - self.dark_since <= BLOCKED_MS:
+            return None
+        return BLOCKED if self.dark == "blocked" else UNSTEADY
 
     def answered(self, n: int, board_us: int, got_ms: float) -> None:
         """PONG n: a round trip for the clock, and the board is there."""
@@ -153,10 +156,9 @@ class Bridge:
                 }
             ]
         if word == "STATUS":
-            if rest != ["blocked"]:
-                self.blocked_since = None
-            elif self.blocked_since is None:  # said again when asked: since the first
-                self.blocked_since = got_ms
+            dark = rest[0] if rest in (["blocked"], ["unsteady"]) else None
+            if dark != self.dark:  # said again when asked: since the first
+                self.dark, self.dark_since = dark, got_ms
             return []
         if word == "ERROR":
             return [{"type": "error", "message": f"board: {' '.join(rest)}"}]
@@ -261,8 +263,8 @@ class Connector:
         elif self.bridge.board:
             # A laser knocked off its sensor, or a loose wire: the beam sees nothing.
             detail = self.bridge.board
-            if self.bridge.blocked(now_ms()):
-                detail += f": {BLOCKED}"
+            if why := self.bridge.unseeing(now_ms()):
+                detail += f": {why}"
             self.send({"type": "status", "state": "connected", "detail": detail})
 
     def obey(self, command: dict[str, Any]) -> bool:

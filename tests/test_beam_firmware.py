@@ -133,6 +133,38 @@ def test_a_bike_is_one_break_its_wheels_and_body_within_the_hold_off(rig):
     assert rig.breaks() == [1, 2]
 
 
+def test_the_light_coming_back_after_a_long_block_is_no_break(rig):
+    """A rider stopped in the beam, or someone standing in it, for longer than the
+    hold-off: the comparator chatters as the light comes back, and that is no rider."""
+    rig.run(100, blocked=False)
+    rig.run(1500, blocked=True)
+    rig.chatter(5)
+    rig.run(100, blocked=False)
+    assert rig.breaks() == [1]
+    rig.run(10, blocked=True)  # the next rider
+    assert rig.breaks() == [1, 2]
+
+
+def test_a_laser_first_aimed_at_the_sensor_is_no_break(rig):
+    rig.run(500, blocked=True)  # the board started in the dark
+    rig.chatter(5)  # the spot comes onto the sensor
+    rig.run(100, blocked=False)
+    assert rig.breaks() == []
+    rig.run(10, blocked=True)  # then a rider
+    assert rig.breaks() == [1]
+
+
+def test_a_light_that_never_holds_is_said_unsteady_as_no_break_can_be_seen(rig):
+    """The spot on the sensor's edge: the comparator flickers, the IRQ is never
+    armed again, and the board says so instead of seeing nothing in silence."""
+    rig.run(100, blocked=False)
+    rig.chatter(600)  # 1.2 s of flicker
+    assert rig.breaks() == [1]  # its first edge, the light lost after it held
+    assert rig.said[-1] == "STATUS unsteady"
+    rig.run(60, blocked=False)
+    assert rig.said[-1] == "STATUS beam"
+
+
 def test_the_clock_carries_on_over_the_ticks_wrapping(monkeypatch):
     """The board's ticks wrap every 18 minutes; its microseconds go on counting."""
     rig = make_rig(monkeypatch, start_us=WRAP - 600_000)
@@ -151,7 +183,7 @@ def test_the_board_answers_what_it_is_asked(rig):
     assert rig.said == [
         "STATUS beam",
         "PONG 7 60000",
-        "HELLO beam-rp2040 0.2 50543165",
+        f"HELLO beam-rp2040 {rig.firmware.FIRMWARE} 50543165",
         "STATUS beam",
         "HOLDOFF 300",
         "ERROR unknown: HOLDOFF -1",
