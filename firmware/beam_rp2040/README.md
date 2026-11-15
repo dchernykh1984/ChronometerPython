@@ -110,6 +110,10 @@ again starts it.
    On Windows, `C:\Users\<you>\.local\bin\uv.exe run --script C:\path\to\...\connector.py`.
    A path with spaces goes in double quotes.
 
+   The first start fetches Python 3.14 and pyserial into uv's cache, which takes
+   the network: run the command once with `--help` after it, at home, and the
+   race needs none.
+
 4. Start. The action log says `source connecting /dev/cu.usbmodem101`, then
    `source connected beam-rp2040 0.1 <board id>`. Cover the sensor: a slot takes
    the time.
