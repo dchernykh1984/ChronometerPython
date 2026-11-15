@@ -1,0 +1,157 @@
+# Beam board: an RP2040-Zero, a light sensor and a laser
+
+A light beam across the finish line for the chronometer. The board times each break
+of the light with its own microsecond clock and reports it over USB; `connector.py`
+moves that time onto the computer's clock and hands the break to the chronometer,
+which stamps the next empty slot with it.
+
+Everything the board runs is in this folder, at the versions below: one copy of the
+repository gives the same board, every time.
+
+| File | What it is |
+| --- | --- |
+| `main.py` | The board's firmware: exactly the file copied onto the board. |
+| `connector.py` | The program the chronometer starts: the board to the chronometer. |
+| `connector.py.lock` | Its dependencies, locked (`uv lock --script connector.py`). |
+
+## Versions
+
+| What | Version | Pinned in |
+| --- | --- | --- |
+| MicroPython | v1.29.0, build `RPI_PICO` | this file, with its SHA-256 |
+| mpremote (copies files to the board) | 1.29.0 | the commands below |
+| Firmware | 0.1 | `FIRMWARE` in `main.py`; the board says it in its `HELLO` |
+| Python for the connector | 3.14 | the script block at the top of `connector.py` |
+| pyserial | 3.5 | the script block and `connector.py.lock` |
+
+## Parts
+
+| Part | Notes |
+| --- | --- |
+| RP2040-Zero (Waveshare, or a clone) | Tested on a "V1083" clone: USB-C, a colour LED on GP16. |
+| Light sensor module | LM393 comparator, a photoresistor and a trimmer; pins VCC, GND, DO, AO. |
+| KY-008 laser module | 650 nm, 5 V. Not needed to try the board: a finger over the sensor will do. |
+| Pin headers | 2 x 9 for the long rows, 1 x 5 for the short edge if wanted. |
+| Dupont wires, female-female | 3 for the sensor, 2 for the laser. |
+| USB-C cable | One that carries data, not a charge-only one. |
+
+Solder the headers with their long pins out on the side with the pin labels, so the
+labels stay readable while wiring.
+
+## Wiring
+
+Hold the board with its labels facing you and the USB socket up. The left row, from
+the USB end: `5V`, `GND`, `3V3`, `29`, `28`, `27`, `26`, `15`, `14`. The right row,
+from the USB end: `GP0`, `GP1`, `GP2`, and on.
+
+| Module pin | Board pin | Why |
+| --- | --- | --- |
+| Sensor `VCC` | `3V3` | Not 5V: `DO` swings up to `VCC`, and a GP pin takes 3.3 V at most. |
+| Sensor `GND` | `GND` | |
+| Sensor `DO` | `GP2` (right row, third from USB) | High while the light is gone. |
+| Sensor `AO` | - | Not used. |
+| Laser `S` | `5V` | The laser lights whenever the board has power. |
+| Laser `-` | `GND` | The board has one `GND` pin: share it with a Y wire, or power the laser from its own 5 V supply. |
+| Laser middle pin | - | Not used. |
+
+The sensor module has two LEDs: power, and one that lights while light reaches the
+sensor. Turn its trimmer until that LED is just lit in the light the sensor will
+see (the room's, or the laser's spot), and goes out when the sensor is covered.
+
+## Flashing
+
+1. Download MicroPython and check it:
+
+   ```bash
+   curl -LO https://micropython.org/resources/firmware/RPI_PICO-20260824-v1.29.0.uf2
+   shasum -a 256 RPI_PICO-20260824-v1.29.0.uf2
+   # e1160e602e277d85920adb5fe741435edccba9ba6ecadc85fdab75252eeff4e9
+   ```
+
+2. Hold `BOOT`, plug the board in, let go: a drive `RPI-RP2` appears (a board with
+   an empty flash shows it without `BOOT`). Copy the `.uf2` onto it; the board
+   restarts as MicroPython and the drive goes.
+3. Copy the firmware, from the repository's folder:
+
+   ```bash
+   uvx mpremote@1.29.0 connect auto cp firmware/beam_rp2040/main.py :main.py + reset
+   ```
+
+   The board's LED turns green, and red while the sensor is covered. The same
+   command puts a new `main.py` on later; MicroPython itself stays.
+
+4. Check it (optional): `uvx mpremote@1.29.0 connect auto repl`, type `HELLO` and
+   Enter (what is typed is not shown), cover the sensor; `Ctrl-]` leaves. What it
+   should say:
+
+   ```text
+   HELLO beam-rp2040 0.1 5054316551247c1c
+   BREAK 1 18734215
+   STATUS blocked
+   STATUS beam
+   ```
+
+`Ctrl-C` in that window stops `main.py`; unplugging the board and plugging it in
+again starts it.
+
+## In the chronometer
+
+1. Choose the results file: every break also goes to the beam's own file next to
+   it, `<results>.beam_breaks.txt`.
+2. Event source: Source `beam`, Device `Custom command`.
+3. Settings, the command line, with full paths (a program started from Finder or
+   a desktop shortcut does not get the terminal's `PATH`; `which uv` or `where uv`
+   tells where uv is):
+
+   ```text
+   /opt/homebrew/bin/uv run --script /path/to/WindowsChronometerPython/firmware/beam_rp2040/connector.py
+   ```
+
+   On Windows, `C:\Users\<you>\.local\bin\uv.exe run --script C:\path\to\...\connector.py`.
+   A path with spaces goes in double quotes.
+
+4. Start. The action log says `source connecting /dev/cu.usbmodem101`, then
+   `source connected beam-rp2040 0.1 <board id>`. Cover the sensor: a slot takes
+   the time.
+
+The connector's options go after `connector.py`:
+
+| Option | Default | What |
+| --- | --- | --- |
+| `--port P` | the first Raspberry Pi port | `/dev/cu.usbmodem101`, `COM5`: for two boards on one computer. |
+| `--hold-off-ms N` | 1000 | After a break, edges this soon are the same rider's: a bike's wheels and body. |
+
+| The log says | Why |
+| --- | --- |
+| `source disconnected no beam board found on USB` | Not plugged in, a charge-only cable, or the board is in `RPI-RP2` mode. It tries again every 2 s. |
+| Breaks missing, or `source disconnected` with an error from the port | Another program has the port open: an `mpremote` window, a serial monitor. Close it. |
+| `source connecting ...`, and no `connected` | The board runs no `main.py`: copy it again (Flashing, step 3). |
+
+## What the board says
+
+One line at a time over its USB serial port; `<t_us>` is microseconds since the board
+started, on its own clock.
+
+| Line | When |
+| --- | --- |
+| `HELLO beam-rp2040 <firmware> <board id>` | At start, and when asked `HELLO`. |
+| `BREAK <seq> <t_us>` | The light went: its first edge, then none for the hold-off. |
+| `STATUS beam` or `STATUS blocked` | The light's state once it has held 50 ms, for aiming; and when asked `STATUS`. |
+| `PONG <n> <t_us>` | Asked `PING <n>`. |
+| `HOLDOFF <ms>` | Asked `HOLDOFF <ms>`: the hold-off is now that. |
+| `FLASH <n> <t_us>` | Asked `FLASH <n>`: the LED lit white for 100 ms, for the cameras. |
+| `ERROR unknown: <line>` | A line it did not understand. |
+
+The connector pings the board every 2 s. The middle of a round trip is taken as the
+moment the board answered, and the median of the last 9 round trips under 20 ms maps
+the board's clock onto the computer's (a round trip takes 3 to 5 ms over USB). A
+break before the first round trip has the time its line came. A board unplugged and
+plugged in again starts its clock anew, and so does the mapping.
+
+## Out of doors
+
+A bare sensor works for a finger, not for a laser 10 m away: a 0.06 degree tilt of
+its stand moves the spot by 1 cm, more than the photoresistor is wide, so wind or a
+flexing ramp would break the beam at every gust. The spot has to land on a lens or a
+reflector that catches it wherever it wanders over a few centimetres (spec FR-019,
+research 11). The firmware stays as it is.
