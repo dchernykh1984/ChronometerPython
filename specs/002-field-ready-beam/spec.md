@@ -210,9 +210,10 @@ unpinned kit is built differently each time.
 - **FR-010**: The receiver MUST NOT be blinded by the sun nor make breaks of its own from sunlight
   or reflections.
 - **FR-011**: The beam MUST work with its parts 10 to 12 m apart.
-- **FR-012**: The way the beam rides out the wind MUST be chosen and built: [NEEDS CLARIFICATION:
-  a laser with a lens of 3-5 cm and the sensor at its focus in a black tube, or an industrial
-  retroreflective sensor with a prism reflector, modulated so the sun does not blind it?]
+- **FR-012**: The beam MUST ride out the wind by a lens: the laser's spot caught by a lens of 5 to
+  7.5 cm, wide enough for FR-009's wavering, with the sensor at its focus in a black tube behind a
+  red filter. An industrial retroreflective sensor was weighed and set aside: the ones that reach
+  10 to 12 m cost several times FR-020's limit, and the ones within it reach 2 to 4 m.
 - **FR-013**: The emitter and the receiver MUST withstand rain, dust and dew as an IP65 class at
   least, IP67 aimed, while keeping a clear optical window, a way to aim, and a way to charge and
   re-flash without breaking the seal. [NEEDS CLARIFICATION: sealed by epoxy potting of the
@@ -238,6 +239,9 @@ unpinned kit is built differently each time.
 - **FR-019**: The beam MUST keep the uses it has today: riders crossing one at a time (time trials,
   downhill), each break a rider's cutoff, and group starts; a crossing is never lost, and every
   break stays in the beam's raw file first.
+- **FR-020**: The parts that make one beam -- the emitter, the receiver and their optics -- MUST
+  cost no more than 10,000 tenge in all, bought in Kazakhstan; the rest of the kit is as cheap as
+  it can be, and its README lists every part with its price and where it was bought.
 
 ### Key Entities *(include if feature involves data)*
 
