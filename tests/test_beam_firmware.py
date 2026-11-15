@@ -192,5 +192,23 @@ def test_the_board_answers_what_it_is_asked(rig):
     assert rig.board.hold_off_us == 300_000
 
 
+def test_the_led_shows_the_light_and_flashes_white_when_asked(rig):
+    """Green while the light reaches the sensor, red while it is blocked, for
+    aiming; white for FLASH, for the cameras, then the light again."""
+    firmware = rig.firmware
+    rig.run(10, blocked=False)
+    assert rig.board.led[0] == firmware.GREEN
+    rig.run(10, blocked=True)
+    assert rig.board.led[0] == firmware.RED
+    rig.board.answer("FLASH 3")
+    assert rig.said[-1] == "FLASH 3 20000"
+    rig.run(50, blocked=False)
+    assert rig.board.led[0] == firmware.WHITE  # the flash goes on over the light
+    rig.run(60, blocked=False)
+    assert rig.board.led[0] == firmware.GREEN
+    rig.board.answer("FLASH")
+    assert rig.said[-1] == "ERROR unknown: FLASH"
+
+
 def test_a_loose_sensor_wire_reads_as_a_blocked_beam(rig):
     assert rig.board.sensor.pull == Pin.PULL_UP
