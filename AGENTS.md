@@ -16,6 +16,8 @@ the network is best effort.
 | `app/paths.py` | Resolves where data lives (see below). |
 | `tests/` | pytest; `conftest.py` holds the offscreen Qt `win` fixture. |
 | `data/` | Runtime data files. |
+| `beam/` | Everything for the laser beam: `README.md` (the kits, parts and prices, wiring, flashing, both apps), `firmware/` (one core, `core/beamcore.py`, and a `main.py` per chip, `rp2040/` and `esp32c3/`), `enclosures/` (the 3D-printed parts, made in Blender). The firmware's tests (`tests/test_beam_firmware.py`) run with the rest, outside the coverage gate, which measures `app/` only. |
+| `app/connectors/boards/` | The beam boards the chronometer reads itself: the contract's reader (`protocol.py`), the USB transport (`usb_serial.py`), the Bluetooth one (`ble.py`, through `bleak`), one module per chip (`rp2040.py`, `esp32c3.py`), each a USB device and a Bluetooth one. |
 
 `app/models.py` is a port of an older C++ chronometer; several helpers say so in
 their docstrings. Keep the ported behaviour unless a change is asked for.
@@ -55,6 +57,33 @@ a stale overwrite (HTTP 409).
 Uploads run on a `QThread` so a slow network never blocks timing, and their
 outcome is appended to the in-app action log, not shown in a dialog. See the
 `site-upload` skill for the failure modes.
+
+## The beam
+
+- The boards' lines are a contract:
+  `specs/001-event-sources/contracts/beam-board-protocol.md`. Change it first, then the
+  firmware, this chronometer (`app/connectors/boards/protocol.py`) and the Android app
+  (ChronometerAndroid's `BoardBridge.kt`) together, and bump `FIRMWARE` in
+  `beam/firmware/core/beamcore.py` and the version the readers expect
+  (`app/connectors/boards/rp2040.py`, and Android's), or every board is said to need
+  flashing.
+- MicroPython runs `beam/firmware/`: no syntax newer than Python 3.8, no `pathlib`, no
+  typing at run time. `beam/ruff.toml` keeps the formatter's 3.14 style out (an
+  `except A, B:` without parentheses stops a board at its start); a test parses every
+  file as 3.8.
+- Over Bluetooth both boards offer the HM-10's serial service, 0xFFE0 with 0xFFE1, and a
+  reader reads only the board its `device` setting names. The clock is mapped from the
+  shortest trip each way of the last 16 PONGs (`RadioSync`), never from a round trip's
+  middle: a radio reply waits for its next connection event.
+- `bleak` runs in the connector process, never in the UI's. Its backend for each system is
+  collected in `.github/workflows/build.yml`. The macOS bundle needs
+  `NSBluetoothAlwaysUsageDescription`, or macOS ends the app at its first Bluetooth call.
+  `.github/scripts/connector_smoke.py` runs a Bluetooth connector in every frozen build.
+- The enclosures are made by `beam/enclosures/beam_enclosures.py` in Blender. Change
+  the script, never an STL, and build them again. Use Blender's MCP add-on (Blender Lab's,
+  `localhost:9876`: a JSON request `{"type": "execute", "code": ..., "strict_json":
+  false}` ended by a NUL byte, with `__file__` set in the code), its Text Editor, or
+  `blender -b -P`. Commit the script, `stl/`, `preview.png` and the `.blend` together.
 
 ## Commands
 
