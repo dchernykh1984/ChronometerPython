@@ -10,7 +10,7 @@ Source "beam", device "Custom command", and as the command (README.md):
 
 It speaks the connector protocol (specs/001-event-sources/contracts/) on its
 standard input and output, and the board's lines (main.py) on the board's USB
-serial port: the one --port names, else the first Raspberry Pi one found. A break
+serial port: the one --port names, else the first MicroPython RP2040 one. A break
 keeps the board's own time: its microseconds, moved onto this computer's clock by
 PING round trips, half a trip each way. A custom command is started with no
 settings, so its own come from the command line.
@@ -32,6 +32,7 @@ from typing import IO, Any
 PROTOCOL = 1
 NAME = "beam-rp2040"
 RASPBERRY_PI_USB = 0x2E8A  # the USB vendor of the RP2040's MicroPython port
+MICROPYTHON_RP2 = 0x0005  # its product: MicroPython's, not a debug probe's
 LONGEST_TRIP_MS = 20.0  # a round trip longer than this says nothing about the clock
 SAMPLES = 9  # round trips kept, their median the offset
 PING_EVERY_S = 2.0
@@ -130,12 +131,13 @@ class Bridge:
 
 
 def board_port(chosen: str) -> str | None:
-    """The port named, else the first Raspberry Pi serial port."""
+    """The port named, else the first MicroPython RP2040 serial port."""
     if chosen:
         return chosen
     from serial.tools import list_ports  # pyserial, only where a board is used
 
-    found = [p.device for p in list_ports.comports() if p.vid == RASPBERRY_PI_USB]
+    ours = (RASPBERRY_PI_USB, MICROPYTHON_RP2)
+    found = [p.device for p in list_ports.comports() if (p.vid, p.pid) == ours]
     return sorted(found)[0] if found else None
 
 
@@ -273,7 +275,9 @@ def hold_off(text: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
-        "--port", default="", help="the board's port; default: the first Raspberry Pi"
+        "--port",
+        default="",
+        help="the board's port; default: the first MicroPython one",
     )
     parser.add_argument(
         "--hold-off-ms",
