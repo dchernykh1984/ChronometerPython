@@ -11,13 +11,14 @@ import threading
 import time
 import types
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
 
 from firmware.beam_rp2040 import connector as c
 
-HELLO = "HELLO beam-rp2040 0.1 e6614103"
+HELLO = f"HELLO beam-rp2040 {c.FIRMWARE} e6614103"
 
 
 def _connected() -> c.Bridge:
@@ -89,6 +90,23 @@ def test_a_beam_blocked_longer_than_a_rider_takes_is_blocked_until_it_is_back():
     assert bridge.blocked(1_000.0 + c.BLOCKED_MS + 1)
     bridge.from_board("STATUS beam", 4_000.0)
     assert not bridge.blocked(10**12)
+
+
+def test_a_board_on_another_firmware_than_main_py_here_is_said():
+    assert c.Bridge().from_board("HELLO beam-rp2040 0.1 e6614103", 0.0) == [
+        {"type": "status", "state": "connected", "detail": "beam-rp2040 0.1 e6614103"},
+        {
+            "type": "error",
+            "message": f"the board runs firmware 0.1, main.py here is {c.FIRMWARE}: "
+            "copy it onto the board (README.md, Flashing)",
+        },
+    ]
+    assert len(c.Bridge().from_board(HELLO, 0.0)) == 1  # the same: nothing to say
+
+
+def test_the_connector_expects_the_firmware_beside_it():
+    main = Path(c.__file__).with_name("main.py").read_text(encoding="utf-8")
+    assert f'\nFIRMWARE = "{c.FIRMWARE}"\n' in main
 
 
 def test_nothing_counts_before_the_board_says_its_hello():

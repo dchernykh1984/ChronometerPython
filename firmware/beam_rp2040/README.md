@@ -131,6 +131,7 @@ The connector's options go after `connector.py`:
 | `source disconnected ... Could not exclusively lock port ...` | Another chronometer has the board: one board, one chronometer. |
 | Breaks missing, lines garbled | Another program has the port open too: an `mpremote` window, a serial monitor. Close it. |
 | `source connected ...: the beam is blocked: no break can be seen until the light is back` | Blocked for over 2 s, longer than any rider takes: the laser is off the sensor, someone stands in the beam, or a sensor wire is loose. The same line without it follows once the light is back. |
+| `source error: the board runs firmware 0.1, main.py here is 0.2: ...` | The board has another `main.py` than this folder: copy it (Flashing, step 3). |
 | `source disconnected the board answers no PING: is main.py running on it?` | The board runs no `main.py`, or it has stopped: unplug the board and plug it in again; if it says so again, copy `main.py` again (Flashing, step 3). |
 
 ## What the board says
