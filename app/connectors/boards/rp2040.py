@@ -1,11 +1,11 @@
-"""The RP2040 beam board: firmware/beam_rp2040/main.py, MicroPython on a Waveshare
+"""The RP2040 beam board: beam/firmware/rp2040/main.py, MicroPython on a Waveshare
 RP2040-Zero or a clone; its README says how to build, wire and flash one."""
 
 from __future__ import annotations
 
 from app.connectors.boards import Board
 
-# firmware/beam_rp2040/main.py's FIRMWARE: a test keeps the two the same.
+# beam/firmware/rp2040/main.py's FIRMWARE: a test keeps the two the same.
 FIRMWARE = "0.3"
 
 BOARD = Board(

@@ -71,7 +71,7 @@ see (the room's, or the laser's spot), and goes out when the sensor is covered.
 3. Copy the firmware, from the repository's folder:
 
    ```bash
-   uvx mpremote@1.29.0 connect auto cp firmware/beam_rp2040/main.py :main.py + reset
+   uvx mpremote@1.29.0 connect auto cp beam/firmware/rp2040/main.py :main.py + reset
    ```
 
    The board's LED turns green, and red while the sensor is covered. The same

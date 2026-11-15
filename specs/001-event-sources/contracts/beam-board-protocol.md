@@ -1,6 +1,6 @@
 # Contract: the beam board's lines, version 0.3
 
-The beam board (`firmware/beam_rp2040/main.py`) times each break of its light with its own
+The beam board (`beam/firmware/rp2040/main.py`) times each break of its light with its own
 clock and talks over its USB serial port. Every program that reads it keeps to this contract:
 the desktop chronometer (`app/connectors/boards/`) and the Android app's USB beam.
 
