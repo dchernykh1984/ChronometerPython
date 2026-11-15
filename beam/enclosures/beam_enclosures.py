@@ -375,12 +375,8 @@ def build():
     tpu = tpu_parts()
     stl = OUT / "stl"
     stl.mkdir(parents=True, exist_ok=True)
-    x = 0.0
-    for obj in petg + tpu:
+    for obj in petg + tpu:  # each where it was made: a print file moves with no other
         obj.color = TPU if obj in tpu else PETG
-        width = obj.dimensions.x
-        obj.location.x = x + width / 2
-        x += width + 15.0
         for other in bpy.context.scene.objects:
             other.select_set(False)
         obj.select_set(True)
@@ -394,6 +390,10 @@ def build():
                 apply_modifiers=True,
                 ascii_format=False,
             )
+    x = 0.0
+    for obj in petg + tpu:  # then in a row, for the preview and the .blend
+        obj.location.x = x + obj.dimensions.x / 2
+        x += obj.dimensions.x + 15.0
     preview(petg + tpu)
     with bpy.context.temp_override(**window()):
         blend = OUT / "beam_enclosures.blend"
