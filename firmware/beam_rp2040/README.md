@@ -137,27 +137,9 @@ The connector's options go after `connector.py`:
 
 ## What the board says
 
-One line at a time over its USB serial port; `<t_us>` is microseconds since the board
-started, on its own clock.
-
-| Line | When |
-| --- | --- |
-| `HELLO beam-rp2040 <firmware> <board id>` | At start, and when asked `HELLO`. |
-| `BREAK <seq> <t_us>` | The light went: its first edge, then none for the hold-off. |
-| `STATUS beam` or `STATUS blocked` | The light's state once it has held 50 ms, for aiming; and when asked `STATUS`, as the connector does as it connects. |
-| `STATUS unsteady` | No state has held for a second: the light flickers on the sensor, and no break can be seen until it holds. |
-| `PONG <n> <t_us>` | Asked `PING <n>`. |
-| `HOLDOFF <ms>` | Asked `HOLDOFF <ms>`: the hold-off is now that. |
-| `FLASH <n> <t_us>` | Asked `FLASH <n>`: the LED lit white for 100 ms, for the cameras. |
-| `ERROR unknown: <line>` | A line it did not understand. |
-
-The connector pings the board every 2 s. The middle of a round trip is taken as the
-moment the board answered, and the median of the last 9 round trips under 20 ms maps
-the board's clock onto the computer's (a round trip takes 3 to 5 ms over USB). A
-break before the first round trip has the time its line came. A board unplugged and
-plugged in again starts its clock anew, and so does the mapping. A board that
-answers no `PING` for 6 s is reported disconnected, and connected again once it
-answers: its port stays open when its `main.py` stops, so only the pings tell.
+Its lines, when a break is a break, and what a program reading the board does (this
+connector, and the Android app's USB beam alike) are in one contract:
+[`specs/001-event-sources/contracts/beam-board-protocol.md`](../../specs/001-event-sources/contracts/beam-board-protocol.md).
 
 ## Out of doors
 

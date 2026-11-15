@@ -9,7 +9,7 @@ Source "beam", device "Custom command", and as the command (README.md):
     <uv> run --script <repo>/firmware/beam_rp2040/connector.py [--port P]
 
 It speaks the connector protocol (specs/001-event-sources/contracts/) on its
-standard input and output, and the board's lines (main.py) on the board's USB
+standard input and output, and the board's (beam-board-protocol.md there) on its USB
 serial port: the one --port names, else the first MicroPython RP2040 one. A break
 keeps the board's own time: its microseconds, moved onto this computer's clock by
 PING round trips, half a trip each way. A custom command is started with no
