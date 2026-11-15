@@ -31,6 +31,7 @@ from typing import IO, Any
 
 PROTOCOL = 1
 NAME = "beam-rp2040"
+FIRMWARE = "0.2"  # main.py's, beside this file: a test keeps the two the same
 RASPBERRY_PI_USB = 0x2E8A  # the USB vendor of the RP2040's MicroPython port
 MICROPYTHON_RP2 = 0x0005  # its product: MicroPython's, not a debug probe's
 LONGEST_TRIP_MS = 20.0  # a round trip longer than this says nothing about the clock
@@ -115,12 +116,26 @@ class Bridge:
         if sent is not None:
             self.sync.add(sent, got_ms, board_us)
 
+    def hello(self, rest: list[str]) -> list[dict[str, Any]]:
+        """HELLO: from now on the board counts, and runs this folder's main.py."""
+        self.board = " ".join(rest)
+        said = [{"type": "status", "state": "connected", "detail": self.board}]
+        runs = rest[1] if len(rest) > 1 else "?"
+        if runs != FIRMWARE:
+            said.append(
+                {
+                    "type": "error",
+                    "message": f"the board runs firmware {runs}, main.py here is "
+                    f"{FIRMWARE}: copy it onto the board (README.md, Flashing)",
+                }
+            )
+        return said
+
     def from_board(self, line: str, got_ms: float) -> list[dict[str, Any]]:
         """Events for the chronometer from one board line, received at ``got_ms``."""
         word, rest = parse(line)
         if word == "HELLO" and rest[:1] == [NAME]:
-            self.board = " ".join(rest)
-            return [{"type": "status", "state": "connected", "detail": self.board}]
+            return self.hello(rest)
         numbers = pair(rest)
         if not self.board:
             return []  # left from before the HELLO asked for, or another firmware's
