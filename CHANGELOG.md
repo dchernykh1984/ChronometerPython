@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.1](https://github.com/dchernykh1984/ChronometerPython/compare/v0.4.0...v0.4.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **firmware:** arm the beam only once its light has held, and say when it never does ([32f9345](https://github.com/dchernykh1984/ChronometerPython/commit/32f9345db649ba331a4c93dfe448fa1f39177f50))
+* **firmware:** end the beam board's link on any reading error, so its port is opened again ([daaaba9](https://github.com/dchernykh1984/ChronometerPython/commit/daaaba97c02847a1d4294c04f163c6efcd016b02))
+* **firmware:** end the beam connector once the program that started it is gone, so its port is free ([1260c22](https://github.com/dchernykh1984/ChronometerPython/commit/1260c2204f6eaa05a978f44059c23e8f8c331018))
+* **firmware:** give up a write the beam board does not read within 1 s, so the connector never hangs on it ([0aaac7e](https://github.com/dchernykh1984/ChronometerPython/commit/0aaac7edf55a6faf6d7f6790fab80993494099bd))
+* **firmware:** keep a beam break that comes before the board's HELLO or clock, timing it once both are known ([a7bb73f](https://github.com/dchernykh1984/ChronometerPython/commit/a7bb73f63095d6645b25af4d10e258600911d192))
+* **firmware:** log a command the beam connector does not understand, as the protocol has it ([8e3566d](https://github.com/dchernykh1984/ChronometerPython/commit/8e3566d5851f7d556f15982f393f5ab1bab2fd3e))
+* **firmware:** map the beam's breaks onto the computer's clock at once when that clock is set anew ([5074445](https://github.com/dchernykh1984/ChronometerPython/commit/5074445db349261bde9e1e117d7e6809abd41dfe))
+* **firmware:** say which beam breaks never came, the board's count skipping them ([1344932](https://github.com/dchernykh1984/ChronometerPython/commit/134493281ea19d379320f3454faa853a04665965))
+* **firmware:** stamp a beam break still waiting for the board's clock when the chronometer stops ([9cfb249](https://github.com/dchernykh1984/ChronometerPython/commit/9cfb249cf324f315cebbabca1642528bc6d497dc))
+* **firmware:** take no line the beam board's port cut short as it ended ([25d5256](https://github.com/dchernykh1984/ChronometerPython/commit/25d5256dd53f4158429ccc178d35baae99b96286))
+
+
+### Documentation
+
+* **firmware:** say in main.py that the next beam break also waits for the light to be back ([4e7debb](https://github.com/dchernykh1984/ChronometerPython/commit/4e7debb4ccd4aff349b68226852ff71d026618ae))
+* **firmware:** say the flickering light is reported after about 3 s, the board's second and the connector's two ([3967f03](https://github.com/dchernykh1984/ChronometerPython/commit/3967f03e85a57fad6fa84a6b6adae8a38668f7a1))
+* **firmware:** say what a Mac and Linux ask before the beam board's port opens ([46f0126](https://github.com/dchernykh1984/ChronometerPython/commit/46f012633553aea049183da2ceb0c0d3d7be4861))
+* list the beam board's folder in the project guide, and its tests outside the coverage gate ([2c518f0](https://github.com/dchernykh1984/ChronometerPython/commit/2c518f09339697323f963d512bbb624ac3e00dbe))
+* **specs:** count a beam board's line only with its end, and say the breaks its count skips ([b64f496](https://github.com/dchernykh1984/ChronometerPython/commit/b64f4963f6b066e26b31d7f9d4bc469f3b4a81ac))
+* **specs:** keep the beam board's lines in one contract, for the desktop connector and Android alike ([2d4d3d1](https://github.com/dchernykh1984/ChronometerPython/commit/2d4d3d1a4a0077ef7bb295541af5e9bca3a7d1b4))
+
 ## [0.4.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.3.0...v0.4.0) (2026-11-15)
 
 
