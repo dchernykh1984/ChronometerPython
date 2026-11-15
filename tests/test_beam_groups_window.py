@@ -7,6 +7,8 @@ Save group. Every break is in the beam file all the same.
 
 from __future__ import annotations
 
+from PySide6.QtTest import QTest
+
 from app import sources_config as sources
 from app.connector_protocol import Break
 from app.models import format_time
@@ -64,6 +66,21 @@ def test_its_riders_breaks_are_no_start_until_save_group(win, tmp_path):
     assert win._edit_group_time.text() == format_time(T0 + 60_000)
     beam = (tmp_path / "results.beam_breaks.txt").read_text(encoding="utf-8")
     assert len(beam.splitlines()) == 3  # every break kept
+
+
+def test_the_judges_own_start_is_not_replaced_by_a_break(win):
+    """Start pressed by hand, or the time typed: the judge's, until Save group."""
+    _group_starts(win)
+    win._on_start_group()
+    by_hand = win._edit_group_time.text()
+    win._on_source_event(Break(1, T0))
+    assert win._edit_group_time.text() == by_hand
+    win._on_save_group()
+    _group_starts(win, "W30")
+    win._edit_group_time.clear()
+    QTest.keyClicks(win._edit_group_time, "1 12:00:00.000")
+    win._on_source_event(Break(2, T0 + 60_000))
+    assert win._edit_group_time.text() == "1 12:00:00.000"
 
 
 def test_a_break_with_no_group_chosen_starts_none_and_says_so(win):
