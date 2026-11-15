@@ -408,6 +408,33 @@ def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
     _until(lambda: ended == [0])
 
 
+def test_a_reading_ended_by_any_error_is_said_and_the_port_opened_again(
+    monkeypatch, ports, serial
+):
+    """Not only pyserial's errors: one from deeper down must not leave the link
+    half dead, read by no one and never opened again."""
+    monkeypatch.setattr(c, "REOPEN_AFTER_S", 0.01)
+    chronometer = Chronometer()
+    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    chronometer.tell({"cmd": "start", "settings": {}})
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    ports[0].said.put(RuntimeError("the driver fell over"))
+    assert chronometer.next() == {
+        "type": "status",
+        "state": "disconnected",
+        "detail": "the driver fell over",
+    }
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    chronometer.tell(None)
+    _until(lambda: ended == [0])
+
+
 def test_a_beam_blocked_from_the_start_is_said_and_so_is_its_return(
     monkeypatch, ports, serial
 ):

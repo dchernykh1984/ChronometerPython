@@ -215,7 +215,7 @@ class Connector:
             for raw in link:
                 line = raw.decode("ascii", "replace").strip()
                 self.inbox.put(("board", (line, now_ms())))  # timed as it came
-        except (OSError, self.serial.SerialException) as error:
+        except Exception as error:  # whatever ends the reading ends the link
             why = str(error) or type(error).__name__
         self.inbox.put(("lost", (link, why)))  # once, naming its port: a new one stays
 
