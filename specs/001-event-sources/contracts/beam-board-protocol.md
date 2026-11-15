@@ -12,6 +12,8 @@ the desktop connector (`firmware/beam_rp2040/connector.py`) and the Android app'
   reads at most 64 characters of a line and drops the rest.
 - One program at a time: the port is opened exclusively where the system allows it, as two
   readers would each get half of every line.
+- A line is counted only with its line end: one cut short as the port ended may be a `BREAK`
+  with half its digits.
 
 ## What the board says
 
@@ -59,5 +61,7 @@ Anything else on the port (a MicroPython traceback, the REPL) is not the board's
    - no board found, or the port could not be opened, with the reason;
    - a `PING` unanswered for 6 s: the board's program has stopped, though its port is open;
    - `STATUS blocked` or `STATUS unsteady` held for over 2 s, longer than any rider takes: no break
-     can be seen; and the light back.
+     can be seen; and the light back;
+   - a `BREAK` whose `seq` skips some after the last one from the same board id: those breaks never
+     came, the link down as they did; a `seq` lower than the last is the board started again.
 5. Tries the port again every 2 s while it is gone.
