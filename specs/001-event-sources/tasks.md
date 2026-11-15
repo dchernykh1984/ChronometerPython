@@ -102,6 +102,11 @@ each commit: `uv run pre-commit run --all-files` and `uv run pytest`.
   written is logged once as it waits and backed up within 2 s, each one, not only the first,
   one restored from the chip state as the program starts too. Qt-level tests.
 
+## Phase 8: the real beam (FR-019)
+
+- [ ] T023 [US4] The real beam's receiver catches a wavering beam: a lens and a tube, or a
+  retroreflective sensor; stands on stakes, off the ramp. Field test SC-007 before the first race.
+
 ## Dependencies
 
 T001 -> T002 -> T003 -> T004. T005 -> T006 -> T007, T006 -> T008 -> T009 -> T010.

@@ -220,6 +220,8 @@ nothing at the race depends on it.
   a reader buffered meanwhile arrive late and are handled by FR-009.
 - The judge chooses another results file: the raw files and the chip state of the new file are
   used from then on, starting empty for a new file; those of the old file stay as they are.
+- The beam wavers: the wind shakes its stand, or the metal ramp it stands on flexes as riders load
+  it. No break is reported for that (FR-019); a break a body makes is reported all the same.
 
 ## Requirements *(mandatory)*
 
@@ -301,6 +303,13 @@ nothing at the race depends on it.
   as they are then. A backup that cannot be written is tried again, 2 s on and then less often up
   to once a minute, brought forward when crossings come, and said in the action log once, until
   one is written again; Empty all empties no slot it could not back up first.
+- **FR-019**: A real beam, a laser across the line by USB or Bluetooth (Story 4), reports no break
+  of its own when the beam only wavers: a laser or a receiver on a ramp that flexes under riders,
+  or shaken by the wind, 10 m and more apart. At 10 m a tilt of 0.06 degrees moves the spot 1 cm,
+  more than a photoresistor or a photodiode is wide, so a beam aimed at a bare sensor breaks at
+  every gust. The receiver catches the beam wherever it lands over a few centimetres, so that only
+  a body crossing it blocks it. Wavering is not filtered out by the length of a break: a wheel
+  crossing at speed blocks the beam for a few milliseconds only (research 11).
 
 ### Key Entities
 
@@ -330,6 +339,9 @@ nothing at the race depends on it.
   downloaded on start-up.
 - **SC-006**: Every crossing, by hand, from the beam or from chips, and every correction is in a
   `temp/stc*.txt` backup within 2 s, proven by tests (FR-018).
+- **SC-007**: With the laser and the receiver 10 m apart, five minutes of shaking the laser's
+  stand by hand, the spot moving by up to 2 cm, report no break, while a hand swept through the
+  beam is reported every time: a field test of the real beam before its first race (FR-019).
 
 ## Assumptions
 
