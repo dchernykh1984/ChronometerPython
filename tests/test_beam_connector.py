@@ -443,13 +443,14 @@ def test_a_beam_blocked_from_the_start_is_said_and_so_is_its_return(
     monkeypatch.setattr(c, "now_ms", lambda: clock[0])
     monkeypatch.setattr(Port, "light", "blocked")
     chronometer = Chronometer()
-    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    connector = c.Connector(chronometer, serial, "COM7", 1000)
+    ended = _run(connector, chronometer)
     chronometer.tell({"cmd": "start", "settings": {}})
     assert [chronometer.next()["state"] for _ in range(2)] == [
         "connecting",
         "connected",
     ]
-    _until(lambda: ports[0].written[3:4] == ["STATUS"])
+    _until(lambda: connector.bridge.blocked_since is not None)  # its STATUS taken
     clock[0] += c.BLOCKED_MS + 1
     assert chronometer.next() == {
         "type": "status",
