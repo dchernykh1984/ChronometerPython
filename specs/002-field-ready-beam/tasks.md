@@ -11,11 +11,11 @@
 
 ## Phase 2: Firmware (US1, US2)
 
-- [ ] T003 `beam/firmware/core/beam.py`: the break logic out of the RP2040's main, links, PONG with
+- [x] T003 `beam/firmware/core/beam.py`: the break logic out of the RP2040's main, links, PONG with
   both moments and a random wait, RESEND from the last 128 breaks
-- [ ] T004 RP2040: USB and the BT05 on UART0, the BT05 named and moved to 115200 baud at start
-- [ ] T005 ESP32-C3: USB and Bluetooth of its own (FFE0/FFE1, advertised as `beam-<4 hex>`)
-- [ ] T006 Tests for the core and both mains in `tests/test_beam_firmware.py`
+- [x] T004 RP2040: USB and the BT05 on UART0, the BT05 named and moved to 115200 baud at start
+- [x] T005 ESP32-C3: USB and Bluetooth of its own (FFE0/FFE1, advertised as `beam-<4 hex>`)
+- [x] T006 Tests for the core and both mains in `tests/test_beam_firmware.py`
 
 ## Phase 3: Desktop (US1, US2)
 

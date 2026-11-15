@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from app.connectors.boards import Board
 
-# beam/firmware/rp2040/main.py's FIRMWARE: a test keeps the two the same.
-FIRMWARE = "0.3"
+# beam/firmware/core/beamcore.py's FIRMWARE: a test keeps the two the same.
+FIRMWARE = "0.4"
 
 BOARD = Board(
     name="beam-rp2040",
