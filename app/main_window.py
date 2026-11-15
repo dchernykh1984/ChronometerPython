@@ -510,6 +510,14 @@ class MainWindow(QMainWindow):
             self._combo_source.addItem(label, key)
         self._combo_connector = QComboBox()
         self._edit_connector_settings = QLineEdit()
+        self._combo_beam_records = QComboBox()
+        for key, label in (("riders", "Rider cutoffs"), ("groups", "Group starts")):
+            self._combo_beam_records.addItem(label, key)
+        index = self._combo_beam_records.findData(self._sources["beam_records"])
+        self._combo_beam_records.setCurrentIndex(max(index, 0))
+        # A group's start is taken from the first break after it is chosen; the
+        # breaks of its riders that follow are not starts, until Save group.
+        self._group_armed = True
         self._btn_source_start = QPushButton("Start")
         self._btn_source_stop = QPushButton("Stop")
         self._lbl_source_state = QLabel("stopped")
@@ -523,10 +531,12 @@ class MainWindow(QMainWindow):
         grid.addWidget(self._combo_connector, 1, 1, 1, 2)
         grid.addWidget(QLabel("Settings:"), 2, 0)
         grid.addWidget(self._edit_connector_settings, 2, 1, 1, 2)
-        grid.addWidget(self._btn_source_start, 3, 1)
-        grid.addWidget(self._btn_source_stop, 3, 2)
-        grid.addWidget(self._lbl_source_state, 4, 0, 1, 3)
-        grid.addWidget(self._lbl_test_data, 5, 0, 1, 3)
+        grid.addWidget(QLabel("Beam records:"), 3, 0)
+        grid.addWidget(self._combo_beam_records, 3, 1, 1, 2)
+        grid.addWidget(self._btn_source_start, 4, 1)
+        grid.addWidget(self._btn_source_stop, 4, 2)
+        grid.addWidget(self._lbl_source_state, 5, 0, 1, 3)
+        grid.addWidget(self._lbl_test_data, 6, 0, 1, 3)
         index = self._combo_source.findData(self._sources["source"])
         self._combo_source.setCurrentIndex(max(index, 0))
         # The source kind and connector the Settings field shows.
@@ -534,6 +544,9 @@ class MainWindow(QMainWindow):
         self._fill_connectors()
         self._combo_source.currentIndexChanged.connect(self._on_source_changed)
         self._combo_connector.currentIndexChanged.connect(self._on_connector_changed)
+        self._combo_beam_records.currentIndexChanged.connect(
+            self._on_beam_records_changed
+        )
         self._edit_connector_settings.editingFinished.connect(
             self._on_connector_settings_edited
         )
@@ -572,7 +585,16 @@ class MainWindow(QMainWindow):
             self._btn_source_start,
         ):
             widget.setEnabled(kind != "hand")
+        self._combo_beam_records.setEnabled(kind == "beam")
         self._show_connector_settings()
+
+    def _beam_records(self) -> str:
+        return str(self._combo_beam_records.currentData())
+
+    def _on_beam_records_changed(self) -> None:
+        self._sources["beam_records"] = self._beam_records()
+        self._group_armed = True
+        self._save_sources()
 
     def _show_connector_settings(self) -> None:
         kind, name = self._settings_for = self._source_kind(), self._connector_name()
@@ -710,6 +732,11 @@ class MainWindow(QMainWindow):
         self._combo_source.setEnabled(not locked)
         for widget in (self._combo_connector, self._edit_connector_settings):
             widget.setEnabled(not locked and not by_hand)
+        # What a break records stays put too: a group start taken as a rider's
+        # crossing, mid-race, would be wrong in both files.
+        self._combo_beam_records.setEnabled(
+            not locked and self._source_kind() == "beam"
+        )
 
     def _on_host_ended(self, host: ConnectorHost) -> None:
         if host in self._stopping:
@@ -735,10 +762,29 @@ class MainWindow(QMainWindow):
         record = f"{event.seq}#{stamp}#{record_field(event.device_time)}#"
         if not append_line(side_file(self._results_path(), "beam_breaks"), record):
             self._append_log(f"beam break not kept in the beam file: {record}")
-        if why := self._stamp_bottom(stamp, quiet=True):
+        if self._beam_records() == "groups":
+            self._start_group_by_beam(stamp)
+        elif why := self._stamp_bottom(stamp, quiet=True):
             self._append_log(
                 f"beam break {stamp} not stamped: every slot has a time and {why}; "
                 "the break is in the beam file"
+            )
+
+    def _start_group_by_beam(self, stamp: str) -> None:
+        """The first break after a group is chosen is its start, in the group's time
+        field for the judge to see and Save; the breaks of its riders after it are
+        no start, and are only in the beam file."""
+        group = self._combo_group.currentText().strip()
+        if not group:
+            self._append_log(
+                f"beam break {stamp} starts no group: choose the group first; "
+                "the break is in the beam file"
+            )
+        elif self._group_armed:
+            self._group_armed = False
+            self._edit_group_time.setText(stamp)
+            self._append_log(
+                f"group {group} started by the beam at {stamp}: Save group"
             )
 
     def _on_source_event(self, event: object) -> None:
@@ -1657,6 +1703,7 @@ class MainWindow(QMainWindow):
             return
         self._append_log(result_line)
         self._save_backup_if_enabled()  # with its line, the group still chosen
+        self._group_armed = True  # the next break is the next group's start
         self._upload_group_stream()
         self._combo_group.removeItem(self._combo_group.currentIndex())
         self._combo_group.setCurrentText("")
