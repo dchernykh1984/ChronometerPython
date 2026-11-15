@@ -35,7 +35,7 @@
 - [x] T012 Blender (through its MCP bridge): receiver with the lens tube, emitter, board box, TPU
   gaskets, tripod mount; STL and the .blend; `beam/enclosures/README.md`
 - [x] T013 `beam/README.md`: the two kits, parts with prices, wiring, flashing, the apps, trouble
-- [ ] T014 `CLAUDE.md` and `AGENTS.md`: the beam folder and its rules
+- [x] T014 `CLAUDE.md` and `AGENTS.md`: the beam folder and its rules
 
 ## Later (needs the parts, or a decision)
 
