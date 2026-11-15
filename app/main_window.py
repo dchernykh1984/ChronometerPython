@@ -766,8 +766,8 @@ class MainWindow(QMainWindow):
             self._start_group_by_beam(stamp)
         elif why := self._stamp_bottom(stamp, quiet=True):
             self._append_log(
-                f"beam break {stamp} not stamped: every slot has a time and {why}; "
-                "the break is in the beam file"
+                f"beam break {stamp} not stamped: the bottom slot has a time and "
+                f"{why}; the break is in the beam file"
             )
 
     def _start_group_by_beam(self, stamp: str) -> None:
