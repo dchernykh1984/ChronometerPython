@@ -267,14 +267,26 @@ class Port:
     answering = True  # False: main.py has stopped, the port is still open
     light = "beam"  # what it answers STATUS
 
+    reading = True  # False: the board reads its USB no more, a write never ends
+
     def __init__(
-        self, device: str, timeout: float | None, exclusive: bool | None
+        self,
+        device: str,
+        timeout: float | None,
+        exclusive: bool | None,
+        write_timeout: float | None = None,
     ) -> None:
         self.device, self.closed, self.exclusive = device, False, exclusive
+        self.write_timeout, self.stuck_writes = write_timeout, 0
         self.written: list[str] = []
         self.said: queue.Queue[bytes | Exception | None] = queue.Queue()
 
     def write(self, data: bytes) -> int:
+        if not self.reading:
+            self.stuck_writes += 1
+            if self.write_timeout is None:
+                threading.Event().wait()  # as pyserial's write with no timeout
+            raise SerialError("Write timeout")
         for line in data.decode().split("\n")[:-1]:
             self.written.append(line)
             if line == "HELLO":
@@ -357,12 +369,15 @@ def serial(ports: list[Port]) -> types.SimpleNamespace:
     pyserial's, an exclusive open fails while another exclusive one holds the port."""
 
     def open_port(
-        device: str, timeout: float | None = None, exclusive: bool | None = None
+        device: str,
+        timeout: float | None = None,
+        exclusive: bool | None = None,
+        write_timeout: float | None = None,
     ) -> Port:
         held = [p for p in ports if p.device == device and not p.closed]
         if exclusive and any(p.exclusive for p in held):
             raise SerialError(f"Could not exclusively lock port {device}")
-        ports.append(Port(device, timeout, exclusive))
+        ports.append(Port(device, timeout, exclusive, write_timeout))
         return ports[-1]
 
     return types.SimpleNamespace(Serial=open_port, SerialException=SerialError)
@@ -428,6 +443,27 @@ def test_a_board_lost_is_said_and_opened_again_with_its_clock_anew(
     chronometer.tell(None)  # the chronometer gone: its standard input ends
     _until(lambda: ended == [0])
     assert ports[1].closed
+
+
+def test_a_board_that_reads_no_more_does_not_hang_the_connector(
+    monkeypatch, ports, serial
+):
+    """Its USB never read: a write that waited for it would never end, no pong
+    would reach the chronometer, and it would be killed and started again on and on."""
+    monkeypatch.setattr(c, "PING_EVERY_S", 0.02)
+    chronometer = Chronometer()
+    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    chronometer.tell({"cmd": "start", "settings": {}})
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    ports[0].reading = False
+    _until(lambda: ports[0].stuck_writes > 0)
+    chronometer.tell({"cmd": "ping", "id": 5})
+    assert chronometer.next() == {"type": "pong", "id": 5}
+    chronometer.tell(None)
+    _until(lambda: ended == [0])
 
 
 def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
