@@ -40,8 +40,13 @@ reports what a device sees: **Device** picks it, **Settings** holds its settings
 
 - Connectors today: "Test beam" and "Test chips" make events up, and a red "TEST CONNECTOR" warning
   shows while one runs; "Replay a chip reads file" plays a raw reads file back; "Custom command"
-  runs any program that speaks `specs/001-event-sources/contracts/connector-protocol.md`. LLRP,
-  RaceResult, R2000, USB beam and Bluetooth beam are listed as "not available yet".
+  runs any program that speaks `specs/001-event-sources/contracts/connector-protocol.md`. The beam
+  boards are read by the program itself: "Beam board RP2040 (USB)", "Beam board RP2040 + BT05
+  (Bluetooth)", "Beam board ESP32-C3 (USB)" and "Beam board ESP32-C3 (Bluetooth)", each keeping
+  to `specs/001-event-sources/contracts/beam-board-protocol.md` (`beam/README.md` says how to build
+  one). A USB board's Settings name its port, else the first with its USB ids; a Bluetooth one's
+  name the board (`device`, as `beam-1a2b`), and with none named the boards in range are said and
+  none is read. LLRP, RaceResult and R2000 are listed as "not available yet".
 - A connector starts only on **Start**, also after the program restarts, and stops on **Stop** or
   when the window closes; what it reports until it has ended still counts. The line under the
   buttons shows its state and the chip crossings waiting. While it runs, and until its program has
