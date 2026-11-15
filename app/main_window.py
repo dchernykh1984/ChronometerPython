@@ -92,6 +92,9 @@ from app.sources_config import (
 _CONFIG_PATH = str(app_path("data", "groupsList.txt"))
 _N_SLOTS = 5
 _BACKUP_DELAY_MS = 2000  # a device burst's backup, and a failed one tried again
+# A group's riders cross the start within seconds: a break this long after its start
+# is likely the next group, its start missed as Save group was not pressed.
+_NEXT_GROUP_MS = 60_000
 
 
 def _kept(path: str) -> str:
@@ -519,6 +522,7 @@ class MainWindow(QMainWindow):
         # A group's start is taken from the first break after it is chosen; the
         # breaks of its riders that follow are not starts, until Save group.
         self._group_armed = True
+        self._group_started_ms, self._group_warned = 0, False
         self._btn_source_start = QPushButton("Start")
         self._btn_source_stop = QPushButton("Stop")
         self._lbl_source_state = QLabel("stopped")
@@ -764,14 +768,15 @@ class MainWindow(QMainWindow):
         if not append_line(side_file(self._results_path(), "beam_breaks"), record):
             self._append_log(f"beam break not kept in the beam file: {record}")
         if self._beam_records() == "groups":
-            self._start_group_by_beam(stamp)
+            at = round(time.time() * 1000) if event.time_ms is None else event.time_ms
+            self._start_group_by_beam(stamp, at)
         elif why := self._stamp_bottom(stamp, quiet=True):
             self._append_log(
                 f"beam break {stamp} not stamped: the bottom slot has a time and "
                 f"{why}; the break is in the beam file"
             )
 
-    def _start_group_by_beam(self, stamp: str) -> None:
+    def _start_group_by_beam(self, stamp: str, at_ms: int) -> None:
         """The first break after a group is chosen is its start, in the group's time
         field for the judge to see and Save; the breaks of its riders after it are
         no start, and are only in the beam file."""
@@ -783,9 +788,19 @@ class MainWindow(QMainWindow):
             )
         elif self._group_armed:
             self._group_armed = False
+            self._group_started_ms, self._group_warned = at_ms, False
             self._edit_group_time.setText(stamp)
             self._append_log(
                 f"group {group} started by the beam at {stamp}: Save group"
+            )
+        elif not self._group_warned and at_ms - self._group_started_ms > _NEXT_GROUP_MS:
+            # Still no start, as chosen; but a minute on, Save group was likely
+            # forgotten and this the next group: said once, its break in the file.
+            self._group_warned = True
+            self._append_log(
+                f"beam break {stamp} is no start: the start in the group's time field "
+                "is not saved yet; Save group, and the next break starts the next "
+                "group (this break is in the beam file)"
             )
 
     def _on_source_event(self, event: object) -> None:

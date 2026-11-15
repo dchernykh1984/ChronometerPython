@@ -93,6 +93,22 @@ def test_choosing_group_starts_again_makes_the_beam_wait_for_a_start_anew(win):
     assert win._edit_group_time.text() == format_time(T0 + 9_000)
 
 
+def test_a_break_long_after_a_start_not_saved_is_said_once_as_likely_a_group(win):
+    """Save group forgotten: the next group's start is no start, as chosen, but the
+    judge is told, once, a minute on; riders of the group crossing just after are not
+    said at all."""
+    _group_starts(win)
+    win._on_source_event(Break(1, T0))
+    count = win._log.count()
+    win._on_source_event(Break(2, T0 + 20_000))  # the group's riders
+    assert win._log.count() == count  # nothing said for them
+    win._on_source_event(Break(3, T0 + 90_000))  # the next group, Save forgotten
+    assert "is not saved yet; Save group" in _said(win)[-1]
+    win._on_source_event(Break(4, T0 + 95_000))
+    assert win._log.count() == count + 1  # said once
+    assert win._edit_group_time.text() == format_time(T0)  # the start kept
+
+
 def test_a_break_with_no_group_chosen_starts_none_and_says_so(win):
     win._combo_beam_records.setCurrentIndex(win._combo_beam_records.findData("groups"))
     win._combo_group.setCurrentText("")
