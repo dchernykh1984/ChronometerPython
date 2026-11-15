@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.5.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.4.1...v0.5.0) (2026-11-15)
+
+
+### Features
+
+* **beam:** bring a beam break and the second judge's stamp in at the bottom slot, as a hand cutoff ([7cc707d](https://github.com/dchernykh1984/ChronometerPython/commit/7cc707db0034a7358de9aa7a4f82470307736311))
+* **beam:** choose the RP2040 beam board from the device list, the chronometer reading it itself ([bff8122](https://github.com/dchernykh1984/ChronometerPython/commit/bff81222a5130d7ac44864420cc586de3ac4176d))
+* **beam:** let the beam stamp group starts, the first break after a group is chosen ([486af56](https://github.com/dchernykh1984/ChronometerPython/commit/486af562906fa8ec2af246a0d39072eeb78c6fb0))
+
+
+### Bug Fixes
+
+* **beam:** keep a group start the judge gave by hand from a beam break, until Save group ([18c12a5](https://github.com/dchernykh1984/ChronometerPython/commit/18c12a5fcff2dc5868a76365b11fb2622c90e7f8))
+* **beam:** say a break was not stamped as the bottom slot had a time, not every slot ([d5dd1de](https://github.com/dchernykh1984/ChronometerPython/commit/d5dd1de6eda76c93205eb60d5e776339e486d08f))
+* **beam:** say once when a break a minute after an unsaved group start is likely the next group's ([0718e9a](https://github.com/dchernykh1984/ChronometerPython/commit/0718e9a4f2c1c2370b41ecafb83de793a5373454))
+
+
+### Documentation
+
+* **specs:** tell story 4 as the beam now works, its breaks at the bottom slot and its group starts ([977180f](https://github.com/dchernykh1984/ChronometerPython/commit/977180ff357d5aa5b6289567cb0d27192827943f))
+* **specs:** the beam's breaks at the bottom slot, its group starts and the board in the device list ([a04c32b](https://github.com/dchernykh1984/ChronometerPython/commit/a04c32b9aa73fc7e00f99e3ccad81a3c0cbd9478))
+
 ## [0.4.1](https://github.com/dchernykh1984/ChronometerPython/compare/v0.4.0...v0.4.1) (2026-11-15)
 
 
