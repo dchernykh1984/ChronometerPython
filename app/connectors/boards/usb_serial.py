@@ -109,21 +109,25 @@ class Connector:
 
     def open_board(self, now: float) -> None:
         port = board_port(self.port, self.spec)
+        link = None
         try:
             if port is None:
                 raise OSError(f"no {self.spec.label} found on USB")
             # Exclusive: two programs on one port would each get half its lines. A
             # write gives up after 1 s: a board that reads no more must not hang this.
-            self.link = self.serial.Serial(
+            link = self.serial.Serial(
                 port, timeout=None, exclusive=True, write_timeout=1
             )
             if not self.spec.lines:  # DTR first: RTS off with DTR on is the bootloader
-                self.link.dtr = False
-                self.link.rts = False
+                link.dtr = False
+                link.rts = False
         except (OSError, ValueError, self.serial.SerialException) as error:
+            if link is not None:  # open, but not as it is to be: let go, try again
+                link.close()
             self.reopen = now + REOPEN_AFTER_S
             self.send({"type": "status", "state": "disconnected", "detail": str(error)})
             return
+        self.link = link
         threading.Thread(target=self.listen, args=(self.link,), daemon=True).start()
         self.opened(port, now)
 

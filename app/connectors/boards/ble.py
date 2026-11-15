@@ -147,7 +147,13 @@ class RadioConnector(Connector):
             disconnected_callback=lambda _: self.inbox.put(("lost", (link, LOST))),
         )
         await link.client.connect()
-        await link.client.start_notify(CHARACTERISTIC, link.heard)
+        try:
+            await link.client.start_notify(CHARACTERISTIC, link.heard)
+        except Exception:
+            # Connected, but no serial service: another device of the name, say. Let
+            # go of it, or it stays held, and the board itself could not connect.
+            await link.client.disconnect()
+            raise
         return link
 
     async def in_range(self) -> str:

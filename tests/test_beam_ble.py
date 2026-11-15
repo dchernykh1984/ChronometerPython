@@ -72,6 +72,8 @@ class Client:
         self.connected = True
 
     async def start_notify(self, char: str, callback: Callable) -> None:
+        if self.device.name == "no-serial":
+            raise OSError("Characteristic 0000ffe1-... was not found!")
         assert char == ble.CHARACTERISTIC
         self.notify = callback
 
@@ -280,6 +282,15 @@ def test_a_write_cut_short_by_the_link_going_ends_quietly():
 def test_a_link_never_connected_closes_without_waiting():
     link = ble.RadioLink(asyncio.new_event_loop(), __import__("queue").Queue(), "x")
     link.close()  # no client: nothing to disconnect
+
+
+def test_a_device_of_the_name_with_no_serial_service_is_let_go(bleak):
+    _board_in_range("no-serial", "AA:BB")
+    _, chronometer, ended = _run(bleak, {"device": "no-serial"})
+    assert chronometer.next()["detail"].startswith("Characteristic 0000ffe1")
+    assert Radio.clients and not any(c.connected for c in Radio.clients)
+    chronometer.tell(None)
+    _until(lambda: ended == [0])
 
 
 def test_a_board_found_by_its_address_is_read_too(bleak):
