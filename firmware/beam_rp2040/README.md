@@ -124,7 +124,8 @@ The connector's options go after `connector.py`:
 | The log says | Why |
 | --- | --- |
 | `source disconnected no beam board found on USB` | Not plugged in, a charge-only cable, or the board is in `RPI-RP2` mode. It tries again every 2 s. |
-| Breaks missing, or `source disconnected` with an error from the port | Another program has the port open: an `mpremote` window, a serial monitor. Close it. |
+| `source disconnected ... Could not exclusively lock port ...` | Another chronometer has the board: one board, one chronometer. |
+| Breaks missing, lines garbled | Another program has the port open too: an `mpremote` window, a serial monitor. Close it. |
 | `source disconnected the board answers no PING: is main.py running on it?` | The board runs no `main.py`, or it has stopped: unplug the board and plug it in again; if it says so again, copy `main.py` again (Flashing, step 3). |
 
 ## What the board says

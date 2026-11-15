@@ -164,8 +164,10 @@ class Port:
     answers_at = 2_000_000
     answering = True  # False: main.py has stopped, the port is still open
 
-    def __init__(self, device: str, timeout: float | None = None) -> None:
-        self.device, self.closed = device, False
+    def __init__(
+        self, device: str, timeout: float | None, exclusive: bool | None
+    ) -> None:
+        self.device, self.closed, self.exclusive = device, False, exclusive
         self.written: list[str] = []
         self.said: queue.Queue[bytes | Exception | None] = queue.Queue()
 
@@ -246,10 +248,16 @@ def ports() -> list[Port]:
 
 @pytest.fixture
 def serial(ports: list[Port]) -> types.SimpleNamespace:
-    """pyserial as the connector uses it, every port it opens kept in ``ports``."""
+    """pyserial as the connector uses it, every port it opens kept in ``ports``. As
+    pyserial's, an exclusive open fails while another exclusive one holds the port."""
 
-    def open_port(device: str, timeout: float | None = None) -> Port:
-        ports.append(Port(device, timeout))
+    def open_port(
+        device: str, timeout: float | None = None, exclusive: bool | None = None
+    ) -> Port:
+        held = [p for p in ports if p.device == device and not p.closed]
+        if exclusive and any(p.exclusive for p in held):
+            raise SerialError(f"Could not exclusively lock port {device}")
+        ports.append(Port(device, timeout, exclusive))
         return ports[-1]
 
     return types.SimpleNamespace(Serial=open_port, SerialException=SerialError)
@@ -349,11 +357,29 @@ def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
     _until(lambda: ended == [0])
 
 
+def test_a_second_program_on_the_board_is_refused_not_given_half_its_lines(serial):
+    """Two chronometers, one per event, both on the first Raspberry Pi port."""
+    first, second = Chronometer(), Chronometer()
+    ended = _run(c.Connector(first, serial, "COM7", 1000), first)
+    first.tell({"cmd": "start", "settings": {}})
+    assert [first.next()["state"] for _ in range(2)] == ["connecting", "connected"]
+    also_ended = _run(c.Connector(second, serial, "COM7", 1000), second)
+    second.tell({"cmd": "start", "settings": {}})
+    assert second.next() == {
+        "type": "status",
+        "state": "disconnected",
+        "detail": "Could not exclusively lock port COM7",
+    }
+    first.tell(None)
+    second.tell(None)
+    _until(lambda: ended == also_ended == [0])
+
+
 def test_a_board_missing_is_said_once_not_at_every_retry(monkeypatch):
     monkeypatch.setattr(c, "REOPEN_AFTER_S", 0.0)
     tries: list[str] = []
 
-    def missing(device: str, timeout: float | None = None) -> Port:
+    def missing(device: str, timeout: float | None = None, **_: object) -> Port:
         tries.append(device)
         raise SerialError(f"could not open port {device}")
 

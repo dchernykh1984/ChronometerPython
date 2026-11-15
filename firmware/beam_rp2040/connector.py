@@ -195,7 +195,8 @@ class Connector:
         try:
             if port is None:
                 raise OSError("no beam board found on USB")
-            self.link = self.serial.Serial(port, timeout=None)
+            # Exclusive: two programs on one port would each get half its lines.
+            self.link = self.serial.Serial(port, timeout=None, exclusive=True)
         except (OSError, ValueError, self.serial.SerialException) as error:
             self.reopen = now + REOPEN_AFTER_S
             self.send({"type": "status", "state": "disconnected", "detail": str(error)})
