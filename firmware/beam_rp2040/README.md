@@ -133,6 +133,7 @@ The connector's options go after `connector.py`:
 | `source connected ...: the beam is blocked: no break can be seen until the light is back` | Blocked for over 2 s, longer than any rider takes: the laser is off the sensor, someone stands in the beam, or a sensor wire is loose. The same line without it follows once the light is back. |
 | `source connected ...: the light flickers on the sensor: no break can be seen; aim it again` | For over 2 s no state of the light has held: the spot sits on the sensor's edge. |
 | `source error: the board runs firmware 0.2, main.py here is 0.3: ...` | The board has another `main.py` than this folder: copy it (Flashing, step 3). |
+| `source error: the board's break(s) 6 to 7 did not arrive: ...` | The USB link was down for a moment, the board's power not, and it saw riders meanwhile: check those finishes by other means. |
 | `source disconnected the board answers no PING: is main.py running on it?` | The board runs no `main.py`, or it has stopped: unplug the board and plug it in again; if it says so again, copy `main.py` again (Flashing, step 3). |
 
 ## What the board says
