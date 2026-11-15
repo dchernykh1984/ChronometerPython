@@ -77,10 +77,12 @@ every break it still keeps, its last 128, from count `seq` on, as `BREAK` lines,
    (10 s over Bluetooth, where the clock takes 4 answers), it takes the time its line came, and that
    is said. A `HELLO` with another firmware version than the one the program was built for is said
    as an error; its breaks still count.
-3. Catches up after the `HELLO`. The first `HELLO` from a board id gives the count the program
-   starts from: breaks before it were not its own. A later one, after the link came back: a `seq`
-   above the last count taken asks `RESEND <last + 1>`; a `seq` below it means the board started
-   again, and asks `RESEND 1` when it is above 0.
+3. Catches up after the `HELLO`, and asks `HELLO` again every 5 s for the board's count. The first
+   `HELLO` from a board id gives the count the program starts from: breaks before it were not its
+   own. A later one, after the link came back or asked again: a `seq` above the last count taken
+   asks `RESEND <last + 1>` (a break whose line was lost on the way, the last of a race say, that no
+   later break would show); a `seq` below it means the board started again, and asks `RESEND 1` when
+   it is above 0. A `HELLO` asked again is said to the judge only when it says something new.
 4. Sends `PING <n>` every 2 s over USB and every 1 s over Bluetooth, `n` never used before by this
    program. A `PONG <n> <got_us> <sent_us>` received at `got`, its `PING` sent at `sent`, both on
    the program's clock, gives the way there `a = got_us / 1000 - sent` and the way back

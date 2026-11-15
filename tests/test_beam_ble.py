@@ -156,7 +156,7 @@ def test_the_board_named_is_read_and_its_break_timed_by_its_clock(bleak):
         "state": "connecting",
         "detail": "beam-4103 (Bluetooth)",
     }
-    assert chronometer.next()["detail"] == f"beam-esp32c3 {rp2040.FIRMWARE} {ID} 0"
+    assert chronometer.next()["detail"] == f"beam-esp32c3 {rp2040.FIRMWARE} {ID}"
     [client] = Radio.clients  # only the one named: never the other in range
     assert client.device.name == "beam-4103"
     _until(lambda: connector.bridge.sync.read)

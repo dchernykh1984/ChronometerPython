@@ -64,7 +64,7 @@ class Connector:
         self.bridge = Bridge(spec)
         self.started = False
         self.link: Any = None
-        self.next_ping = self.reopen = 0.0
+        self.next_ping = self.reopen = self.next_hello = 0.0
         self.status: tuple[str, str] | None = None  # the last said
         self.unknown: set[str] = set()  # commands not known, each said once
 
@@ -137,7 +137,7 @@ class Connector:
         )
         self.send({"type": "status", "state": "connecting", "detail": where})
         self.write(f"\nHOLDOFF {self.hold_off_ms}\nHELLO\nSTATUS\n")
-        self.next_ping = now
+        self.next_ping, self.next_hello = now, now + protocol.HELLO_EVERY_S
 
     def tick(self, now: float) -> None:
         if self.started and self.link is None and now >= self.reopen:
@@ -149,6 +149,9 @@ class Connector:
             self.next_ping = now + self.bridge.ping_every_s
         for event in self.bridge.release(now_ms()):
             self.send(event)
+        if now >= self.next_hello:  # its count: a break whose line was lost shows
+            self.write("HELLO\n")
+            self.next_hello = now + protocol.HELLO_EVERY_S
         while self.bridge.outbox:  # RESEND: breaks counted while no link was up
             self.write(self.bridge.outbox.pop(0) + "\n")
         # A board whose main.py has stopped keeps its port open: only PING tells.

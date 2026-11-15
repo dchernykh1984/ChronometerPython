@@ -25,6 +25,9 @@ from app.connectors.boards import usb_serial as u
 HELLO = f"HELLO beam-rp2040 {rp2040.FIRMWARE} e6614103 0"
 
 
+DETAIL = HELLO[6:].rsplit(" ", 1)[0]  # what "connected" says: its name, firmware, id
+
+
 def _hello(count: int) -> str:
     """The board's HELLO with the count of its last break."""
     return f"{HELLO.rsplit(' ', 1)[0]} {count}"
@@ -202,6 +205,22 @@ def test_a_light_that_flickers_on_the_sensor_is_said_as_no_break_can_be_seen():
     assert bridge.unseeing(5_000.0 + p.BLOCKED_MS + 1) == p.BLOCKED
 
 
+def test_a_hello_asked_again_is_said_once_and_its_count_asks_for_a_lost_break():
+    """The connector asks HELLO every few seconds: the firmware said once, the status
+    the same, and a count above the last break taken asks for the one whose line was
+    lost on the way, the last of a race say, which no later break would show."""
+    old = "HELLO beam-rp2040 0.3 e6614103 0"
+    bridge = p.Bridge(rp2040.BOARD)
+    assert len(bridge.from_board(old, 0.0)) == 2  # connected, and the firmware said
+    _read(bridge)
+    assert bridge.from_board(old, 5.0) == [
+        {"type": "status", "state": "connected", "detail": "beam-rp2040 0.3 e6614103"}
+    ]
+    bridge.from_board("BREAK 1 1000", 6.0)
+    bridge.from_board(_hello(2), 10.0)  # break 2's line lost
+    assert bridge.outbox == ["RESEND 2"]
+
+
 def test_a_board_on_another_firmware_than_the_chronometer_reads_is_said():
     old = "HELLO beam-rp2040 0.1 e6614103"
     assert p.Bridge(rp2040.BOARD).from_board(old, 0.0) == [
@@ -249,7 +268,7 @@ def test_a_break_before_the_hello_waits_for_the_boards_clock_not_dropped():
     assert bridge.from_board("HELLO another-board 1", 5.0) == []
     hello = f"HELLO beam-rp2040 {rp2040.FIRMWARE} e6614103 1"
     assert bridge.from_board(hello, 6.0) == [
-        {"type": "status", "state": "connected", "detail": hello[6:]}
+        {"type": "status", "state": "connected", "detail": DETAIL}
     ]
     n = bridge.ping(1_000_000.0).split()[1]
     assert bridge.from_board(f"PONG {n} 2000000 2000000", 1_000_000.0) == [
@@ -711,7 +730,7 @@ def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
     assert chronometer.next() == {
         "type": "status",
         "state": "connected",
-        "detail": HELLO[6:],
+        "detail": DETAIL,
     }
     chronometer.tell({"cmd": "stop"})
     _until(lambda: ended == [0])
@@ -786,6 +805,30 @@ def test_a_break_seen_while_the_link_was_down_comes_once_it_is_back(
         "device_time": "2600000",
     }
     assert "RESEND 2" in ports[1].written
+    chronometer.tell(None)
+    _until(lambda: ended == [0])
+
+
+def test_the_board_is_asked_its_count_every_few_seconds_a_lost_last_break_comes(
+    monkeypatch, ports, serial
+):
+    monkeypatch.setattr(u, "now_ms", lambda: 1_000_000.0)
+    monkeypatch.setattr(p, "HELLO_EVERY_S", 0.05)
+    chronometer = Chronometer()
+    ended = _run(u.Connector(chronometer, serial, rp2040.BOARD), chronometer)
+    chronometer.tell(START)
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    Port.kept.append("BREAK 1 2500000")  # said, its line lost: no break comes after it
+    assert chronometer.next() == {
+        "type": "beam",
+        "seq": 1,
+        "time_ms": 1_000_500,
+        "device_time": "2500000",
+    }
+    assert ports[0].written.count("HELLO") >= 2 and "RESEND 1" in ports[0].written
     chronometer.tell(None)
     _until(lambda: ended == [0])
 
@@ -891,13 +934,13 @@ def test_a_beam_blocked_from_the_start_is_said_and_so_is_its_return(
     assert chronometer.next() == {
         "type": "status",
         "state": "connected",
-        "detail": f"{HELLO[6:]}: {p.BLOCKED}",
+        "detail": f"{DETAIL}: {p.BLOCKED}",
     }
     ports[0].say("STATUS beam")  # aimed again
     assert chronometer.next() == {
         "type": "status",
         "state": "connected",
-        "detail": HELLO[6:],
+        "detail": DETAIL,
     }
     chronometer.tell({"cmd": "stop"})
     _until(lambda: ended == [0])
