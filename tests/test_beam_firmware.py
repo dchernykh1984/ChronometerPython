@@ -93,6 +93,9 @@ class Uart:
     def any(self) -> int:
         return len(self.incoming)
 
+    def txdone(self) -> bool:
+        return True
+
     def read(self, n: int | None = None) -> bytes | None:
         n = len(self.incoming) if n is None else n
         data, self.incoming = self.incoming[:n], self.incoming[n:]
@@ -370,11 +373,30 @@ def test_resend_says_again_the_kept_breaks_from_a_count_on(rig):
         rig.run(10, blocked=True)
         rig.run(1100, blocked=False)
     rig.radio.inbox = "RESEND 2\n"
-    rig.run(1)
+    rig.run(3)
     breaks = [line for line in rig.radio.said if line.startswith("BREAK")]
     assert breaks[-2:] == [breaks[1], breaks[2]]  # 2 and 3 again, as they were
     assert breaks[-2].startswith("BREAK 2 ")
     assert sum(line.startswith("BREAK") for line in rig.said) == 3  # USB: no again
+
+
+def test_breaks_asked_for_again_go_a_line_a_turn_once_the_link_is_free(rig):
+    """A long RESEND on a slow wire must never hold up the loop that arms the IRQ."""
+    rig.board.kept = [(n, n * 10) for n in range(1, 6)]
+    busy = [True]
+    rig.radio.ready = lambda: not busy[0]
+    rig.radio.inbox = "RESEND 2\n"
+    rig.run(3)
+    assert rig.radio.said == []  # its link still sending: they wait
+    busy[0] = False
+    rig.run(2)
+    assert rig.radio.said == ["BREAK 2 20", "BREAK 3 30"]
+    rig.run(5)
+    assert rig.radio.said[-1] == "BREAK 5 50" and len(rig.radio.said) == 4
+    busy[0] = True
+    rig.radio.inbox = "RESEND 1\n" * 40  # a reader asking on and on
+    rig.run(2)
+    assert len(rig.board.resends) == rig.core.KEPT
 
 
 def test_the_board_keeps_its_last_128_breaks(rig):
@@ -540,6 +562,7 @@ def test_the_uart_link_reads_the_bt05_and_knows_its_characters_trip(rp2040):
     link.write("PONG 3 1 2")
     assert uart.written == ["PONG 3 1 2\r\n"]
     assert link.transfer_us(7) == 607  # 7 characters at 115200 baud
+    assert link.ready()  # its UART has sent all it was given
     assert rp2040.UartLink(uart, 9600).transfer_us(7) == 7291
     assert link.quiet
 

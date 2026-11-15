@@ -116,6 +116,10 @@ class Link:
         """How long ``chars`` characters take to come in on this link, when known."""
         return 0
 
+    def ready(self):
+        """Whether a line written now goes at once, not after the ones before it."""
+        return True
+
     def lines(self):
         """The lines ended since last asked; a line longer than LINE_MAX is cut."""
         ended = []
@@ -166,6 +170,7 @@ class Board:
         self.flash_until = None
         self.kept = []  # (seq, t_us) of the last KEPT breaks
         self.pongs = []  # (due_us, link, n, got_us): PONGs waiting their turn
+        self.resends = []  # (link, line): breaks asked for again, a line a turn
 
     def say(self, *words):
         """News, on every link."""
@@ -246,10 +251,13 @@ class Board:
             self.flash_until = now + FLASH_US
             reply(f"FLASH {words[1]} {now}")
         elif command == "RESEND" and len(words) == 2 and words[1].isdigit():
+            # A line a turn, and only once the link has sent the last: 128 lines at 9600
+            # baud would hold the loop 3 s, and an edge after the hold-off goes unseen
+            # while the loop that arms the IRQ again waits.
             first = int(words[1])
-            for seq, t_us in self.kept:
-                if seq >= first:
-                    reply(f"BREAK {seq} {t_us}")
+            again = [f"BREAK {s} {t}" for s, t in self.kept if s >= first]
+            self.resends += [(link, line) for line in again]
+            del self.resends[:-KEPT]  # asked again and again: the last asks are enough
         elif words and not link.quiet:
             reply("ERROR unknown: " + line[:40])
 
@@ -263,6 +271,12 @@ class Board:
         for _, link, n, got in due:
             link.write(f"PONG {n} {got} {self.clock.now()}")
 
+    def resent(self):
+        """The next break asked for again, once its link is free."""
+        if self.resends and self.resends[0][0].ready():
+            link, line = self.resends.pop(0)
+            link.write(line)
+
     def step(self):
         """One turn of the loop: breaks, the light, commands, answers due."""
         self.breaks()
@@ -271,6 +285,7 @@ class Board:
             for line in link.lines():
                 self.answer(link, line)
         self.answers()
+        self.resent()
 
     def run(self):
         self.sensor.irq(handler=edge, trigger=machine.Pin.IRQ_RISING, hard=True)
