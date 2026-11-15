@@ -170,7 +170,7 @@ and the slots worked all the time.
    run for 30 s without failing, the next pause is 1 s again.
 2. **Given** a connector that sends a line that is not valid protocol, **Then** the line is logged
    and ignored.
-3. **Given** a stub (LLRP / Impinj, RaceResult, R2000, USB beam, Bluetooth beam), **Then** it is
+3. **Given** a stub (LLRP / Impinj, RaceResult, R2000, Bluetooth beam), **Then** it is
    listed, marked "not available yet" and cannot be started.
 4. **Given** the window closes, **Then** every connector process is stopped.
 5. **Given** a dummy or replay connector running, **Then** the window shows that its crossings are
@@ -237,8 +237,10 @@ nothing at the race depends on it.
   antenna, signal strength, reader id; a beam break carries its time and a sequence number. The
   protocol is shared with ChronometerAndroid.
 - **FR-003**: Connectors shipped: dummy chips, dummy beam, replay (a raw reads file played back),
-  custom command; stubs, listed and not startable: LLRP (Impinj, Zebra), RaceResult decoder, R2000
-  serial/TCP readers, USB beam, Bluetooth beam. While a dummy or replay connector runs, the window
+  custom command, and the RP2040 beam board over USB, read by the chronometer itself by the beam
+  board contract (`contracts/beam-board-protocol.md`), one module per board under
+  `app/connectors/boards/`; stubs, listed and not startable: LLRP (Impinj, Zebra), RaceResult
+  decoder, R2000 serial/TCP readers, Bluetooth beam. While a dummy or replay connector runs, the window
   says that its crossings are test data, so a rehearsal is not uploaded as a race unnoticed.
 - **FR-004**: A connector that exits or stops answering is restarted after 1 s, doubling to at most
   30 s while it keeps failing and back to 1 s once it has run for 30 s without failing; its state is
@@ -278,11 +280,13 @@ nothing at the race depends on it.
   cannot be written waits in a queue shown in the Chips tab and counted on the source's state line,
   is kept with the chip state, and is retried every second until it is written; the failure is in
   the action log.
-- **FR-012**: A beam break stamps the first slot without a time with the break's time and the
-  current action, like the second-user FINISH button. When all slots are stamped, the slots shift as
-  with that button, except that slot 5 gets the break's time with an empty number: the Next field
-  is the judge's typing, and a machine event never takes it. Every break is appended to a raw beam
-  file next to the results file, `sequence#time#device time#`.
+- **FR-012**: A beam break recording riders comes in as a hand cutoff does: at the bottom slot,
+  with the number typed in Next (the judge types it before the rider crosses, or into the slot
+  after), the slots above moving up one and slot 1 going to the results file. A bottom slot
+  without a time takes the break as it is, keeping a number typed there. A break never writes slot
+  1 while the judge types in it. The second-user FINISH button stamps the same way. Every break is
+  appended to a raw beam file next to the results file, `sequence#time#device time#`, before
+  anything else happens to it.
 - **FR-013**: The crossings list shows the results file. The judge can add a crossing (number,
   time, action; time defaults to now), edit one's number, time or action, and delete one after a
   confirmation.
@@ -310,6 +314,11 @@ nothing at the race depends on it.
   every gust. The receiver catches the beam wherever it lands over a few centimetres, so that only
   a body crossing it blocks it. Wavering is not filtered out by the length of a break: a wheel
   crossing at speed blocks the beam for a few milliseconds only (research 11).
+- **FR-020**: The judge chooses what a beam break records: rider cutoffs (FR-012) or group starts.
+  For group starts the first break after a group is chosen is that group's start, put in its time
+  field for the judge to see and Save; the breaks of its riders after it are no start, until Save
+  group. The choice is kept with the event source settings and cannot change while the source
+  runs.
 
 ### Key Entities
 
