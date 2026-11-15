@@ -119,7 +119,7 @@ The connector's options go after `connector.py`:
 | Option | Default | What |
 | --- | --- | --- |
 | `--port P` | the first Raspberry Pi port | `/dev/cu.usbmodem101`, `COM5`: for two boards on one computer. |
-| `--hold-off-ms N` | 1000 | After a break, edges this soon are the same rider's: a bike's wheels and body. |
+| `--hold-off-ms N` | 1000 | After a break, edges this soon are the same rider's: a bike's wheels and body. 1 to 60000. |
 
 | The log says | Why |
 | --- | --- |

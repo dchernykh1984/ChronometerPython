@@ -260,6 +260,16 @@ class Connector:
                 return 0
 
 
+def hold_off(text: str) -> int:
+    """A hold-off from the command line: whole milliseconds, 1 to 60000. The board
+    would take 0, every edge of a chattering sensor then a break, or a typo's hours,
+    every break after the first then lost."""
+    ms = int(text)
+    if not 1 <= ms <= 60_000:
+        raise argparse.ArgumentTypeError(f"{ms} ms: it takes 1 to 60000")
+    return ms
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -267,7 +277,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--hold-off-ms",
-        type=int,
+        type=hold_off,
         default=1000,
         help="after a break, edges this soon are the same rider's (default 1000)",
     )
