@@ -38,7 +38,7 @@ counting past the 30-bit ticks' wrap.
 
 | Line | When |
 | --- | --- |
-| `HELLO <name> <firmware> <board id> <seq>` | At start, and when asked `HELLO`. The board id is 16 hex digits; `seq` is the count of its last break, 0 before any. |
+| `HELLO <name> <firmware> <board id> <seq>` | At start, and when asked `HELLO`. The board id is its chip's unique id in hex, 16 digits on the RP2040 and 12 on the ESP32-C3; `seq` is the count of its last break, 0 before any. |
 | `BREAK <seq> <t_us>` | The light went: the time of its first edge. `seq` counts from 1 at each start. Said again, the same, when asked `RESEND`. |
 | `STATUS beam`, `STATUS blocked` | The light's state once it has held 50 ms, and when asked `STATUS`. |
 | `STATUS unsteady` | No state has held 50 ms for a second: the light flickers on the sensor. |

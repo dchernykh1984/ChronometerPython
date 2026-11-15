@@ -159,7 +159,7 @@ def test_a_hello_short_of_words_is_taken_without_falling_over(line, runs):
 
 
 def test_the_connector_expects_the_firmware_beside_it():
-    main = Path(__file__).parents[1] / "beam" / "firmware" / "rp2040" / "main.py"
+    main = Path(__file__).parents[1] / "beam" / "firmware" / "core" / "beamcore.py"
     main = main.read_text(encoding="utf-8")
     assert f'\nFIRMWARE = "{rp2040.FIRMWARE}"\n' in main
 

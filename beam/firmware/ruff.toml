@@ -1,0 +1,9 @@
+# MicroPython runs these files, and knows no syntax newer than about Python 3.8: the
+# formatter's Python 3.14 style (PEP 758's `except A, B:` without parentheses) would be a
+# SyntaxError on the board. The rules stay the project's; only the target changes here.
+extend = "../../pyproject.toml"
+target-version = "py38"
+
+[lint]
+# MicroPython has no pathlib: open() it is.
+extend-per-file-ignores = { "**/*.py" = ["PTH"] }
