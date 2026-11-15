@@ -36,8 +36,11 @@ The firmware's version is `FIRMWARE` in `core/beamcore.py`. A board says it in i
 - **PONG.** It gives both of the board's moments, when the `PING` came and when the answer
   went. The board waits a random 0 to 49 ms between them, so that over Bluetooth some
   answers fall right before a radio event: the reader takes the shortest trip each way.
-- **RESEND.** The board keeps its last 128 breaks and says them again when asked. A link
-  that came back is so caught up, the breaks with their own times.
+- **RESEND.** The board keeps its last 128 breaks and says them again when asked, a line
+  at a time once the link has sent the last: 128 of them at 9600 baud would hold the loop,
+  and with it the next break, for 3 s. A link that came back is so caught up, the breaks
+  with their own times; the readers ask the board's count every 5 s too, so a last break
+  whose line was lost on the way comes all the same.
 
 ## Tests
 
