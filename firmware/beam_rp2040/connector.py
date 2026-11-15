@@ -36,6 +36,8 @@ LONGEST_TRIP_MS = 20.0  # a round trip longer than this says nothing about the c
 SAMPLES = 9  # round trips kept, their median the offset
 PING_EVERY_S = 2.0
 REOPEN_AFTER_S = 2.0
+SILENT_MS = 3 * PING_EVERY_S * 1000  # a PING unanswered this long: the board stopped
+SILENT = "the board answers no PING: is main.py running on it?"
 
 
 def now_ms() -> float:
@@ -92,6 +94,10 @@ class Bridge:
             del self.pings[unanswered]
         return f"PING {n}"
 
+    def silent(self, now_ms: float) -> bool:
+        """A PING unanswered for SILENT_MS: the board has stopped, its port open."""
+        return any(now_ms - sent > SILENT_MS for sent in self.pings.values())
+
     def from_board(self, line: str, got_ms: float) -> list[dict[str, Any]]:
         """Events for the chronometer from one board line, received at ``got_ms``."""
         word, rest = parse(line)
@@ -103,6 +109,8 @@ class Bridge:
             return []  # left from before the HELLO asked for, or another firmware's
         if word == "PONG" and numbers is not None:
             sent = self.pings.pop(numbers[0], None)
+            for lost in [k for k in self.pings if k < numbers[0]]:
+                del self.pings[lost]  # a later one answered: the board is there
             if sent is not None:
                 self.sync.add(sent, got_ms, numbers[1])
             return []
@@ -203,9 +211,17 @@ class Connector:
     def tick(self, now: float) -> None:
         if self.started and self.link is None and now >= self.reopen:
             self.open_board(now)
-        if self.link is not None and now >= self.next_ping:
+        if self.link is None:
+            return
+        if now >= self.next_ping:
             self.write(self.bridge.ping(now_ms()) + "\n")
             self.next_ping = now + PING_EVERY_S
+        # A board whose main.py has stopped keeps its port open: only PING tells.
+        if self.bridge.silent(now_ms()):
+            self.send({"type": "status", "state": "disconnected", "detail": SILENT})
+        elif self.bridge.board:
+            board = self.bridge.board
+            self.send({"type": "status", "state": "connected", "detail": board})
 
     def handle(self, kind: str, item: Any) -> bool:
         """Act on one inbox item; False once the chronometer has said stop."""

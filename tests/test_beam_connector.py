@@ -71,6 +71,16 @@ def test_pings_are_numbered_and_the_long_unanswered_ones_dropped():
     assert bridge.pings[2] == 2.0
 
 
+def test_a_board_that_answers_no_ping_for_six_seconds_is_silent():
+    bridge = _connected()
+    bridge.ping(0.0)
+    assert not bridge.silent(c.SILENT_MS)
+    assert bridge.silent(c.SILENT_MS + 1)
+    bridge.ping(5_000.0)
+    bridge.from_board("PONG 2 10", 5_003.0)  # a later one answered: the board is there
+    assert not bridge.silent(10**12)
+
+
 def test_nothing_counts_before_the_board_says_its_hello():
     """Lines left from before the HELLO asked for, or a board that runs another
     firmware, stamp no slot."""
@@ -152,6 +162,7 @@ class Port:
     say."""
 
     answers_at = 2_000_000
+    answering = True  # False: main.py has stopped, the port is still open
 
     def __init__(self, device: str, timeout: float | None = None) -> None:
         self.device, self.closed = device, False
@@ -163,7 +174,7 @@ class Port:
             self.written.append(line)
             if line == "HELLO":
                 self.say(HELLO)
-            elif line.startswith("PING "):
+            elif line.startswith("PING ") and self.answering:
                 self.say(f"PONG {line.split()[1]} {self.answers_at}")
         return len(data)
 
@@ -304,6 +315,38 @@ def test_a_board_lost_is_said_and_opened_again_with_its_clock_anew(
     chronometer.tell(None)  # the chronometer gone: its standard input ends
     _until(lambda: ended == [0])
     assert ports[1].closed
+
+
+def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
+    monkeypatch, ports, serial
+):
+    clock = [1_000_000.0]
+    monkeypatch.setattr(c, "now_ms", lambda: clock[0])
+    monkeypatch.setattr(c, "PING_EVERY_S", 0.02)
+    chronometer = Chronometer()
+    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    chronometer.tell({"cmd": "start", "settings": {}})
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    ports[0].answering = False
+    sent = len(ports[0].written)
+    _until(lambda: len(ports[0].written) > sent)  # a PING the board left unanswered
+    clock[0] += c.SILENT_MS + 1
+    assert chronometer.next() == {
+        "type": "status",
+        "state": "disconnected",
+        "detail": c.SILENT,
+    }
+    ports[0].answering = True
+    assert chronometer.next() == {
+        "type": "status",
+        "state": "connected",
+        "detail": HELLO[6:],
+    }
+    chronometer.tell({"cmd": "stop"})
+    _until(lambda: ended == [0])
 
 
 def test_a_board_missing_is_said_once_not_at_every_retry(monkeypatch):

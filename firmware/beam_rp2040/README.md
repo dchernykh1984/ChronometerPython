@@ -125,7 +125,7 @@ The connector's options go after `connector.py`:
 | --- | --- |
 | `source disconnected no beam board found on USB` | Not plugged in, a charge-only cable, or the board is in `RPI-RP2` mode. It tries again every 2 s. |
 | Breaks missing, or `source disconnected` with an error from the port | Another program has the port open: an `mpremote` window, a serial monitor. Close it. |
-| `source connecting ...`, and no `connected` | The board runs no `main.py`: copy it again (Flashing, step 3). |
+| `source disconnected the board answers no PING: is main.py running on it?` | The board runs no `main.py`, or it has stopped: unplug the board and plug it in again; if it says so again, copy `main.py` again (Flashing, step 3). |
 
 ## What the board says
 
@@ -146,7 +146,9 @@ The connector pings the board every 2 s. The middle of a round trip is taken as 
 moment the board answered, and the median of the last 9 round trips under 20 ms maps
 the board's clock onto the computer's (a round trip takes 3 to 5 ms over USB). A
 break before the first round trip has the time its line came. A board unplugged and
-plugged in again starts its clock anew, and so does the mapping.
+plugged in again starts its clock anew, and so does the mapping. A board that
+answers no `PING` for 6 s is reported disconnected, and connected again once it
+answers: its port stays open when its `main.py` stops, so only the pings tell.
 
 ## Out of doors
 
