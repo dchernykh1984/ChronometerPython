@@ -83,6 +83,16 @@ def test_the_judges_own_start_is_not_replaced_by_a_break(win):
     assert win._edit_group_time.text() == "1 12:00:00.000"
 
 
+def test_choosing_group_starts_again_makes_the_beam_wait_for_a_start_anew(win):
+    _group_starts(win)
+    win._on_source_event(Break(1, T0))  # taken: the next waits for Save group
+    riders = win._combo_beam_records.findData("riders")
+    win._combo_beam_records.setCurrentIndex(riders)
+    win._combo_beam_records.setCurrentIndex(win._combo_beam_records.findData("groups"))
+    win._on_source_event(Break(2, T0 + 9_000))
+    assert win._edit_group_time.text() == format_time(T0 + 9_000)
+
+
 def test_a_break_with_no_group_chosen_starts_none_and_says_so(win):
     win._combo_beam_records.setCurrentIndex(win._combo_beam_records.findData("groups"))
     win._combo_group.setCurrentText("")
