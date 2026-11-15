@@ -155,6 +155,18 @@ def test_a_break_before_any_round_trip_has_the_time_its_line_came():
     ]
 
 
+def test_breaks_the_board_counted_that_never_came_are_said():
+    bridge = _connected()
+    assert len(bridge.from_board("BREAK 4 1000", 0.0)) == 1  # the first seen: no gap
+    assert len(bridge.from_board("BREAK 5 2000", 0.0)) == 1
+    beam, error = bridge.from_board("BREAK 8 3000", 0.0)
+    assert (beam["seq"], error["type"]) == (8, "error")
+    assert error["message"].startswith("the board's break(s) 6 to 7 did not arrive")
+    beam, error = bridge.from_board("BREAK 10 4000", 0.0)
+    assert error["message"].startswith("the board's break(s) 9 did not arrive")
+    assert len(bridge.from_board("BREAK 1 5000", 0.0)) == 1  # the board started again
+
+
 def test_a_break_has_the_board_time_moved_onto_the_computer_clock():
     bridge = _connected()
     n = bridge.ping(1_000_000.0).split()[1]
@@ -427,6 +439,36 @@ def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
         "detail": HELLO[6:],
     }
     chronometer.tell({"cmd": "stop"})
+    _until(lambda: ended == [0])
+
+
+def test_a_break_lost_while_the_link_was_down_is_said(monkeypatch, ports, serial):
+    """A USB link dropped and found again, the board's power never cut: it went on
+    counting, and a break it saw meanwhile never came."""
+    monkeypatch.setattr(c, "REOPEN_AFTER_S", 0.01)
+    chronometer = Chronometer()
+    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    chronometer.tell({"cmd": "start", "settings": {}})
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    ports[0].say("BREAK 1 2500000")
+    assert chronometer.next()["type"] == "beam"
+    ports[0].said.put(SerialError("device disconnected"))
+    assert [chronometer.next()["state"] for _ in range(3)] == [
+        "disconnected",
+        "connecting",
+        "connected",
+    ]
+    ports[1].say("BREAK 3 2600000")
+    assert chronometer.next()["seq"] == 3
+    assert chronometer.next() == {
+        "type": "error",
+        "message": "the board's break(s) 2 did not arrive: its link was down as "
+        "they came; check that finish by other means",
+    }
+    chronometer.tell(None)
     _until(lambda: ended == [0])
 
 
