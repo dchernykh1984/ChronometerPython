@@ -19,7 +19,7 @@
 
 ## Phase 3: Desktop (US1, US2)
 
-- [ ] T007 `protocol.py`: the 0.4 PONG, the Bluetooth clock (shortest trip each way), RESEND and
+- [x] T007 `protocol.py`: the 0.4 PONG, the Bluetooth clock (shortest trip each way), RESEND and
   counts taken once (FR-002, FR-003, FR-006)
 - [ ] T008 `ble.py`: the Bluetooth transport through `bleak`; the boards in the device list (FR-004,
   FR-007)

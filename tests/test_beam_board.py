@@ -14,7 +14,7 @@ import time
 import types
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 
@@ -22,21 +22,29 @@ from app.connectors.boards import protocol as p
 from app.connectors.boards import rp2040
 from app.connectors.boards import usb_serial as u
 
-HELLO = f"HELLO beam-rp2040 {rp2040.FIRMWARE} e6614103"
+HELLO = f"HELLO beam-rp2040 {rp2040.FIRMWARE} e6614103 0"
+
+
+def _hello(count: int) -> str:
+    """The board's HELLO with the count of its last break."""
+    return f"{HELLO.rsplit(' ', 1)[0]} {count}"
+
+
 # The port named: a real board on this computer is never looked for.
 START = {"cmd": "start", "settings": {"port": "COM7"}}
 
 
-def _connected() -> p.Bridge:
-    bridge = p.Bridge(rp2040.BOARD)
-    bridge.from_board(HELLO, 0.0)
+def _connected(board: Any = rp2040.BOARD, hello: str = HELLO) -> p.Bridge:
+    bridge = p.Bridge(board)
+    bridge.from_board(hello, 0.0)
     return bridge
 
 
 def _read(bridge: p.Bridge) -> p.Bridge:
-    """Its clock read: one round trip, the board's 2 s at the computer's 1000 s."""
-    n = bridge.ping(1_000_000.0).split()[1]
-    bridge.from_board(f"PONG {n} 2000000", 1_000_000.0)
+    """Its clock read: round trips with the board's 2 s at the computer's 1000 s."""
+    for _ in range(p.RADIO_READY if bridge.radio else 1):
+        n = bridge.ping(1_000_000.0).split()[1]
+        bridge.from_board(f"PONG {n} 2000000 2000000", 1_000_000.0)
     return bridge
 
 
@@ -48,32 +56,43 @@ def test_a_board_line_is_its_word_and_the_rest():
 @pytest.mark.parametrize(
     "rest", [["1"], ["1", "2", "3"], ["1", "-2"], ["x", "2"], ["1.5", "2"]]
 )
-def test_a_break_or_pong_without_two_whole_numbers_carries_none(rest):
-    assert p.pair(rest) is None
+def test_a_break_without_two_whole_numbers_carries_none(rest):
+    assert p.numbers(rest, 2) is None
 
 
-def test_the_board_clock_maps_onto_the_middle_of_a_round_trip():
+def test_a_pong_carries_three_whole_numbers():
+    assert p.numbers(["7", "10", "22"], 3) == [7, 10, 22]
+    assert p.numbers(["7", "10"], 3) is None
+
+
+def test_the_board_clock_maps_onto_the_middle_of_a_round_trip_its_wait_left_out():
+    """The board waited 10 ms before its PONG: the trip took 14 ms, 4 of them on
+    the wire, and the board's moment is the middle of those 4."""
     sync = p.ClockSync()
     assert sync.to_host_ms(2_000_000) is None
-    sync.add(sent_ms=1_000_000.0, got_ms=1_000_004.0, board_us=2_000_000)
+    sync.add(
+        sent_ms=1_000_000.0, got_ms=1_000_014.0, got_us=2_000_000, sent_us=2_010_000
+    )
     assert sync.to_host_ms(2_000_000) == 1_000_002
     assert sync.to_host_ms(3_500_000) == 1_001_502
 
 
 def test_a_round_trip_too_long_to_say_when_the_board_answered_is_left_out():
     sync = p.ClockSync()
-    sync.add(0.0, p.LONGEST_TRIP_MS + 0.1, 0)
+    sync.add(0.0, p.LONGEST_TRIP_MS + 0.1, 0, 0)
     assert sync.to_host_ms(0) is None
-    sync.add(0.0, p.LONGEST_TRIP_MS, 0)
+    sync.add(0.0, p.LONGEST_TRIP_MS, 0, 0)
     assert sync.to_host_ms(0) == round(p.LONGEST_TRIP_MS / 2)
 
 
 def test_the_offset_is_the_median_of_the_last_nine_round_trips():
     sync = p.ClockSync()
     for offset in [0.0] * p.SAMPLES + [30.0] * 5:
-        sync.add(offset, offset, 0)
+        sync.add(offset, offset, 0, 0)
     assert sync.to_host_ms(0) == 30  # five of the last nine: the oldest have gone
-    sync.add(75.0, 75.0, 0)  # a stray one, short of a clock step, moves it no further
+    sync.add(
+        75.0, 75.0, 0, 0
+    )  # a stray one, short of a clock step, moves it no further
     assert sync.to_host_ms(0) == 30
 
 
@@ -82,18 +101,74 @@ def test_the_computer_clock_set_anew_moves_the_mapping_at_once():
     on the new clock, not on the old one until the old round trips roll off."""
     sync = p.ClockSync()
     for n in range(p.SAMPLES):
-        sync.add(float(n), float(n), n * 1000)  # offset 0
-    sync.add(5_000.0, 5_000.0, 0)  # the clock set 5 s on
+        sync.add(float(n), float(n), n * 1000, n * 1000)  # offset 0
+    sync.add(5_000.0, 5_000.0, 0, 0)  # the clock set 5 s on
     assert sync.to_host_ms(1_000) == 5_001
-    sync.add(5_000.0 + p.STEP_MS, 5_000.0 + p.STEP_MS, 0)  # not a step: kept
+    sync.add(5_000.0 + p.STEP_MS, 5_000.0 + p.STEP_MS, 0, 0)  # not a step: kept
     assert sync.offsets == [5_000.0, 5_000.0 + p.STEP_MS]
+
+
+def _radio_trips(offset_ms: float, waits: list[tuple[float, float]]) -> p.RadioSync:
+    """Round trips over a radio: each way waits for its next connection event, here
+    the milliseconds given; the computer's clock ``offset_ms`` ahead of the board's."""
+    sync = p.RadioSync()
+    sent = 1_000_000.0
+    for there, back in waits:
+        got_us = round((sent + there - offset_ms) * 1000)  # the board's clock
+        sent_us = got_us + 12_000  # its random wait before the PONG
+        got = sent_us / 1000 + offset_ms + back
+        sync.add(sent, got, got_us, sent_us)
+        sent += 1000.0
+    return sync
+
+
+def test_over_bluetooth_the_shortest_trip_each_way_gives_the_clock():
+    """A PONG sent at once would always wait a whole connection event (30 ms): the
+    middle of the round trip would be 15 ms off. The shortest way there and the
+    shortest way back, each near the radio's bare delay, are not."""
+    waits = [(29.0, 30.0), (3.0, 30.0), (17.0, 2.5), (25.0, 11.0), (8.0, 30.0)]
+    sync = _radio_trips(500_000.0, waits)
+    assert abs(sync.offset - 500_000.0 - (2.5 - 3.0) / 2) < 1e-6
+    assert sync.to_host_ms(2_000_000) == round(2_000 + sync.offset)
+
+
+def test_the_radio_clock_is_read_only_once_enough_trips_have_come():
+    sync = _radio_trips(0.0, [(5.0, 5.0)] * (p.RADIO_READY - 1))
+    assert not sync.read and sync.to_host_ms(1_000) is None
+    sync = _radio_trips(0.0, [(5.0, 5.0)] * p.RADIO_READY)
+    assert sync.read and sync.to_host_ms(1_000) == 1
+
+
+def test_the_radio_clock_keeps_its_last_trips_and_starts_again_on_a_clock_step():
+    sync = _radio_trips(0.0, [(1.0, 1.0)] + [(9.0, 9.0)] * p.RADIO_SAMPLES)
+    assert len(sync.trips) == p.RADIO_SAMPLES and sync.offset == 0.0
+    sent = 2_000_000.0
+    sync.add(
+        sent,
+        sent + 10.0,
+        round((sent - 5_000.0) * 1000),
+        round((sent - 5_000.0) * 1000),
+    )
+    assert sync.trips and len(sync.trips) == 1  # the computer's clock set 5 s on
+    assert not sync.read
+
+
+def test_a_bluetooth_board_is_read_with_the_radio_clock_and_pinged_faster():
+    from app.connectors.boards import esp32c3
+
+    bridge = p.Bridge(esp32c3.RADIO)
+    assert isinstance(bridge.sync, p.RadioSync) and bridge.radio
+    assert bridge.ping_every_s == p.RADIO_PING_EVERY_S
+    usb = p.Bridge(esp32c3.BOARD)
+    assert isinstance(usb.sync, p.ClockSync) and usb.ping_every_s == p.PING_EVERY_S
 
 
 def test_pings_are_numbered_and_the_long_unanswered_ones_dropped():
     bridge = p.Bridge(rp2040.BOARD)
-    lines = [bridge.ping(float(n)) for n in range(1, 4 * p.SAMPLES + 2)]
+    kept = 4 * p.RADIO_SAMPLES
+    lines = [bridge.ping(float(n)) for n in range(1, kept + 2)]
     assert lines[:2] == ["PING 1", "PING 2"]
-    assert sorted(bridge.pings) == list(range(2, 4 * p.SAMPLES + 2))
+    assert sorted(bridge.pings) == list(range(2, kept + 2))
     assert bridge.pings[2] == 2.0
 
 
@@ -103,7 +178,7 @@ def test_a_board_that_answers_no_ping_for_six_seconds_is_silent():
     assert not bridge.silent(p.SILENT_MS)
     assert bridge.silent(p.SILENT_MS + 1)
     bridge.ping(5_000.0)
-    bridge.from_board("PONG 2 10", 5_003.0)  # a later one answered: the board is there
+    bridge.from_board("PONG 2 10 10", 5_003.0)  # a later one answered: it is there
     assert not bridge.silent(10**12)
 
 
@@ -172,13 +247,15 @@ def test_a_break_before_the_hello_waits_for_the_boards_clock_not_dropped():
     bridge = p.Bridge(rp2040.BOARD)
     assert bridge.from_board("BREAK 1 2500000", 5.0) == []
     assert bridge.from_board("HELLO another-board 1", 5.0) == []
-    assert bridge.from_board(HELLO, 6.0) == [
-        {"type": "status", "state": "connected", "detail": HELLO[6:]}
+    hello = f"HELLO beam-rp2040 {rp2040.FIRMWARE} e6614103 1"
+    assert bridge.from_board(hello, 6.0) == [
+        {"type": "status", "state": "connected", "detail": hello[6:]}
     ]
     n = bridge.ping(1_000_000.0).split()[1]
-    assert bridge.from_board(f"PONG {n} 2000000", 1_000_000.0) == [
+    assert bridge.from_board(f"PONG {n} 2000000 2000000", 1_000_000.0) == [
         {"type": "beam", "seq": 1, "time_ms": 1_000_500, "device_time": "2500000"}
     ]
+    assert bridge.outbox == []  # it came: nothing to ask for again
 
 
 def test_a_board_that_never_says_hello_has_no_break_counted():
@@ -209,33 +286,95 @@ def test_a_break_given_up_on_for_the_boards_clock_takes_its_lines_time_said_so()
     ]
 
 
-def test_breaks_the_board_counted_that_never_came_are_said():
+def test_over_bluetooth_a_break_waits_longer_for_the_clock():
+    from app.connectors.boards import esp32c3
+
+    hello = f"HELLO beam-esp32c3 {esp32c3.FIRMWARE} 50543165e6614103 0"
+    bridge = _connected(esp32c3.RADIO, hello)
+    assert bridge.from_board("BREAK 1 812345", 0.0) == []
+    assert bridge.release(p.HELD_MS + 1) == []
+    assert len(bridge.release(p.RADIO_HELD_MS + 1)) == 2
+
+
+def test_breaks_the_board_counted_that_never_came_are_asked_for_again():
+    """A gap in the counts: the link dropped a line. The board keeps its last
+    breaks: asked for them, it says them again, each taken once."""
+    bridge = _read(_connected(hello=_hello(3)))
+    assert bridge.from_board("BREAK 4 1000", 0.0)[0]["seq"] == 4
+    assert bridge.outbox == []
+    assert [e["seq"] for e in bridge.from_board("BREAK 7 4000", 10.0)] == [7]
+    assert bridge.outbox == ["RESEND 5"]
+    assert bridge.from_board("BREAK 5 2000", 20.0)[0]["seq"] == 5  # said again
+    assert bridge.from_board("BREAK 6 3000", 20.0)[0]["seq"] == 6
+    assert bridge.from_board("BREAK 7 4000", 20.0) == []  # had already
+    assert bridge.release(10**9) == []  # all came: nothing to say
+
+
+def test_breaks_asked_for_again_that_never_come_are_said_once():
     bridge = _read(_connected())
-    assert len(bridge.from_board("BREAK 4 1000", 0.0)) == 1  # the first seen: no gap
-    assert len(bridge.from_board("BREAK 5 2000", 0.0)) == 1
-    beam, error = bridge.from_board("BREAK 8 3000", 0.0)
-    assert (beam["seq"], error["type"]) == (8, "error")
-    assert error["message"].startswith("the board's break(s) 6 to 7 did not arrive")
-    beam, error = bridge.from_board("BREAK 10 4000", 0.0)
-    assert error["message"].startswith("the board's break(s) 9 did not arrive")
-    assert len(bridge.from_board("BREAK 1 5000", 0.0)) == 1  # the board started again
+    bridge.from_board("BREAK 1 1000", 0.0)
+    bridge.from_board("BREAK 4 4000", 100.0)
+    assert bridge.release(100.0 + p.RESENT_WITHIN_MS) == []
+    [error] = bridge.release(100.0 + p.RESENT_WITHIN_MS + 1)
+    assert error["message"] == (
+        "the board's break(s) 2 to 3 did not arrive: its link was down as they "
+        "came; check that finish by other means"
+    )
+    assert bridge.release(10**12) == []  # said once
+    assert bridge.from_board("BREAK 3 3000", 10**12)[0]["seq"] == 3  # late: taken
+
+
+def test_a_board_started_again_counts_anew():
+    """Its count from 1 again, by a lower count not asked for, or by a count it has
+    had at another time."""
+    bridge = _read(_connected())
+    for seq in (1, 2, 3):
+        bridge.from_board(f"BREAK {seq} {seq}000", 0.0)
+    assert bridge.from_board("BREAK 1 500", 0.0)[0]["seq"] == 1
+    assert bridge.from_board("BREAK 2 900", 0.0)[0]["seq"] == 2
+    assert bridge.from_board("BREAK 2 950", 0.0)[0]["seq"] == 2  # again: anew
+    assert bridge.outbox == ["RESEND 1"]  # count 1 since that start never came
+
+
+def test_a_board_found_again_is_asked_for_what_it_counted_meanwhile():
+    bridge = _read(_connected())
+    bridge.from_board("BREAK 1 1000", 0.0)
+    bridge.from_board("BREAK 2 2000", 0.0)
+    later = p.Bridge(rp2040.BOARD, counts=bridge.counts)  # the link opened again
+    later.from_board(_hello(3), 50.0)
+    assert later.outbox == ["RESEND 3"]
+    again = p.Bridge(rp2040.BOARD, counts=bridge.counts)
+    again.from_board(_hello(1), 60.0)  # below the last: it started again since
+    assert again.outbox == ["RESEND 1"]
+    once_more = p.Bridge(rp2040.BOARD, counts=bridge.counts)
+    once_more.from_board(_hello(0), 70.0)  # started again, nothing counted yet
+    assert once_more.outbox == []
+
+
+def test_a_board_without_a_count_in_its_hello_starts_from_its_first_break():
+    old = "HELLO beam-rp2040 0.3 e6614103"
+    bridge = _read(_connected(hello=old))
+    assert bridge.from_board("BREAK 15 1000", 0.0)[0]["seq"] == 15
+    assert bridge.outbox == []  # no gap before the first seen
 
 
 def test_a_break_has_the_board_time_moved_onto_the_computer_clock():
     bridge = _connected()
     n = bridge.ping(1_000_000.0).split()[1]
-    assert bridge.from_board(f"PONG {n} 2000000", 1_000_004.0) == []
+    assert bridge.from_board(f"PONG {n} 2000000 2000000", 1_000_004.0) == []
     [event] = bridge.from_board("BREAK 3 3500000", 9_999_999.0)  # its line came late
     assert event["time_ms"] == 1_001_502
 
 
 def test_a_pong_for_no_ping_or_answered_twice_is_left_out():
     bridge = _connected()
-    bridge.from_board("PONG 5 2000000", 1.0)
-    assert bridge.sync.offsets == []
-    pong = f"PONG {bridge.ping(0.0).split()[1]} 0"
+    bridge.from_board("PONG 5 2000000 2000000", 1.0)
+    assert isinstance(bridge.sync, p.ClockSync) and bridge.sync.offsets == []
+    pong = f"PONG {bridge.ping(0.0).split()[1]} 0 0"
     bridge.from_board(pong, 2.0)
     bridge.from_board(pong, 4.0)
+    assert bridge.sync.offsets == [1.0]
+    bridge.from_board("PONG 9 1", 5.0)  # a PONG of firmware 0.3: no clock from it
     assert bridge.sync.offsets == [1.0]
 
 
@@ -304,6 +443,8 @@ class Port:
     answering = True  # False: main.py has stopped, the port is still open
     light = "beam"  # what it answers STATUS
     rider = False  # True: a rider breaks the beam just as the port opens
+    kept: ClassVar[list[str]] = []  # the BREAKs it said, whichever port was open
+    resending = True  # False: the breaks asked for are no longer kept
 
     reading = True  # False: the board reads its USB no more, a write never ends
 
@@ -327,17 +468,30 @@ class Port:
             raise SerialError("Write timeout")
         for line in data.decode().split("\n")[:-1]:
             self.written.append(line)
-            if line == "HELLO":
-                if self.rider:
-                    self.say("BREAK 1 1500000")  # said before it read the HELLO
-                self.say(HELLO)
-            elif line == "STATUS":
-                self.say(f"STATUS {self.light}")
-            elif line.startswith("PING ") and self.answering:
-                self.say(f"PONG {line.split()[1]} {self.answers_at}")
+            self.answer(line)
         return len(data)
 
+    def answer(self, line: str) -> None:
+        """What the firmware answers, of what the connector sends."""
+        if line == "HELLO":
+            if self.rider:
+                self.say("BREAK 1 1500000")  # said before it read the HELLO
+            count = int(Port.kept[-1].split()[1]) if Port.kept else 0
+            self.say(_hello(count))
+        elif line == "STATUS":
+            self.say(f"STATUS {self.light}")
+        elif line.startswith("PING ") and self.answering:
+            at = self.answers_at
+            self.say(f"PONG {line.split()[1]} {at} {at}")
+        elif line.startswith("RESEND ") and self.resending:
+            first = int(line.split()[1])
+            for kept in Port.kept:
+                if int(kept.split()[1]) >= first:
+                    self.said.put(f"{kept}\r\n".encode())
+
     def say(self, line: str) -> None:
+        if line.startswith("BREAK "):
+            Port.kept.append(line)
         self.said.put(f"{line}\r\n".encode())
 
     def __iter__(self) -> Iterator[bytes]:
@@ -404,9 +558,10 @@ def ports() -> list[Port]:
 
 
 @pytest.fixture
-def serial(ports: list[Port]) -> types.SimpleNamespace:
+def serial(ports: list[Port], monkeypatch: pytest.MonkeyPatch) -> types.SimpleNamespace:
     """pyserial as the connector uses it, every port it opens kept in ``ports``. As
     pyserial's, an exclusive open fails while another exclusive one holds the port."""
+    monkeypatch.setattr(Port, "kept", [])
 
     def open_port(
         device: str,
@@ -577,10 +732,13 @@ def test_a_break_still_waiting_for_the_clock_at_stop_is_stamped(
     assert (beam["type"], beam["seq"], error["type"]) == ("beam", 1, "error")
 
 
-def test_a_break_lost_while_the_link_was_down_is_said(monkeypatch, ports, serial):
+def test_a_break_seen_while_the_link_was_down_comes_once_it_is_back(
+    monkeypatch, ports, serial
+):
     """A USB link dropped and found again, the board's power never cut: it went on
-    counting, and a break it saw meanwhile never came."""
+    counting, and the break it saw meanwhile comes, with its own time, once asked."""
     monkeypatch.setattr(u, "REOPEN_AFTER_S", 0.01)
+    monkeypatch.setattr(u, "now_ms", lambda: 1_000_000.0)
     chronometer = Chronometer()
     ended = _run(u.Connector(chronometer, serial, rp2040.BOARD), chronometer)
     chronometer.tell(START)
@@ -589,15 +747,42 @@ def test_a_break_lost_while_the_link_was_down_is_said(monkeypatch, ports, serial
         "connected",
     ]
     ports[0].say("BREAK 1 2500000")
-    assert chronometer.next()["type"] == "beam"
+    assert chronometer.next()["seq"] == 1
     ports[0].said.put(SerialError("device disconnected"))
+    Port.kept.append("BREAK 2 2600000")  # seen while no link was up
     assert [chronometer.next()["state"] for _ in range(3)] == [
         "disconnected",
         "connecting",
         "connected",
     ]
-    ports[1].say("BREAK 3 2600000")
+    assert chronometer.next() == {
+        "type": "beam",
+        "seq": 2,
+        "time_ms": 1_000_600,
+        "device_time": "2600000",
+    }
+    assert "RESEND 2" in ports[1].written
+    chronometer.tell(None)
+    _until(lambda: ended == [0])
+
+
+def test_a_break_the_board_no_longer_keeps_is_said_as_lost(monkeypatch, ports, serial):
+    clock = [1_000_000.0]
+    monkeypatch.setattr(u, "now_ms", lambda: clock[0])
+    monkeypatch.setattr(Port, "resending", False)
+    chronometer = Chronometer()
+    ended = _run(u.Connector(chronometer, serial, rp2040.BOARD), chronometer)
+    chronometer.tell(START)
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    ports[0].say("BREAK 1 2500000")
+    assert chronometer.next()["seq"] == 1
+    ports[0].say("BREAK 3 2700000")
     assert chronometer.next()["seq"] == 3
+    _until(lambda: "RESEND 2" in ports[0].written)
+    clock[0] += p.RESENT_WITHIN_MS + 1
     assert chronometer.next() == {
         "type": "error",
         "message": "the board's break(s) 2 did not arrive: its link was down as "
