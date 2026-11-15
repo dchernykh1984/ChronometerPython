@@ -1,0 +1,10 @@
+# The beam folder runs elsewhere than the chronometer: the firmware on MicroPython, which
+# knows no syntax newer than about Python 3.8, the enclosures in Blender's own Python.
+# The formatter's Python 3.14 style (PEP 758's `except A, B:` without parentheses) would
+# be a SyntaxError on a board, so ruff targets 3.8 here. The rules stay the project's.
+extend = "../pyproject.toml"
+target-version = "py38"
+
+[lint]
+# MicroPython has no pathlib: open() it is.
+extend-per-file-ignores = { "firmware/**/*.py" = ["PTH"] }
