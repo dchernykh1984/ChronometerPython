@@ -522,6 +522,15 @@ def test_a_bt05_that_answers_nothing_is_taken_at_the_baud_remembered(
     assert rp2040.bt05("beam-4103")[1] == 9600
 
 
+def test_a_flash_that_will_not_keep_the_baud_never_stops_the_start(
+    rp2040, tmp_path, monkeypatch
+):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / rp2040.BAUD_FILE).mkdir()  # a file that cannot be written
+    uart, baud = rp2040.bt05("beam-4103")
+    assert baud == 115200 and uart.baud == 115200
+
+
 def test_a_bt05_that_will_not_move_stays_at_its_own_baud(rp2040, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     original = Uart.write

@@ -45,7 +45,10 @@ At start, while nothing is connected to it, the BT05 takes AT commands. The boar
 its baud rate, names it `beam-` and the last 4 hex digits of the board id, and moves it to
 115200 baud, where a character takes 87 us instead of 1 ms. The baud it ends at is kept in
 `bt05_baud.txt` on the board, for a start when a reader is still connected to the module.
-A module that will not take the name keeps its own: the chronometers find it by that.
+A module that will not take the name keeps its own: the chronometers find it by that. The
+board ends each AT command with `\r\n`, as the BT05, AT-09 and MLT-BT05 want; a genuine
+HM-10 may take those two characters into its name, so set its name by hand once, or read it
+by its address.
 
 ## Flashing
 

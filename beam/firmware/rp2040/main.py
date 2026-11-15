@@ -80,9 +80,14 @@ def remembered():
 
 
 def remember(baud):
+    """The baud kept for the next start; a flash that will not take it costs only
+    that, never the board's start."""
     if baud != remembered():
-        with open(BAUD_FILE, "w") as f:
-            f.write(str(baud))
+        try:
+            with open(BAUD_FILE, "w") as f:
+                f.write(str(baud))
+        except OSError:
+            pass
 
 
 def bt05(name):
