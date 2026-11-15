@@ -49,6 +49,9 @@ class UartLink(beamcore.Link):
     def transfer_us(self, chars):
         return chars * 10_000_000 // self.baud  # ten bits a character
 
+    def ready(self):
+        return self.uart.txdone()
+
 
 def open_uart(baud):
     return machine.UART(UART_ID, baud, tx=machine.Pin(TX_PIN), rx=machine.Pin(RX_PIN))
