@@ -121,13 +121,18 @@ class Connector:
             self.reopen = now + REOPEN_AFTER_S
             self.send({"type": "status", "state": "disconnected", "detail": str(error)})
             return
-        # The board may have started again: its clock with it, so no old round
-        # trip counts, and a ping number once used is not used again.
-        self.bridge = Bridge(
-            self.spec, next_ping=self.bridge.next_ping, seqs=self.bridge.seqs
-        )
         threading.Thread(target=self.listen, args=(self.link,), daemon=True).start()
-        self.send({"type": "status", "state": "connecting", "detail": port})
+        self.opened(port, now)
+
+    def opened(self, where: str, now: float) -> None:
+        """A link to the board is up: asked who it is, its clock read anew."""
+        # The board may have started again: its clock with it, so no old round
+        # trip counts, and a ping number once used is not used again; the counts
+        # taken stay, to ask for what it counted while no link was up.
+        self.bridge = Bridge(
+            self.spec, next_ping=self.bridge.next_ping, counts=self.bridge.counts
+        )
+        self.send({"type": "status", "state": "connecting", "detail": where})
         self.write(f"\nHOLDOFF {self.hold_off_ms}\nHELLO\nSTATUS\n")
         self.next_ping = now
 
@@ -138,9 +143,11 @@ class Connector:
             return
         if now >= self.next_ping:
             self.write(self.bridge.ping(now_ms()) + "\n")
-            self.next_ping = now + protocol.PING_EVERY_S
+            self.next_ping = now + self.bridge.ping_every_s
         for event in self.bridge.release(now_ms()):
             self.send(event)
+        while self.bridge.outbox:  # RESEND: breaks counted while no link was up
+            self.write(self.bridge.outbox.pop(0) + "\n")
         # A board whose main.py has stopped keeps its port open: only PING tells.
         if self.bridge.silent(now_ms()):
             self.send(
