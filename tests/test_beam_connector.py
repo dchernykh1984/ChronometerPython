@@ -549,6 +549,25 @@ def test_a_rider_as_the_port_opens_is_stamped_not_dropped(monkeypatch, ports, se
     _until(lambda: ended == [0])
 
 
+def test_a_break_still_waiting_for_the_clock_at_stop_is_stamped(
+    monkeypatch, ports, serial
+):
+    """The chronometer counts all a connector says until it has ended."""
+    monkeypatch.setattr(Port, "rider", True)
+    monkeypatch.setattr(Port, "answering", False)  # no round trip: no clock read
+    chronometer = Chronometer()
+    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    chronometer.tell({"cmd": "start", "settings": {}})
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    chronometer.tell({"cmd": "stop"})
+    _until(lambda: ended == [0])
+    beam, error = list(chronometer.events.queue)
+    assert (beam["type"], beam["seq"], error["type"]) == ("beam", 1, "error")
+
+
 def test_a_break_lost_while_the_link_was_down_is_said(monkeypatch, ports, serial):
     """A USB link dropped and found again, the board's power never cut: it went on
     counting, and a break it saw meanwhile never came."""

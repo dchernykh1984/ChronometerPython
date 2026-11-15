@@ -373,6 +373,8 @@ class Connector:
             except queue.Empty:
                 continue
             if not self.handle(kind, item):
+                for event in self.bridge.release(float("inf")):
+                    self.send(event)  # a break still waiting for the clock: not lost
                 if self.link is not None:
                     self.link.close()
                 return 0
