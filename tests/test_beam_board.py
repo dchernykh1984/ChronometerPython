@@ -370,6 +370,20 @@ def test_a_board_found_again_is_asked_for_what_it_counted_meanwhile():
     assert once_more.outbox == []
 
 
+def test_a_board_started_again_under_a_link_that_stayed_up_has_its_clock_read_anew():
+    """The RP2040 restarted, its BT05 still connected: its clock starts again from 0,
+    and a break timed with the old offset would be off by all its uptime before."""
+    from app.connectors.boards import esp32c3
+
+    hello = f"HELLO beam-esp32c3 {esp32c3.FIRMWARE} 50543165e661 0"
+    bridge = _read(_connected(esp32c3.RADIO, hello))
+    bridge.from_board("BREAK 1 1000", 0.0)
+    assert bridge.sync.read
+    bridge.from_board(hello, 10.0)  # its start's HELLO: count 0, below 1
+    assert not bridge.sync.read
+    assert bridge.from_board("BREAK 1 2000", 11.0) == []  # waits for the new clock
+
+
 def test_a_board_without_a_count_in_its_hello_starts_from_its_first_break():
     old = "HELLO beam-rp2040 0.3 e6614103"
     bridge = _read(_connected(hello=old))
