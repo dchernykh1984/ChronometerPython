@@ -126,6 +126,19 @@ def test_a_board_on_another_firmware_than_main_py_here_is_said():
     assert len(c.Bridge().from_board(HELLO, 0.0)) == 1  # the same: nothing to say
 
 
+@pytest.mark.parametrize(
+    ("line", "runs"),
+    [("HELLO beam-rp2040", "?"), (f"HELLO beam-rp2040 {c.FIRMWARE}", c.FIRMWARE)],
+    ids=["no version", "no board id"],
+)
+def test_a_hello_short_of_words_is_taken_without_falling_over(line, runs):
+    bridge = c.Bridge()
+    said = bridge.from_board(line, 0.0)
+    assert said[0]["state"] == "connected"
+    assert (bridge.board_id, len(said)) == ("", 1 if runs == c.FIRMWARE else 2)
+    assert len(bridge.from_board("BREAK 1 1000", 0.0)) == 1  # and it counts
+
+
 def test_the_connector_expects_the_firmware_beside_it():
     main = Path(c.__file__).with_name("main.py").read_text(encoding="utf-8")
     assert f'\nFIRMWARE = "{c.FIRMWARE}"\n' in main
@@ -470,6 +483,14 @@ def test_a_break_lost_while_the_link_was_down_is_said(monkeypatch, ports, serial
     }
     chronometer.tell(None)
     _until(lambda: ended == [0])
+
+
+def test_a_port_lost_before_is_not_the_one_open_now(ports, serial):
+    """The lost port of an earlier link says so late: the link open now stays."""
+    connector = c.Connector(Chronometer(), serial, "COM7", 1000)
+    connector.link = Port("COM7", None, True)
+    assert connector.handle("lost", (Port("COM7", None, True), "closed long ago"))
+    assert connector.link is not None and not connector.link.closed
 
 
 def test_a_line_cut_short_as_the_port_ends_is_no_line(ports, serial):
