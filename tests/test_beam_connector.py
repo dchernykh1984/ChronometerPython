@@ -27,6 +27,13 @@ def _connected() -> c.Bridge:
     return bridge
 
 
+def _read(bridge: c.Bridge) -> c.Bridge:
+    """Its clock read: one round trip, the board's 2 s at the computer's 1000 s."""
+    n = bridge.ping(1_000_000.0).split()[1]
+    bridge.from_board(f"PONG {n} 2000000", 1_000_000.0)
+    return bridge
+
+
 def test_a_board_line_is_its_word_and_the_rest():
     assert c.parse("break 12 812345\r") == ("BREAK", ["12", "812345"])
     assert c.parse("  ") == ("", [])
@@ -136,7 +143,7 @@ def test_a_hello_short_of_words_is_taken_without_falling_over(line, runs):
     said = bridge.from_board(line, 0.0)
     assert said[0]["state"] == "connected"
     assert (bridge.board_id, len(said)) == ("", 1 if runs == c.FIRMWARE else 2)
-    assert len(bridge.from_board("BREAK 1 1000", 0.0)) == 1  # and it counts
+    assert len(_read(bridge).from_board("BREAK 1 1000", 0.0)) == 1  # and it counts
 
 
 def test_the_connector_expects_the_firmware_beside_it():
@@ -144,32 +151,53 @@ def test_the_connector_expects_the_firmware_beside_it():
     assert f'\nFIRMWARE = "{c.FIRMWARE}"\n' in main
 
 
-def test_nothing_counts_before_the_board_says_its_hello():
-    """Lines left from before the HELLO asked for, or a board that runs another
-    firmware, stamp no slot."""
+def test_a_break_before_the_hello_waits_for_the_boards_clock_not_dropped():
+    """The milliseconds between the port opening and the board's HELLO: a rider
+    then is a rider all the same. The break waits till the board is known and its
+    clock read, then is timed by it: right even for a line the system kept from
+    before the port was opened."""
     bridge = c.Bridge()
-    assert bridge.from_board("BREAK 1 1000", 5.0) == []
+    assert bridge.from_board("BREAK 1 2500000", 5.0) == []
     assert bridge.from_board("HELLO another-board 1", 5.0) == []
-    assert bridge.from_board("BREAK 2 1000", 5.0) == []
-    assert bridge.from_board(HELLO, 5.0) == [
+    assert bridge.from_board(HELLO, 6.0) == [
         {"type": "status", "state": "connected", "detail": HELLO[6:]}
     ]
-    assert len(bridge.from_board("BREAK 3 1000", 5.0)) == 1
+    n = bridge.ping(1_000_000.0).split()[1]
+    assert bridge.from_board(f"PONG {n} 2000000", 1_000_000.0) == [
+        {"type": "beam", "seq": 1, "time_ms": 1_000_500, "device_time": "2500000"}
+    ]
 
 
-def test_a_break_before_any_round_trip_has_the_time_its_line_came():
-    assert _connected().from_board("BREAK 12 812345", 1_761_725_401_500.4) == [
+def test_a_board_that_never_says_hello_has_no_break_counted():
+    bridge = c.Bridge()
+    bridge.from_board("BREAK 1 1000", 0.0)
+    assert bridge.release(10**12) == []
+
+
+def test_a_break_given_up_on_for_the_boards_clock_takes_its_lines_time_said_so():
+    """Every round trip too long to read the clock by: the break is stamped all the
+    same, by when its line came, and the judge told."""
+    bridge = _connected()
+    came = 1_761_725_401_500.4
+    assert bridge.from_board("BREAK 12 812345", came) == []
+    assert bridge.release(came + c.HELD_MS) == []
+    assert bridge.release(came + c.HELD_MS + 1) == [
         {
             "type": "beam",
             "seq": 12,
             "time_ms": 1_761_725_401_500,
             "device_time": "812345",
-        }
+        },
+        {
+            "type": "error",
+            "message": "the board's clock could not be read: 1 break(s) timed by "
+            "when their lines came",
+        },
     ]
 
 
 def test_breaks_the_board_counted_that_never_came_are_said():
-    bridge = _connected()
+    bridge = _read(_connected())
     assert len(bridge.from_board("BREAK 4 1000", 0.0)) == 1  # the first seen: no gap
     assert len(bridge.from_board("BREAK 5 2000", 0.0)) == 1
     beam, error = bridge.from_board("BREAK 8 3000", 0.0)
@@ -266,6 +294,7 @@ class Port:
     answers_at = 2_000_000
     answering = True  # False: main.py has stopped, the port is still open
     light = "beam"  # what it answers STATUS
+    rider = False  # True: a rider breaks the beam just as the port opens
 
     reading = True  # False: the board reads its USB no more, a write never ends
 
@@ -290,6 +319,8 @@ class Port:
         for line in data.decode().split("\n")[:-1]:
             self.written.append(line)
             if line == "HELLO":
+                if self.rider:
+                    self.say("BREAK 1 1500000")  # said before it read the HELLO
                 self.say(HELLO)
             elif line == "STATUS":
                 self.say(f"STATUS {self.light}")
@@ -495,6 +526,26 @@ def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
         "detail": HELLO[6:],
     }
     chronometer.tell({"cmd": "stop"})
+    _until(lambda: ended == [0])
+
+
+def test_a_rider_as_the_port_opens_is_stamped_not_dropped(monkeypatch, ports, serial):
+    monkeypatch.setattr(c, "now_ms", lambda: 1_000_000.0)
+    monkeypatch.setattr(Port, "rider", True)
+    chronometer = Chronometer()
+    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    chronometer.tell({"cmd": "start", "settings": {}})
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    assert chronometer.next() == {  # half a second before the board answered PING 1
+        "type": "beam",
+        "seq": 1,
+        "time_ms": 999_500,
+        "device_time": "1500000",
+    }
+    chronometer.tell(None)
     _until(lambda: ended == [0])
 
 

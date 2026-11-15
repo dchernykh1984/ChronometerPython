@@ -46,14 +46,19 @@ Anything else on the port (a MicroPython traceback, the REPL) is not the board's
 ## What a reading program does
 
 1. Opens the port and sends `\n` (to end any half line), `HOLDOFF <ms>`, `HELLO`, `STATUS`.
-2. Counts nothing before the `HELLO` it asked for, with the name `beam-rp2040`: a line left from
-   before, or another firmware's, stamps no slot. A `HELLO` with another firmware version than the
-   one the program was built for is said as an error; its breaks still count.
+2. Takes the board for this firmware's only from the `HELLO` it asked for, with the name
+   `beam-rp2040`; until then no line counts. A `BREAK` that comes before it (in the milliseconds
+   the board takes to read the `HELLO`) or before the board's clock is read (step 3) is a rider all
+   the same, and waits: once both are known, it is timed by the board's clock. That is right even
+   for a line the system kept from before the port was opened. Given up on 3 s after it came, it
+   takes the time its line came, and that is said. A board that never says the `HELLO` has none of
+   its lines counted. A `HELLO` with another firmware version than the one the program was built
+   for is said as an error; its breaks still count.
 3. Sends `PING <n>` every 2 s, `n` never used before by this program. A `PONG <n>` received
    `got` ms after its `PING` was sent at `sent`, both on the program's clock, gives the offset
    `(sent + got) / 2 - t_us / 1000`, unless the round trip `got - sent` is over 20 ms. The median
    of the last 9 offsets maps a break's `t_us` onto the program's clock; a break before any offset
-   takes the time its line came. An offset more than 50 ms from that median means the program's
+   waits for one (step 2). An offset more than 50 ms from that median means the program's
    clock was set anew (round trips this short agree within 10 ms): the offsets before it no longer
    count. When the port is opened again, the board may have started again:
    no earlier offset counts.
