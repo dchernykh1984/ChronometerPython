@@ -132,6 +132,19 @@ def test_a_board_error_is_said_and_its_other_lines_are_its_own_business():
         assert bridge.from_board(line, 0.0) == []
 
 
+@pytest.mark.parametrize("given", ["-5", "0", "60001", "1.5", "x"])
+def test_a_hold_off_out_of_range_is_refused_at_start(given, capsys):
+    """Refused where the chronometer's log shows it, before any board is opened."""
+    with pytest.raises(SystemExit) as ended:
+        c.main(["--hold-off-ms", given])
+    assert ended.value.code == 2
+    assert "--hold-off-ms" in capsys.readouterr().err
+
+
+def test_a_hold_off_in_range_is_taken():
+    assert (c.hold_off("1"), c.hold_off("60000")) == (1, 60_000)
+
+
 def test_the_port_named_is_used_else_the_first_raspberry_pi_one(monkeypatch):
     assert c.board_port("COM7") == "COM7"
     ports = [
