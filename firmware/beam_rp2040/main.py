@@ -15,7 +15,8 @@ talks over its USB serial port, a line at a time; what it says:
 <t_us> is microseconds since the board started, on its own clock; the computer maps
 it onto its own with PING. What it answers: HELLO, PING <n>, STATUS, HOLDOFF <ms>,
 FLASH <n>. The LED shows the light: green while it reaches the sensor, red while it
-is blocked.
+is blocked. The contract every reader keeps to:
+specs/001-event-sources/contracts/beam-board-protocol.md.
 """
 
 import select
