@@ -17,8 +17,11 @@ from app.results_file import write_in_one_step
 
 SOURCES_PATH = str(app_path("data", "sources.txt"))
 SOURCES = ("hand", "beam", "chips")
+# What a beam break stamps: a rider's crossing in the slots, or a group's start.
+BEAM_RECORDS = ("riders", "groups")
 DEFAULTS = {
     "source": "hand",
+    "beam_records": "riders",
     "beam_connector": "dummy-beam",
     "chips_connector": "dummy-chips",
     "dead_time_s": "5",
@@ -35,6 +38,8 @@ def load_sources(path: str = SOURCES_PATH) -> dict[str, str]:
             cfg[key.strip()] = value.strip()
     if cfg["source"] not in SOURCES:
         cfg["source"] = "hand"
+    if cfg["beam_records"] not in BEAM_RECORDS:
+        cfg["beam_records"] = "riders"
     return cfg
 
 
