@@ -46,7 +46,7 @@ from app.chips import (
     unknown_line,
 )
 from app.connector_host import ConnectorHost, builtin_command
-from app.connectors import builtin, connectors_for, find
+from app.connectors import connectors_for, find, runs_itself
 from app.device_files import side_file
 from app.http_io import (
     fetch_groups,
@@ -679,7 +679,7 @@ class MainWindow(QMainWindow):
                 )
                 return
             settings: dict = {}
-        elif builtin(name) is not None:
+        elif runs_itself(name):
             program, settings = (
                 builtin_command(name),
                 connector_settings(self._sources, name),

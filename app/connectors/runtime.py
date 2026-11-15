@@ -18,6 +18,7 @@ from typing import IO, Any
 
 from app import connector_protocol as cp
 from app.connectors import Events, builtin
+from app.connectors.boards import boards
 
 _EOF = None
 # A queue cannot wait longer than the platform's timeout allows; the loop just
@@ -27,6 +28,11 @@ _LONGEST_WAIT_S = 3600.0
 
 def run(name: str) -> int:
     """The process entry for ``--connector <name>``; returns the exit code."""
+    board = boards().get(name)
+    if board is not None:  # a loop of its own: a port to read as well as commands
+        from app.connectors.boards import usb_serial
+
+        return usb_serial.run(board)
     found = builtin(name)
     if found is None:
         print(f"no built-in connector {name!r}", file=sys.stderr)

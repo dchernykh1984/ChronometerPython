@@ -22,12 +22,18 @@ def test_the_registry_lists_test_connectors_custom_and_stubs():
     assert "dummy-beam" not in chips
     assert chips["dummy-chips"].test and chips["dummy-chips"].available
     assert not chips["llrp"].available
-    beam = {c.name for c in connectors.connectors_for("beam")}
-    assert {"dummy-beam", "custom", "beam-usb", "beam-ble"} <= beam
+    beam = {c.name: c for c in connectors.connectors_for("beam")}
+    assert {"dummy-beam", "custom", "beam-rp2040", "beam-ble"} <= set(beam)
+    assert beam["beam-rp2040"].available and not beam["beam-rp2040"].test
+    assert beam["beam-rp2040"].settings == {"port": "", "hold_off_ms": 1000}
     assert connectors.find("beam-ble").kind == "beam"
     assert connectors.find("nothing") is None
     assert connectors.builtin("dummy-beam")[0] == "beam"
     assert connectors.builtin("llrp") is None
+    # A board runs a loop of its own, not the pull-based one: run all the same.
+    assert connectors.builtin("beam-rp2040") is None
+    assert connectors.runs_itself("beam-rp2040") and connectors.runs_itself("replay")
+    assert not connectors.runs_itself("custom") and not connectors.runs_itself("llrp")
 
 
 def test_test_chips_pass_riders_in_turn_with_a_few_reads_each():

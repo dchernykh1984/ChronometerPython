@@ -11,6 +11,8 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.connectors.boards import boards
+
 # What a built-in connector produces: pauses and the events that follow them.
 Events = Iterator[tuple[float, dict[str, Any]]]
 
@@ -57,7 +59,13 @@ CONNECTORS = (
     ConnectorInfo("llrp", "chips", "LLRP reader (Impinj, Zebra)", available=False),
     ConnectorInfo("raceresult", "chips", "RaceResult decoder", available=False),
     ConnectorInfo("r2000", "chips", "R2000 reader (serial or TCP)", available=False),
-    ConnectorInfo("beam-usb", "beam", "USB beam", available=False),
+    # The beam boards the chronometer reads itself (app/connectors/boards/).
+    *(
+        ConnectorInfo(
+            b.name, "beam", b.label, settings={"port": "", "hold_off_ms": 1000}
+        )
+        for b in boards().values()
+    ),
     ConnectorInfo("beam-ble", "beam", "Bluetooth beam", available=False),
 )
 
@@ -69,6 +77,11 @@ def connectors_for(kind: str) -> list[ConnectorInfo]:
 
 def find(name: str) -> ConnectorInfo | None:
     return next((c for c in CONNECTORS if c.name == name), None)
+
+
+def runs_itself(name: str) -> bool:
+    """Whether the chronometer runs this connector itself, with ``--connector``."""
+    return builtin(name) is not None or name in boards()
 
 
 def builtin(name: str) -> tuple[str, Callable[[dict[str, Any]], Events]] | None:
