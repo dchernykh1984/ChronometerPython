@@ -1,9 +1,9 @@
 # Beam board: an RP2040-Zero, a light sensor and a laser
 
-A light beam across the finish line for the chronometer. The board times each break
-of the light with its own microsecond clock and reports it over USB; `connector.py`
-moves that time onto the computer's clock and hands the break to the chronometer,
-which stamps the next empty slot with it.
+A light beam across the finish (or the start) for the chronometer. The board times
+each break of the light with its own microsecond clock and reports it over USB; the
+chronometer reads it itself (`app/connectors/boards/`), moves that time onto the
+computer's clock and stamps a rider's cutoff or a group's start with it.
 
 Everything the board runs is in this folder, at the versions below: one copy of the
 repository gives the same board, every time.
@@ -11,8 +11,6 @@ repository gives the same board, every time.
 | File | What it is |
 | --- | --- |
 | `main.py` | The board's firmware: exactly the file copied onto the board. |
-| `connector.py` | The program the chronometer starts: the board to the chronometer. |
-| `connector.py.lock` | Its dependencies, locked (`uv lock --script connector.py`). |
 
 ## Versions
 
@@ -20,9 +18,8 @@ repository gives the same board, every time.
 | --- | --- | --- |
 | MicroPython | v1.29.0, build `RPI_PICO` | this file, with its SHA-256 |
 | mpremote (copies files to the board) | 1.29.0 | the commands below |
-| Firmware | 0.3 | `FIRMWARE` in `main.py`; the board says it in its `HELLO` |
-| Python for the connector | 3.14 | the script block at the top of `connector.py` |
-| pyserial | 3.5 | the script block and `connector.py.lock` |
+| Firmware | 0.3 | `FIRMWARE` in `main.py`, the board says it in its `HELLO`; the chronometer reads the same (`app/connectors/boards/rp2040.py`) |
+| pyserial (the chronometer's) | 3.5 | `pyproject.toml` and `uv.lock` |
 
 ## Parts
 
@@ -98,49 +95,37 @@ again starts it.
 
 1. Choose the results file: every break also goes to the beam's own file next to
    it, `<results>.beam_breaks.txt`.
-2. Event source: Source `beam`, Device `Custom command`.
-3. Settings, the command line, with full paths (a program started from Finder or
-   a desktop shortcut does not get the terminal's `PATH`; `which uv` or `where uv`
-   tells where uv is):
-
-   ```text
-   /opt/homebrew/bin/uv run --script /path/to/WindowsChronometerPython/firmware/beam_rp2040/connector.py
-   ```
-
-   On Windows, `C:\Users\<you>\.local\bin\uv.exe run --script C:\path\to\...\connector.py`.
-   A path with spaces goes in double quotes.
-
-   The first start fetches Python 3.14 and pyserial into uv's cache, which takes
-   the network: run the command once with `--help` after it, at home, and the
-   race needs none.
-
+2. Event source: Source `beam`, Device `Beam board RP2040 (USB)`.
+3. Beam records: `Rider cutoffs` for the finish, `Group starts` for the start.
 4. Start. The action log says `source connecting /dev/cu.usbmodem101`, then
-   `source connected beam-rp2040 0.3 <board id>`. Cover the sensor: a slot takes
-   the time.
+   `source connected beam-rp2040 0.3 <board id>`. Cover the sensor: the break comes
+   in at the bottom slot, with the number typed in Next, as a hand cutoff does. For
+   group starts, the first break after a group is chosen is its start, in the
+   group's time field: Save group keeps it.
 
-The connector's options go after `connector.py`:
+Its settings, the JSON in the Settings field:
 
-| Option | Default | What |
+| Setting | Default | What |
 | --- | --- | --- |
-| `--port P` | the first MicroPython RP2040 port (USB 2E8A:0005) | `/dev/cu.usbmodem101`, `COM5`: for two boards on one computer. |
-| `--hold-off-ms N` | 1000 | After a break, edges this soon are the same rider's: a bike's wheels and body. 1 to 60000. The next break also waits for the light to be back for 50 ms, so light coming back after a long block, or a laser being aimed, is no break. |
+| `port` | `""`: the first MicroPython RP2040 port (USB 2E8A:0005) | `/dev/cu.usbmodem101`, `COM5`: for two boards on one computer. |
+| `hold_off_ms` | 1000 | After a break, edges this soon are the same rider's: a bike's wheels and body. 1 to 60000. The next break also waits for the light to be back for 50 ms, so light coming back after a long block, or a laser being aimed, is no break. |
 
 | The log says | Why |
 | --- | --- |
-| `source disconnected no beam board found on USB` | Not plugged in, a charge-only cable, or the board is in `RPI-RP2` mode. On a Mac with Apple silicon, the question whether to allow the accessory may still wait for its answer: Allow. It tries again every 2 s. |
+| `source disconnected no Beam board RP2040 (USB) found on USB` | Not plugged in, a charge-only cable, or the board is in `RPI-RP2` mode. On a Mac with Apple silicon, the question whether to allow the accessory may still wait for its answer: Allow. It tries again every 2 s. |
 | `source disconnected [Errno 13] could not open port /dev/ttyACM0: ... Permission denied` | Linux: only the `dialout` group may open serial ports. `sudo usermod -aG dialout $USER`, then log out and in. |
 | `source disconnected ... Could not exclusively lock port ...` | Another chronometer has the board: one board, one chronometer. |
 | Breaks missing, lines garbled | Another program has the port open too: an `mpremote` window, a serial monitor. Close it. |
 | `source connected ...: the beam is blocked: no break can be seen until the light is back` | Blocked for over 2 s, longer than any rider takes: the laser is off the sensor, someone stands in the beam, or a sensor wire is loose. The same line without it follows once the light is back. |
-| `source connected ...: the light flickers on the sensor: no break can be seen; aim it again` | For about 3 s no state of the light has held 50 ms (the board says so after 1 s, the connector after 2 s more): the spot sits on the sensor's edge. |
-| `source error: the board runs firmware 0.2, main.py here is 0.3: ...` | The board has another `main.py` than this folder: copy it (Flashing, step 3). |
+| `source connected ...: the light flickers on the sensor: no break can be seen; aim it again` | For about 3 s no state of the light has held 50 ms (the board says so after 1 s, the chronometer after 2 s more): the spot sits on the sensor's edge. |
+| `source error: the board runs firmware 0.2, the chronometer reads 0.3: ...` | The board has another `main.py` than this chronometer reads: copy it (Flashing, step 3). |
 | `source error: the board's break(s) 6 to 7 did not arrive: ...` | The USB link was down for a moment, the board's power not, and it saw riders meanwhile: check those finishes by other means. |
 | `source disconnected the board answers no PING: is main.py running on it?` | The board runs no `main.py`, or it has stopped: unplug the board and plug it in again; if it says so again, copy `main.py` again (Flashing, step 3). |
 
 ## What the board says
 
-Its lines, when a break is a break, and what a program reading the board does (this
-connector, and the Android app's USB beam alike) are in one contract:
+Its lines, when a break is a break, and what a program reading the board does (the
+chronometer, and the Android app's USB beam alike) are in one contract:
 [`specs/001-event-sources/contracts/beam-board-protocol.md`](../../specs/001-event-sources/contracts/beam-board-protocol.md).
 
 ## Out of doors
