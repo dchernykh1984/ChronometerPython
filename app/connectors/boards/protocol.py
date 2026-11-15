@@ -22,6 +22,7 @@ RADIO_SAMPLES = 16  # Bluetooth round trips kept: the shortest way each way of t
 RADIO_READY = 4  # Bluetooth round trips before the board's clock counts as read
 RADIO_STEP_MS = 100.0  # beyond a radio trip's own spread: the clock stepped
 PING_EVERY_S = 2.0
+HELLO_EVERY_S = 5.0  # its count: a last break whose line was lost is asked for again
 RADIO_PING_EVERY_S = 1.0  # more trips over Bluetooth: more chances of a short one
 SILENT_MS = 6000.0  # a PING unanswered this long: the board stopped
 SILENT = "the board answers no PING: is main.py running on it?"
@@ -189,11 +190,12 @@ class Bridge:
     def hello(self, rest: list[str], got_ms: float) -> list[dict[str, Any]]:
         """HELLO: from now on the board counts, and runs the firmware it is to; what
         it counted while no link was up is asked for again."""
-        self.board = " ".join(rest)
+        first = not self.board  # asked again every few seconds: said once
+        self.board = " ".join(rest[:3])  # its count left out: it changes at each break
         self.board_id = rest[2] if len(rest) > 2 else ""
         said = [{"type": "status", "state": "connected", "detail": self.board}]
         runs = rest[1] if len(rest) > 1 else "?"
-        if runs != self.spec.firmware:
+        if runs != self.spec.firmware and first:
             said.append(
                 {
                     "type": "error",

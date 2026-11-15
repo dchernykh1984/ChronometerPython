@@ -81,7 +81,7 @@ reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which
    | `hold_off_ms` | 1000 | After a break, edges this soon are the same rider's: a bike's wheels and body. 1 to 60000. |
 
 5. Start. The action log says `source connecting beam-4103 (Bluetooth)` (or the USB
-   port), then `source connected beam-esp32c3 0.4 <board id> <count>`. Cover the sensor:
+   port), then `source connected beam-esp32c3 0.4 <board id>`. Cover the sensor:
    the break comes in at the bottom slot, with the number typed in Next, as a hand cutoff
    does. For group starts, the first break after a group is chosen is its start.
 
