@@ -127,7 +127,8 @@ The connector's options go after `connector.py`:
 
 | The log says | Why |
 | --- | --- |
-| `source disconnected no beam board found on USB` | Not plugged in, a charge-only cable, or the board is in `RPI-RP2` mode. It tries again every 2 s. |
+| `source disconnected no beam board found on USB` | Not plugged in, a charge-only cable, or the board is in `RPI-RP2` mode. On a Mac with Apple silicon, the question whether to allow the accessory may still wait for its answer: Allow. It tries again every 2 s. |
+| `source disconnected [Errno 13] could not open port /dev/ttyACM0: ... Permission denied` | Linux: only the `dialout` group may open serial ports. `sudo usermod -aG dialout $USER`, then log out and in. |
 | `source disconnected ... Could not exclusively lock port ...` | Another chronometer has the board: one board, one chronometer. |
 | Breaks missing, lines garbled | Another program has the port open too: an `mpremote` window, a serial monitor. Close it. |
 | `source connected ...: the beam is blocked: no break can be seen until the light is back` | Blocked for over 2 s, longer than any rider takes: the laser is off the sensor, someone stands in the beam, or a sensor wire is loose. The same line without it follows once the light is back. |
