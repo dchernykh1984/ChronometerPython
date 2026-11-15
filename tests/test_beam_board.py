@@ -665,6 +665,27 @@ def test_an_esp32c3_port_is_opened_with_its_control_lines_off_dtr_first(
     rp2040_connector.link.close()
 
 
+def test_a_port_whose_lines_cannot_be_set_is_let_go_and_tried_again(
+    monkeypatch, ports, serial
+):
+    """Unplugged just as it opened: the port is closed, not kept as a link nobody
+    reads, which would never be said lost nor opened again."""
+    from app.connectors.boards import esp32c3
+
+    def fails(self: Port, name: str, value: object) -> None:
+        if name == "rts":
+            raise SerialError("device disconnected")
+        object.__setattr__(self, name, value)
+
+    monkeypatch.setattr(Port, "__setattr__", fails)
+    chronometer = Chronometer()
+    connector = u.Connector(chronometer, serial, esp32c3.BOARD)
+    connector.configure({"port": "/dev/cu.usbmodem301"})
+    connector.open_board(0.0)
+    assert connector.link is None and ports[0].closed
+    assert chronometer.next()["detail"] == "device disconnected"
+
+
 def test_a_board_lost_is_said_and_opened_again_with_its_clock_anew(
     monkeypatch, ports, serial
 ):
