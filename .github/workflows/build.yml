@@ -126,7 +126,7 @@ jobs:
             plutil -replace CFBundleVersion -string "$version" "$plist"
             # Without it macOS ends the app the moment its Bluetooth beam
             # connector touches Bluetooth, instead of asking the judge.
-            plutil -insert NSBluetoothAlwaysUsageDescription -string \
+            plutil -replace NSBluetoothAlwaysUsageDescription -string \
               "The chronometer reads the beam board over Bluetooth." "$plist"
             # Editing the plist breaks the ad-hoc signature PyInstaller
             # applied ("plist or signature have been modified"), so reseal it.
