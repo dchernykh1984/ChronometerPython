@@ -19,7 +19,7 @@ made in Blender, through its MCP bridge, for a 60 mm lens.
 `pyserial` as today; Android's `BluetoothGatt`; Blender 5.2 for the models
 **Testing**: pytest (the firmware run on the computer with MicroPython's modules faked, the
 connectors with a fake link); JUnit and Robolectric on Android
-**Target Platform**: RP2040-Zero, ESP32-C3 SuperMini; the desktop's portable builds; Android 8+
+**Target Platform**: RP2040-Zero, ESP32-C3 SuperMini; the desktop's portable builds; Android 7+
 **Constraints**: a break is timed on the board (FR-001); the clock mapping within 2 ms over
 Bluetooth (FR-002); a beam's optics at most 10,000 tenge (FR-020)
 
@@ -74,9 +74,11 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
    the BT05 `beam-<last 4 hex digits of its id>` and asks it for 115200 baud, checking each answer;
    whatever fails, it keeps 9600 and goes on. Lines from the BT05 that are not commands get no
    ERROR back, so its own answers never echo between the two.
-7. **RESEND.** The board keeps its last 128 breaks. An app sends `RESEND <seq>` after every HELLO
-   with the next count it expects from that board, and on any gap; it takes a count it has already
-   had only once, and says a gap that is not filled within 10 s.
+7. **RESEND.** The board keeps its last 128 breaks and says them again a line a turn. An app
+   asks `HELLO` every 5 s, whose count shows a break it missed, the last of a race say, and
+   sends `RESEND <seq>` after any HELLO whose count is ahead of what it took, and on any gap;
+   it takes a count it has already had only once, and says a gap not filled within 10 s. A
+   HELLO whose count went down is the board started again: its clock is read anew.
 8. **Picking a board.** The ESP32-C3 advertises `beam-<4 hex>`, the RP2040 renames its BT05 the
    same way. The app is told a board's name or address (`device` in its settings) and reads no
    other; with none told, it lists the boards it finds and connects to none (FR-007).
