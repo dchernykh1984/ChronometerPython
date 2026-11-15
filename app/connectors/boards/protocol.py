@@ -220,6 +220,9 @@ class Bridge:
             self.resend(counts, counts.last + 1, seq, got_ms)  # missed while down
         elif seq < counts.last:
             counts.restart()  # it started again, and counted while no link was up
+            # Its clock with it: a radio link that stayed up keeps no trip of the old
+            # one, so its breaks wait for new trips, not the old uptime's offset.
+            self.sync = RadioSync() if self.radio else ClockSync()
             if seq:
                 self.resend(counts, 1, seq, got_ms)
 
