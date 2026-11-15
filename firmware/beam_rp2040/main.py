@@ -4,7 +4,8 @@ MicroPython 1.29 on an RP2040-Zero (README.md says how to build and flash one). 
 talks over its USB serial port, a line at a time; what it says:
 
     HELLO beam-rp2040 <firmware> <board id>
-    BREAK <seq> <t_us>    the light lost: its first edge, then none for the hold-off
+    BREAK <seq> <t_us>    the light lost: its first edge, then none until the hold-off
+                          is over and the light has been back for 50 ms
     STATUS beam|blocked   the light's state once it has held 50 ms, for aiming
     STATUS unsteady       no state has held for a second: no break can be seen
     PONG <n> <t_us>       the answer to PING <n>
