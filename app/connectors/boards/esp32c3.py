@@ -14,6 +14,9 @@ BOARD = Board(
     firmware=FIRMWARE,
     vendor=0x303A,  # Espressif
     product=0x1001,  # the chip's own USB Serial/JTAG
+    # RTS on holds the chip in reset, and DTR on as RTS goes off starts its bootloader:
+    # both off, DTR first. MicroPython there needs neither.
+    lines=False,
 )
 
 RADIO = Board(

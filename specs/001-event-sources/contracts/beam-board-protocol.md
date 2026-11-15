@@ -17,8 +17,10 @@ the name keeps its own).
 
 ## Transport
 
-- USB CDC serial. The line settings do not matter; the host sets DTR, or the board's output may
-  be dropped. One program at a time: the port is opened exclusively where the system allows it,
+- USB CDC serial. The line settings do not matter. On the RP2040 the host sets DTR, or the
+  board's output may be dropped. On the ESP32-C3 it sets DTR off and then RTS off, as it opens
+  the port: on its own USB, RTS on holds the chip in reset, and DTR on as RTS goes off starts its
+  bootloader. One program at a time: the port is opened exclusively where the system allows it,
   as two readers would each get half of every line.
 - Bluetooth Low Energy: the serial service 0xFFE0 and its characteristic 0xFFE1, the HM-10's,
   which the ESP32-C3 offers too. The board's characters come as notifications of at most 20 bytes;

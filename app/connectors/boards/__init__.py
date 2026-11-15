@@ -24,6 +24,7 @@ class Board:
     vendor: int | None = None  # the USB ids of its serial port
     product: int | None = None
     transport: str = "usb"  # "usb" or "ble"
+    lines: bool = True  # DTR and RTS on, as a port opens: off, its USB resets the chip
 
 
 def boards() -> dict[str, Board]:

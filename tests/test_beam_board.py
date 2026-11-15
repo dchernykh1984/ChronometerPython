@@ -460,6 +460,11 @@ class Port:
         self.written: list[str] = []
         self.said: queue.Queue[bytes | Exception | None] = queue.Queue()
 
+    def __setattr__(self, name: str, value: object) -> None:
+        if name in ("dtr", "rts"):  # the control lines, in the order they are set
+            self.__dict__.setdefault("lines", []).append((name, value))
+        super().__setattr__(name, value)
+
     def write(self, data: bytes) -> int:
         if not self.reading:
             self.stuck_writes += 1
@@ -606,6 +611,25 @@ def test_a_break_on_the_board_reaches_the_chronometer_on_its_clock(
     chronometer.tell({"cmd": "stop"})
     _until(lambda: ended == [0])
     assert port.closed
+
+
+def test_an_esp32c3_port_is_opened_with_its_control_lines_off_dtr_first(
+    monkeypatch, ports, serial
+):
+    """RTS on holds an ESP32-C3 in reset through its own USB, and DTR on as RTS goes
+    off starts its bootloader: the board would never run main.py."""
+    from app.connectors.boards import esp32c3
+
+    connector = u.Connector(Chronometer(), serial, esp32c3.BOARD)
+    connector.configure({"port": "/dev/cu.usbmodem301"})
+    connector.open_board(0.0)
+    assert ports[0].lines == [("dtr", False), ("rts", False)]
+    connector.link.close()
+    rp2040_connector = u.Connector(Chronometer(), serial, rp2040.BOARD)
+    rp2040_connector.configure({"port": "/dev/cu.usbmodem101"})
+    rp2040_connector.open_board(0.0)
+    assert getattr(ports[1], "lines", []) == []  # pyserial's own: both on
+    rp2040_connector.link.close()
 
 
 def test_a_board_lost_is_said_and_opened_again_with_its_clock_anew(
