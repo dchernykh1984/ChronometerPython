@@ -735,7 +735,7 @@ class MainWindow(QMainWindow):
         record = f"{event.seq}#{stamp}#{record_field(event.device_time)}#"
         if not append_line(side_file(self._results_path(), "beam_breaks"), record):
             self._append_log(f"beam break not kept in the beam file: {record}")
-        if why := self._stamp_first_empty_slot(stamp, take_next=False, quiet=True):
+        if why := self._stamp_bottom(stamp, quiet=True):
             self._append_log(
                 f"beam break {stamp} not stamped: every slot has a time and {why}; "
                 "the break is in the beam file"
@@ -1682,65 +1682,63 @@ class MainWindow(QMainWindow):
 
     def _on_finish_second_user(self) -> None:
         current = get_current_time(summer_time=self._chk_summer_time.isChecked())
-        self._stamp_first_empty_slot(current, take_next=True)
+        self._stamp_bottom(current, quiet=False)
 
-    def _stamp_first_empty_slot(
-        self, time_str: str, take_next: bool, quiet: bool = False
-    ) -> str:
-        """Put time_str into the first slot without a time, shifting when all have one.
+    def _stamp_bottom(self, time_str: str, quiet: bool) -> str:
+        """A stamp not typed by hand: a beam break, or the second judge's button.
 
-        A beam break comes here with take_next False -- the Next field is the judge's
-        typing, never a machine's to take -- and quiet, so a write it causes reports
-        in the action log rather than in a dialog. Returns why time_str is in no
-        slot, or "" when it is in one.
+        As a hand cutoff, it comes in at the bottom slot with the number typed in
+        Next, the slots above it moving up one and slot 1 going to the results file
+        and the action log. A bottom slot without a time takes it as it is, keeping a
+        number the judge typed there. A beam break comes quiet: a write it causes is
+        reported in the action log rather than in a dialog, and it never writes slot 1
+        while the judge types in it. Returns why time_str is in no slot, or "".
         """
+        last = _N_SLOTS - 1
         why = ""
-        for i in range(_N_SLOTS):
-            if not self._time_edits[i].text():
-                self._time_edits[i].setText(time_str + "#" + self._action())
-                self._check_possibility_to_empty_upper(quiet)
-                break
+        if not self._time_edits[last].text():
+            if not self._number_edits[last].text():  # else the number typed there
+                self._number_edits[last].setText(self._next_number.text())
+                self._next_number.clear()
+            self._time_edits[last].setText(time_str + "#" + self._action())
         else:
-            # Every slot has a time: slot 1 goes to the results file to make room,
-            # but a device never commits a number the judge is still typing.
-            unnamed = (
-                ""
-                if self._number_edits[0].text().strip()
-                else f"#{self._time_edits[0].text()}#"
-            )
-            if quiet and self.focusWidget() in (
-                self._number_edits[0],
-                self._time_edits[0],
-            ):
-                why = "slot 1 is being typed in"
-            elif not self._shift_fields_up(
-                get_next_competitor=take_next,
-                stamp=None if take_next else time_str,
-                quiet=quiet,
-            ):
-                why = "slot 1 could not be written"
-            elif not quiet:
-                self._check_possibility_to_empty_upper()  # as the button always did
-            else:
-                if unnamed:  # its time is kept rather than lost; its number by hand
-                    self._append_log(
-                        f"slot 1 written with no number to make room for a break: "
-                        f"{unnamed}; give it its number in the Crossings tab"
-                    )
-                if self._focused_slot > 0 and self.focusWidget() in self._number_edits:
-                    # One stamp, one move: the number being typed went up a slot
-                    # with the others, and the focus follows it there.
-                    self._focused_slot -= 1
-                    self._number_edits[self._focused_slot].setFocus()
-        if not quiet:
-            self._save_backup_if_enabled()
-        else:
+            why = self._shift_for(time_str, quiet)
+        if quiet:
             self._schedule_backup()
+        else:
+            self._save_backup_if_enabled()
         self._update_crosses()
         return why
 
+    def _shift_for(self, time_str: str, quiet: bool) -> str:
+        """Move the slots up for a stamp at the bottom; why it could not, or ""."""
+        number_0, time_0 = self._number_edits[0].text(), self._time_edits[0].text()
+        typing = self.focusWidget()
+        if quiet and typing in (self._number_edits[0], self._time_edits[0]):
+            return "slot 1 is being typed in"
+        if not self._shift_fields_up(
+            get_next_competitor=True, stamp=time_str, quiet=quiet, keep_focus=True
+        ):
+            return "slot 1 could not be written"
+        if quiet and time_0 and not number_0.strip():  # its time kept, its number later
+            self._append_log(
+                f"slot 1 written with no number to make room for a break: "
+                f"#{time_0}#; give it its number in the Crossings tab"
+            )
+        # One stamp, one move: what the judge was typing went up a slot with the
+        # others, and the focus follows it there.
+        for edits in (self._number_edits, self._time_edits):
+            if typing in edits and edits.index(typing) > 0:
+                self._focused_slot = edits.index(typing) - 1
+                edits[self._focused_slot].setFocus()
+        return ""
+
     def _shift_fields_up(
-        self, get_next_competitor: bool, stamp: str | None = None, quiet: bool = False
+        self,
+        get_next_competitor: bool,
+        stamp: str | None = None,
+        quiet: bool = False,
+        keep_focus: bool = False,
     ) -> bool:
         number_0 = self._number_edits[0].text()
         time_0 = self._time_edits[0].text()
@@ -1755,13 +1753,11 @@ class MainWindow(QMainWindow):
 
         if get_next_competitor:
             self._number_edits[_N_SLOTS - 1].setText(self._next_number.text())
-            t = get_current_time(summer_time=self._chk_summer_time.isChecked())
+            t = stamp or get_current_time(summer_time=self._chk_summer_time.isChecked())
             self._time_edits[_N_SLOTS - 1].setText(t + "#" + self._action())
             self._next_number.clear()
-            self._next_number.setFocus()
-        elif stamp is not None:
-            self._number_edits[_N_SLOTS - 1].clear()
-            self._time_edits[_N_SLOTS - 1].setText(stamp + "#" + self._action())
+            if not keep_focus:
+                self._next_number.setFocus()
         else:
             self._number_edits[_N_SLOTS - 1].clear()
             self._time_edits[_N_SLOTS - 1].clear()
@@ -1769,18 +1765,11 @@ class MainWindow(QMainWindow):
         self._update_crosses()
         return True
 
-    def _check_possibility_to_empty_upper(self, quiet: bool = False) -> bool:
-        # A device's stamp moves the slots only while the judge types in one: the
-        # slot typed in last, long ago maybe, says nothing about slot 1 being done,
-        # and the focus must stay in any other field the judge types in. Nor does
-        # it write slot 1 before its number is typed: the judge may come back to it.
-        if quiet and (
-            self.focusWidget() not in self._number_edits
-            or not self._number_edits[0].text().strip()
-        ):
-            return False
+    def _check_possibility_to_empty_upper(self) -> bool:
+        """With a second judge, slot 1 goes to the results file once the judge has
+        typed its number and gone on to another slot."""
         if self._focused_slot != 0 and self._time_edits[0].text():
-            shifted = self._shift_fields_up(get_next_competitor=False, quiet=quiet)
+            shifted = self._shift_fields_up(get_next_competitor=False)
             if shifted:
                 self._focused_slot = max(0, self._focused_slot - 1)
                 self._number_edits[self._focused_slot].setFocus()
