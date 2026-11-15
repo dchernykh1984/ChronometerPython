@@ -38,7 +38,7 @@ SCREW_CLEAR = 3.4
 FOCUS_RANGE = 20.0  # the carriage's travel around FOCAL, as lenses differ
 BAY = 45.0  # behind the carriage: the board (and the BT05)
 CARRIAGE_T = 8.0
-MODULE_SLOT = (14.6, 5.0)  # the LM393 module through the carriage, its LDR forward
+MODULE_SLOT = (14.6, 9.5)  # the LM393 module, its trimmer too, through the carriage
 NUT_AF, NUT_T, BOLT_D = 11.5, 6.0, 6.8  # a 1/4-20 nut (11.1 across flats), its bolt
 CABLE_SLOT = (13.0, 8.0)  # a USB-C plug passes; the grommet then holds the cable
 CABLE_D = 4.0
@@ -205,25 +205,43 @@ def sensor_carriage():
     return cut(disc, slot)
 
 
+def duplicate(obj, name):
+    """A second object of the same shape, its mesh its own."""
+    copy = obj.copy()
+    copy.data = obj.data.copy()
+    copy.name = copy.data.name = name
+    bpy.context.scene.collection.objects.link(copy)
+    return copy
+
+
 def tripod_collar():
-    """Clamps the tube; a 1/4-20 nut below takes a camera tripod. Printed with its
-    axis up: the nut and the clamp screw lie across."""
+    """Two halves clamping the tube between its flanges, which no whole ring would
+    pass; a 1/4-20 nut in the lower one's foot takes a camera tripod. Printed with
+    their axis up: the nut, its bolt and the two clamp screws lie across."""
     width, inner = 20.0, TUBE_OD + FIT
     outer = inner + 8.0
-    collar = cylinder("tripod_collar", outer / 2, width)
+    ear_x = outer / 2 + 4.0  # the clamp screws, either side of the tube
+    whole = cylinder("tripod_collar", outer / 2, width)
     foot = box("foot", 30.0, 16.0, width, y=-(outer / 2 + 2.0))
-    ears = box("ears", 10.0, 12.0, width, y=outer / 2 + 3.0)
-    join(collar, foot, ears)
+    ears = [box(f"ear{s}", 10.0, 12.0, width, x=s * ear_x) for s in (-1, 1)]
+    join(whole, foot, *ears)
     bore = cylinder("collar_bore", inner / 2, width + 2, -1)
-    slit = box("slit", 2.0, 20.0, width + 2, y=outer / 2 + 4.0, z=-1)
     sole = -(outer / 2 + 10.0)  # the foot's face on the tripod
     across = ((1, 0, 0), math.radians(90))  # a cylinder's axis turned onto -Y
     nut = hexagon("nut", NUT_AF, NUT_T + 1, -1, rot=across)
     moved(nut, 0, sole + NUT_T - 1, width / 2)  # 1 mm out of the face: a clean cut
     bolt = moved(cylinder("bolt", BOLT_D / 2, 14, rot=across), 0, sole + 12, width / 2)
-    clamp = cylinder("clamp", SCREW_CLEAR / 2, 30, rot=((0, 1, 0), math.radians(90)))
-    moved(clamp, -15.0, outer / 2 + 5.0, width / 2)
-    return cut(collar, bore, slit, nut, bolt, clamp)
+    screws = [
+        moved(cylinder(f"clamp{s}", SCREW_CLEAR / 2, 20, rot=across), s * ear_x, 10, 10)
+        for s in (-1, 1)
+    ]
+    cut(whole, bore, nut, bolt, *screws)
+    # Split across the axis, 0.4 mm apart: tightened, the halves close on the tube.
+    top = duplicate(whole, "tripod_collar_top")
+    cut(top, box("below", 200.0, 200.0, width + 2, y=-100.0 + 0.2, z=-1))
+    whole.name = whole.data.name = "tripod_collar_bottom"
+    cut(whole, box("above", 200.0, 200.0, width + 2, y=100.0 - 0.2, z=-1))
+    return [top, whole]
 
 
 def emitter_box():
@@ -350,7 +368,7 @@ def build():
         lens_ring(),
         back_cap(),
         sensor_carriage(),
-        tripod_collar(),
+        *tripod_collar(),
         emitter_box(),
         emitter_lid(),
     ]

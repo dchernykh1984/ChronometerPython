@@ -15,7 +15,7 @@ changed (spec 002, FR-013 and FR-016).
 | `receiver_lens_ring.stl` | PETG | 1 | Presses the lens and its two gaskets into the tube; 3 screws. |
 | `receiver_sensor_carriage.stl` | PETG | 1 | Holds the light sensor module at the lens's focus. |
 | `receiver_back_cap.stl` | PETG | 1 | Closes the tube: a slot for the USB cable, a window for the board's LED. |
-| `tripod_collar.stl` | PETG | 1 | Clamps the tube and takes a camera tripod's screw. |
+| `tripod_collar_top.stl`, `tripod_collar_bottom.stl` | PETG | 1 each | Two halves clamping the tube between its flanges; the lower one takes a camera tripod's screw. |
 | `emitter_box.stl` | PETG | 1 | The laser's box: the barrel through its front, a tripod nut underneath. |
 | `emitter_lid.stl` | PETG | 1 | Closes the laser's box; 4 screws. |
 | `tpu_lens_gasket.stl` | TPU | 2 | One on each side of the lens. |
@@ -41,7 +41,7 @@ changed (spec 002, FR-013 and FR-016).
 | A 3x hand magnifier, 60 mm glass lens | 1 | Its lens, out of its frame, into the tube (see "The lens" below). |
 | M3 x 10 screw | 6 | The lens ring and the back cap (they cut their thread in PETG). |
 | M3 x 8 screw | 4 | The emitter's lid. |
-| M3 x 20 screw and an M3 nut | 1 | The collar's clamp. |
+| M3 x 25 screw and an M3 nut | 2 | The collar's halves, one each side. |
 | 1/4-20 hex nut (camera thread) | 2 | Pressed into the collar's foot and under the emitter's box. |
 | A camera tripod with a pan and tilt head | 2 | One for the receiver, one for the emitter: aiming them. |
 
@@ -62,19 +62,21 @@ changes three numbers at the top of `beam_enclosures.py`: `LENS_D` (its diameter
 1. **Lens.** Lay a lens gasket on the shoulder at the tube's top, then the lens, then the
    second gasket. Put the lens ring on top and fix it with 3 M3 x 10 screws, tightened
    evenly until the gaskets are pressed.
-2. **Sensor.** Push the light sensor module through the carriage's slot, its photoresistor
-   forward. Slide the carriage into the tube from the back, the photoresistor towards the
-   lens.
+2. **Sensor.** Push the light sensor module through the carriage's slot, its trimmer too,
+   until its photoresistor is in front, at the carriage's middle: the lens focuses there.
+   Slide the carriage into the tube from the back, the photoresistor towards the lens.
 3. **Focus.** Aim the laser at the lens from 10 m away. Slide the carriage until the
    sensor's LED is lit most steadily. Fix the carriage there with a drop of hot glue.
 4. **Board.** Wire the board to the sensor as `beam/README.md` says. Fix the board, and the
-   BT05 in the RP2040 kit, behind the carriage with foam tape.
+   BT05 in the RP2040 kit, behind the carriage with foam tape, its LED where the back cap's
+   window will be.
 5. **Back cap.** Pass the USB cable through the cap's slot, plug it in, and close the slot
    with a cable grommet around the cable. Fix the cap on its gasket with 3 M3 x 10 screws.
    The board's LED shows through the cap's window. Seal the window with a drop of clear
    epoxy, or a disc of clear plastic.
-6. **Collar.** Press a 1/4-20 nut into the collar's foot, slide the collar onto the tube at
-   its middle, and clamp it with the M3 x 20 screw and its nut. Put it on a tripod.
+6. **Collar.** Press a 1/4-20 nut into the lower half's foot. Put the two halves round the
+   tube at its middle and clamp them with the two M3 x 25 screws and their nuts. Put it on
+   a tripod.
 7. **Emitter.** Press a 1/4-20 nut into the box's bottom. Lay the KY-008 on the ledge
    inside, its barrel through the TPU ring in the front hole. Bring the USB cable in
    through a grommet in the back: its +5 V to the laser's `S` pin, its ground to its `-`
