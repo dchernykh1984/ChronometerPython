@@ -36,6 +36,7 @@ RASPBERRY_PI_USB = 0x2E8A  # the USB vendor of the RP2040's MicroPython port
 MICROPYTHON_RP2 = 0x0005  # its product: MicroPython's, not a debug probe's
 LONGEST_TRIP_MS = 20.0  # a round trip longer than this says nothing about the clock
 SAMPLES = 9  # round trips kept, their median the offset
+STEP_MS = 50.0  # an offset this far from the median: this computer's clock stepped
 PING_EVERY_S = 2.0
 REOPEN_AFTER_S = 2.0
 SILENT_MS = 3 * PING_EVERY_S * 1000  # a PING unanswered this long: the board stopped
@@ -73,7 +74,12 @@ class ClockSync:
     def add(self, sent_ms: float, got_ms: float, board_us: int) -> None:
         if got_ms - sent_ms > LONGEST_TRIP_MS:
             return
-        self.offsets.append((sent_ms + got_ms) / 2 - board_us / 1000)
+        offset = (sent_ms + got_ms) / 2 - board_us / 1000
+        # Round trips this short agree within half of one; one that does not saw the
+        # computer's clock set anew, and the offsets before it no longer hold.
+        if self.offsets and abs(offset - statistics.median(self.offsets)) > STEP_MS:
+            self.offsets.clear()
+        self.offsets.append(offset)
         del self.offsets[:-SAMPLES]
 
     def to_host_ms(self, board_us: int) -> int | None:

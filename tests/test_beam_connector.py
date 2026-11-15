@@ -57,11 +57,23 @@ def test_a_round_trip_too_long_to_say_when_the_board_answered_is_left_out():
 
 def test_the_offset_is_the_median_of_the_last_nine_round_trips():
     sync = c.ClockSync()
-    for offset in [0.0] * c.SAMPLES + [500.0] * 5:
+    for offset in [0.0] * c.SAMPLES + [30.0] * 5:
         sync.add(offset, offset, 0)
-    assert sync.to_host_ms(0) == 500  # five of the last nine: the oldest have gone
-    sync.add(9_000.0, 9_000.0, 0)  # one far off moves it no further
-    assert sync.to_host_ms(0) == 500
+    assert sync.to_host_ms(0) == 30  # five of the last nine: the oldest have gone
+    sync.add(75.0, 75.0, 0)  # a stray one, short of a clock step, moves it no further
+    assert sync.to_host_ms(0) == 30
+
+
+def test_the_computer_clock_set_anew_moves_the_mapping_at_once():
+    """NTP at the venue, or the judge setting the clock: a break just after must be
+    on the new clock, not on the old one until the old round trips roll off."""
+    sync = c.ClockSync()
+    for n in range(c.SAMPLES):
+        sync.add(float(n), float(n), n * 1000)  # offset 0
+    sync.add(5_000.0, 5_000.0, 0)  # the clock set 5 s on
+    assert sync.to_host_ms(1_000) == 5_001
+    sync.add(5_000.0 + c.STEP_MS, 5_000.0 + c.STEP_MS, 0)  # not a step: kept
+    assert sync.offsets == [5_000.0, 5_000.0 + c.STEP_MS]
 
 
 def test_pings_are_numbered_and_the_long_unanswered_ones_dropped():

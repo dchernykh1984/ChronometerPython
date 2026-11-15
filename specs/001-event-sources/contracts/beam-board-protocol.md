@@ -51,7 +51,9 @@ Anything else on the port (a MicroPython traceback, the REPL) is not the board's
    `got` ms after its `PING` was sent at `sent`, both on the program's clock, gives the offset
    `(sent + got) / 2 - t_us / 1000`, unless the round trip `got - sent` is over 20 ms. The median
    of the last 9 offsets maps a break's `t_us` onto the program's clock; a break before any offset
-   takes the time its line came. When the port is opened again, the board may have started again:
+   takes the time its line came. An offset more than 50 ms from that median means the program's
+   clock was set anew (round trips this short agree within 10 ms): the offsets before it no longer
+   count. When the port is opened again, the board may have started again:
    no earlier offset counts.
 4. Says, once each and only when it changes, in the place the judge reads:
    - no board found, or the port could not be opened, with the reason;
