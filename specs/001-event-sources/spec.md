@@ -127,26 +127,31 @@ current file.
 
 ### User Story 4 - Light beam breaks fill the slots (Priority: P2)
 
-With the beam source started, every break of the beam puts its time into the first slot without a
-time -- what the second-user FINISH button does today -- and the judge types the number and saves
-as usual. Every break is also appended to a raw beam file, so no break is lost when the judge
-clears a slot.
+With the beam source started, every break of the beam comes in as a hand cutoff does: at the
+bottom slot, with the number the judge typed in Next, the slots above moving up and slot 1 going
+to the results file -- what the second-user FINISH button does as well. A number not typed in
+time goes into its slot later. At the start the beam can stamp group starts instead: the first
+break after a group is chosen is its start. Every break is also appended to a raw beam file, so no
+break is lost when the judge clears a slot.
 
 **Why this priority**: Time trials and downhill start and finish one rider at a time; the beam
 times them better than a thumb. It needs the connector contract of Story 5, so it follows the chip
 work.
 
-**Independent Test**: Start the dummy beam; each break stamps the next empty slot with its own time
-and appears in the raw beam file.
+**Independent Test**: Start the dummy beam; each break comes in at the bottom slot with its own
+time, moving the slots above up, and appears in the raw beam file.
 
 **Acceptance Scenarios**:
 
-1. **Given** empty slots, **When** a break arrives at 10:00:00.123, **Then** slot 1's time becomes
-   `<that time>#<action>`.
-2. **Given** all slots stamped, **When** another break arrives, **Then** the slots shift as with the
-   second-user button, the oldest stamped slot is written, and slot 5 gets the break's time without
-   a number; what the judge is typing in Next stays there.
+1. **Given** empty slots and 12 typed in Next, **When** a break arrives at 10:00:00.123, **Then**
+   slot 5 becomes 12 with `<that time>#<action>`, and Next is empty.
+2. **Given** slot 5 stamped, **When** another break arrives, **Then** the slots move up one, slot 1
+   is written when it holds anything, and slot 5 gets the break with the number in Next; slot 1 is
+   never written while the judge types in it.
 3. **Given** any break, **Then** the raw beam file gets a line with its time and sequence number.
+4. **Given** the beam recording group starts and a group chosen, **When** its riders cross, **Then**
+   the first break's time is in the group's time field, the others are no start, and Save group
+   keeps it; a start the judge gave by hand is never replaced by a break.
 
 ---
 
