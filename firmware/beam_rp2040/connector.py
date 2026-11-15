@@ -224,6 +224,8 @@ class Connector:
         why = "the board's port closed"
         try:
             for raw in link:
+                if not raw.endswith(b"\n"):
+                    continue  # cut short as the port ended: a BREAK of half its digits
                 line = raw.decode("ascii", "replace").strip()
                 self.inbox.put(("board", (line, now_ms())))  # timed as it came
         except Exception as error:  # whatever ends the reading ends the link

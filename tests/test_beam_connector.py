@@ -430,6 +430,26 @@ def test_a_board_that_stops_answering_is_said_disconnected_until_it_answers(
     _until(lambda: ended == [0])
 
 
+def test_a_line_cut_short_as_the_port_ends_is_no_line(ports, serial):
+    """The port's end can cut a line: BREAK 5 12345678 would be BREAK 5 12."""
+    chronometer = Chronometer()
+    ended = _run(c.Connector(chronometer, serial, "COM7", 1000), chronometer)
+    chronometer.tell({"cmd": "start", "settings": {}})
+    assert [chronometer.next()["state"] for _ in range(2)] == [
+        "connecting",
+        "connected",
+    ]
+    ports[0].said.put(b"BREAK 5 12")
+    ports[0].said.put(None)  # the port ends
+    assert chronometer.next() == {
+        "type": "status",
+        "state": "disconnected",
+        "detail": "the board's port closed",
+    }
+    chronometer.tell(None)
+    _until(lambda: ended == [0])
+
+
 def test_a_reading_ended_by_any_error_is_said_and_the_port_opened_again(
     monkeypatch, ports, serial
 ):
