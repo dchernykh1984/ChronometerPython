@@ -149,10 +149,11 @@ assemble a kit with them.
 
 ### User Story 6 - Everything for a kit in its own folder (Priority: P3)
 
-The repository keeps each kind of thing in a folder of its own next to the code: the enclosure
-models in one, the firmware in another with a subfolder for each chip or board (the RP2040 now, the
-Bluetooth board next), each with its README and its versions pinned. One copy of the repository is
-enough to build the whole kit, the same way every time.
+The repository keeps everything for the beam in one folder next to the code: a README for the kits
+(what to buy and for how much, how to wire, flash and use them), the firmware with a subfolder for
+each chip or board (the RP2040-Zero with its BT05, the ESP32-C3), and the enclosure models in a
+subfolder of their own, each with its README and its versions pinned. One copy of the repository
+is enough to build the whole kit, the same way every time.
 
 **Why this priority**: The kit is built again by others and for other races; a scattered or
 unpinned kit is built differently each time.
@@ -214,10 +215,11 @@ unpinned kit is built differently each time.
   7.5 cm, wide enough for FR-009's wavering, with the sensor at its focus in a black tube behind a
   red filter. An industrial retroreflective sensor was weighed and set aside: the ones that reach
   10 to 12 m cost several times FR-020's limit, and the ones within it reach 2 to 4 m.
-- **FR-013**: The emitter and the receiver MUST withstand rain, dust and dew as an IP65 class at
-  least, IP67 aimed, while keeping a clear optical window, a way to aim, and a way to charge and
-  re-flash without breaking the seal. [NEEDS CLARIFICATION: sealed by epoxy potting of the
-  electronics, by conformal coating, or by a gasketed enclosure?]
+- **FR-013**: The emitter and the receiver MUST be sealed against rain, dust and dew, as an IP65
+  class at least, IP67 aimed, while keeping a clear optical window, a way to aim, and a way to charge
+  and re-flash without breaking the seal. Sealing is required; the way (potting in a compound, a
+  conformal coating, or a gasketed enclosure) is chosen once the first printed enclosures have been
+  tried, and until then the enclosures leave room for any of them.
 - **FR-014**: The board MUST help aiming: its light shows whether the beam reaches the receiver, and
   it tells the app the light's state, as `STATUS` does today.
 - **FR-015**: On request the board MUST light a light the PhotoFinish cameras see at 10 m in
@@ -226,10 +228,12 @@ unpinned kit is built differently each time.
 - **FR-016**: Every part MUST have a 3D-printable enclosure and mount -- the emitter, the receiver,
   the board with its battery, and a stand or a stake mount that keeps the beam off a ramp with a way
   to aim -- kept in the repository as editable source models, print-ready files, and the print
-  settings (material fit for sun and rain, for example PETG or ASA).
-- **FR-017**: The repository MUST keep each kind of thing in a folder of its own next to the code:
-  enclosure models in one, firmware in another with a subfolder for each chip or board; each folder
-  with a README and its versions pinned, so the whole kit is built the same way from the repository
+  settings: PETG, fit for sun and rain, with TPU for gaskets and other soft parts. The models are
+  made in Blender.
+- **FR-017**: The repository MUST keep everything for the beam in one folder next to the code: a
+  README for the kits (what to buy with prices, how to wire, flash and use them), the firmware with
+  a subfolder for each chip or board, and the enclosure models in a subfolder; each subfolder with
+  its README and its versions pinned, so the whole kit is built the same way from the repository
   alone.
 - **FR-018**: Bluetooth MUST come from two boards, both read by both apps, over Bluetooth and over
   the cable alike: an ESP32-C3 SuperMini, whose own chip has Bluetooth, and the RP2040-Zero with an
@@ -242,6 +246,9 @@ unpinned kit is built differently each time.
 - **FR-020**: The parts that make one beam -- the emitter, the receiver and their optics -- MUST
   cost no more than 10,000 tenge in all, bought in Kazakhstan; the rest of the kit is as cheap as
   it can be, and its README lists every part with its price and where it was bought.
+- **FR-021**: Once a kit works at a race, an article MUST be published in the cycling site's
+  knowledge base: what the beam is, what to buy, how to build, flash and set it up, and how both
+  chronometers read it, pointing to the repository's beam folder.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -278,6 +285,8 @@ unpinned kit is built differently each time.
 - **SC-010**: Two kits, one beam 0.5 m under the other, time a weight dropped from rest above them:
   over 20 drops, the interval between their breaks matches free fall from the measured heights
   within 2 ms with both boards on the cable, within 4 ms with both on Bluetooth.
+- **SC-011**: The site's knowledge base has the article of FR-021, and an organiser who reads it
+  finds every part to buy and every step to build, flash and use a kit.
 
 ## Assumptions
 
@@ -287,9 +296,12 @@ unpinned kit is built differently each time.
   whether the ESP32-C3's firmware offers the HM-10's service as well, so the apps read one, or the
   apps read both.
 - The USB cable version stays as it is, the fallback and the choice of whoever has no Bluetooth.
-- Parts are printed on a hobby FDM printer.
-- The hardware choices marked for clarification are made in this PR, before planning; the rest
-  of the spec does not depend on which is chosen.
+- Parts are printed on a hobby FDM printer, in PETG, with TPU for soft parts.
+- Two kits are built first, both on Bluetooth: the RP2040-Zero with a BT05 (an HM-10 clone on the
+  CC2541) and an ESP32-C3 SuperMini, each with an LM393 light sensor on a photoresistor and a KY-008
+  laser; the lenses are bought once one has been tried.
+- The hardware choices are made in this PR; only the way of sealing waits, for the first printed
+  enclosures (FR-013).
 - Chips and video analysis are out of scope: their own specs cover them.
 - This spec takes over spec 001's FR-019, SC-007 and task T023; once it is planned, 001 points
   here.
