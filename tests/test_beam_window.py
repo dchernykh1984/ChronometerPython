@@ -247,3 +247,18 @@ def test_a_break_never_writes_slot_1_while_its_time_is_corrected(win, tmp_path):
     win._on_source_event(Break(6, T0))
     assert not (tmp_path / "results.txt").exists()
     assert win._time_edits[0].text() == "1 10:0:"
+
+
+def test_the_second_judges_stamp_moves_the_slots_even_with_slot_1_typed_in(
+    win, tmp_path
+):
+    """A button the judge pressed at a crossing: its time is never left out, as a
+    break's is, which the beam file keeps."""
+    for i in range(5):
+        win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")
+    win._number_edits[0].setText("12")
+    win._number_edits[0].setFocus()
+    win._on_finish_second_user()
+    results = (tmp_path / "results.txt").read_text(encoding="utf-8")
+    assert results == "12#1 10:0:0.000#nextLap#\n"
+    assert win._time_edits[4].text().endswith("#nextLap")
