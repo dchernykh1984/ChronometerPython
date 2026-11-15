@@ -43,6 +43,8 @@ REOPEN_AFTER_S = 2.0
 SILENT_MS = 3 * PING_EVERY_S * 1000  # a PING unanswered this long: the board stopped
 SILENT = "the board answers no PING: is main.py running on it?"
 BLOCKED_MS = 2000.0  # longer than any rider takes to cross the beam
+HELD_MS = 3000.0  # a break waits this long for the board's clock, then takes its line's
+HELD_MAX = 64
 BLOCKED = "the beam is blocked: no break can be seen until the light is back"
 UNSTEADY = "the light flickers on the sensor: no break can be seen; aim it again"
 
@@ -96,7 +98,8 @@ class Bridge:
     sync: ClockSync = field(default_factory=ClockSync)
     pings: dict[int, float] = field(default_factory=dict)  # sent at, by number
     next_ping: int = 1
-    board: str = ""  # what its HELLO said: nothing counts before it
+    board: str = ""  # what its HELLO said: no line counts before it
+    held: list[tuple[int, int, str, float]] = field(default_factory=list)  # BREAKs
     dark: str | None = None  # STATUS blocked or unsteady: no break can be seen
     seqs: dict[str, int] = field(default_factory=dict)  # last BREAK, by board id
     board_id: str = ""
@@ -159,26 +162,56 @@ class Bridge:
             }
         ]
 
+    def beam(self, seq: int, board_us: int, text: str, got_ms: float) -> list[Any]:
+        at = self.sync.to_host_ms(board_us)
+        beam = {
+            "type": "beam",
+            "seq": seq,
+            "time_ms": round(got_ms) if at is None else at,
+            "device_time": text,
+        }
+        return [beam, *self.missing(seq)]
+
+    def release(self, now_ms: float | None = None) -> list[dict[str, Any]]:
+        """Breaks that waited for the board's HELLO and its clock: timed by the
+        board's clock once it is read. Given up on HELD_MS after the first came,
+        they take the time their lines came, and that is said."""
+        if not self.held or not self.board:
+            return []
+        read = bool(self.sync.offsets)
+        if not read and (now_ms is None or now_ms - self.held[0][3] <= HELD_MS):
+            return []
+        held, self.held = self.held, []
+        events = [event for one in held for event in self.beam(*one)]
+        if not read:
+            events.append(
+                {
+                    "type": "error",
+                    "message": "the board's clock could not be read: "
+                    f"{len(held)} break(s) timed by when their lines came",
+                }
+            )
+        return events
+
     def from_board(self, line: str, got_ms: float) -> list[dict[str, Any]]:
         """Events for the chronometer from one board line, received at ``got_ms``."""
         word, rest = parse(line)
         if word == "HELLO" and rest[:1] == [NAME]:
             return self.hello(rest)
         numbers = pair(rest)
+        if word == "BREAK" and numbers is not None:
+            if self.board and self.sync.offsets:
+                return self.beam(*numbers, rest[1], got_ms)
+            # Before the HELLO, or the clock read: a rider all the same, so it
+            # waits, and one from a board that never says HELLO never counts.
+            if len(self.held) < HELD_MAX:
+                self.held.append((*numbers, rest[1], got_ms))
+            return []
         if not self.board:
             return []  # left from before the HELLO asked for, or another firmware's
         if word == "PONG" and numbers is not None:
             self.answered(*numbers, got_ms)
-            return []
-        if word == "BREAK" and numbers is not None:
-            at = self.sync.to_host_ms(numbers[1])
-            beam = {
-                "type": "beam",
-                "seq": numbers[0],
-                "time_ms": round(got_ms) if at is None else at,
-                "device_time": rest[1],
-            }
-            return [beam, *self.missing(numbers[0])]
+            return self.release()
         if word == "STATUS":
             dark = rest[0] if rest in (["blocked"], ["unsteady"]) else None
             if dark != self.dark:  # said again when asked: since the first
@@ -286,6 +319,8 @@ class Connector:
         if now >= self.next_ping:
             self.write(self.bridge.ping(now_ms()) + "\n")
             self.next_ping = now + PING_EVERY_S
+        for event in self.bridge.release(now_ms()):
+            self.send(event)
         # A board whose main.py has stopped keeps its port open: only PING tells.
         if self.bridge.silent(now_ms()):
             self.send({"type": "status", "state": "disconnected", "detail": SILENT})
