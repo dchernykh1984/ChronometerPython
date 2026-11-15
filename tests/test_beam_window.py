@@ -1,4 +1,5 @@
-"""Light beam breaks: each stamps the first empty slot and is kept in the beam file."""
+"""Light beam breaks: each comes in at the bottom slot, as a hand cutoff does, the
+slots above moving up, and is kept in the beam file first."""
 
 from __future__ import annotations
 
@@ -12,34 +13,62 @@ from app.models import append_line, format_time, record_field
 T0 = 1_761_725_400_123  # a break's time on the computer's clock
 
 
-def test_a_break_stamps_slot_1_with_its_own_time(win, tmp_path):
+def test_a_break_comes_in_at_the_bottom_slot_with_its_own_time(win, tmp_path):
     win._on_source_event(Break(1, T0, "812"))
-    assert win._time_edits[0].text() == f"{format_time(T0)}#nextLap"
+    assert win._time_edits[4].text() == f"{format_time(T0)}#nextLap"
+    assert [e.text() for e in win._time_edits[:4]] == ["", "", "", ""]
     beam = tmp_path / "results.beam_breaks.txt"
     assert beam.read_text(encoding="utf-8") == f"1#{format_time(T0)}#812#\n"
 
 
-def test_breaks_fill_the_slots_in_turn(win):
+def test_breaks_come_in_at_the_bottom_and_move_up_as_hand_cutoffs_do(win):
     for seq in (1, 2, 3):
         win._on_source_event(Break(seq, T0 + seq))
-    assert [e.text().split("#")[0] for e in win._time_edits[:3]] == [
+    assert [e.text().split("#")[0] for e in win._time_edits] == [
+        "",
+        "",
         format_time(T0 + 1),
         format_time(T0 + 2),
         format_time(T0 + 3),
     ]
 
 
-def test_with_all_slots_stamped_a_break_shifts_and_leaves_next_alone(win, tmp_path):
+def test_with_every_slot_stamped_a_break_shifts_and_takes_the_number_in_next(
+    win, tmp_path
+):
     for i in range(5):
         win._number_edits[i].setText(str(10 + i))
         win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")
-    win._next_number.setText("4")  # the judge is typing
+    win._next_number.setText("4")  # typed before the rider crossed, as for Enter
     win._on_source_event(Break(6, T0))
     results = (tmp_path / "results.txt").read_text(encoding="utf-8")
     assert results == "10#1 10:0:0.000#nextLap#\n"
-    assert win._number_edits[4].text() == ""
+    assert win._number_edits[4].text() == "4"
     assert win._time_edits[4].text() == f"{format_time(T0)}#nextLap"
-    assert win._next_number.text() == "4"
+    assert win._next_number.text() == ""
+
+
+def test_a_break_into_a_free_bottom_slot_takes_the_number_in_next(win):
+    win._next_number.setText("77")
+    win._on_source_event(Break(1, T0))
+    assert (win._number_edits[4].text(), win._next_number.text()) == ("77", "")
+
+
+def test_a_number_typed_into_the_free_bottom_slot_is_kept_for_the_break(win):
+    win._number_edits[4].setText("55")  # waiting for its time
+    win._next_number.setText("77")
+    win._on_source_event(Break(1, T0))
+    assert win._number_edits[4].text() == "55"
+    assert win._time_edits[4].text() == f"{format_time(T0)}#nextLap"
+    assert win._next_number.text() == "77"
+
+
+def test_the_second_judge_stamps_at_the_bottom_too(win):
+    win._next_number.setText("8")
+    win._on_finish_second_user()
+    assert win._number_edits[4].text() == "8"
+    assert win._time_edits[4].text().endswith("#nextLap")
+    assert [e.text() for e in win._time_edits[:4]] == ["", "", "", ""]
 
 
 def test_a_write_a_break_causes_never_opens_a_dialog(win, monkeypatch):
@@ -116,27 +145,39 @@ def test_a_break_while_the_judge_types_elsewhere_only_stamps(win, tmp_path):
     win._edit_dsq.setFocus()  # the judge is typing a DSQ meanwhile
     win._on_source_event(Break(1, T0))
     assert win._number_edits[0].text() == "10"  # nothing written, nothing moved
-    assert win._time_edits[2].text() == f"{format_time(T0)}#nextLap"
+    assert win._time_edits[4].text() == f"{format_time(T0)}#nextLap"
     assert win.focusWidget() is win._edit_dsq
     assert not (tmp_path / "results.txt").exists()
 
 
 def test_a_break_never_writes_a_slot_still_waiting_for_its_number(win, tmp_path):
+    for i in range(4):
+        win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")  # riders not known yet
     win._focused_slot = 2  # where the judge typed last, before going elsewhere
     win._edit_dsq.setFocus()
-    win._on_source_event(Break(1, T0))
-    assert win._time_edits[0].text() == f"{format_time(T0)}#nextLap"
-    assert win._number_edits[0].text() == ""
+    win._on_source_event(Break(5, T0))
+    assert win._time_edits[4].text() == f"{format_time(T0)}#nextLap"
+    assert win._time_edits[0].text() == "1 10:0:0.000#nextLap"
     assert not (tmp_path / "results.txt").exists()
 
 
-def test_the_focus_follows_the_number_being_typed_when_a_break_shifts(win):
+def test_a_break_into_a_free_bottom_slot_leaves_the_number_being_typed_alone(win):
     _two_slots_done_typing_in_slot_3(win)
     win._number_edits[2].setText("4")
     win._number_edits[2].setFocus()
     win._on_source_event(Break(1, T0))
-    assert win._number_edits[1].text() == "4"
-    assert win.focusWidget() is win._number_edits[1]
+    assert win._number_edits[2].text() == "4"
+    assert win.focusWidget() is win._number_edits[2]
+    assert win._time_edits[4].text() == f"{format_time(T0)}#nextLap"
+
+
+def test_a_time_corrected_in_slot_3_moves_up_with_its_focus_when_a_break_shifts(win):
+    for i in range(5):
+        win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")
+    win._time_edits[2].setFocus()  # the judge corrects slot 3's time
+    win._on_source_event(Break(6, T0))
+    assert win._time_edits[1].text() == "1 10:0:2.000#nextLap"
+    assert win.focusWidget() is win._time_edits[1]
 
 
 def test_a_break_with_every_slot_stamped_moves_them_once(win, tmp_path):
@@ -183,7 +224,7 @@ def test_a_break_never_writes_slot_1_before_its_number_is_typed(win, tmp_path):
     win._focused_slot = 2
     win._number_edits[2].setFocus()  # the judge went on to slot 3
     win._on_source_event(Break(1, T0))
-    assert win._time_edits[1].text() == f"{format_time(T0)}#nextLap"
+    assert win._time_edits[4].text() == f"{format_time(T0)}#nextLap"
     assert win._time_edits[0].text() == "1 10:0:0.000#nextLap"
     assert not (tmp_path / "results.txt").exists()
 
