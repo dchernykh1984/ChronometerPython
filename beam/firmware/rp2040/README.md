@@ -82,7 +82,20 @@ by its address.
    STATUS beam
    ```
 
-`Ctrl-C` in that window stops `main.py`; powering the board off and on starts it again.
+5. Check its clock: every board, each time it is flashed. Close the chronometer (and the
+   REPL), then from the repository's folder:
+
+   ```bash
+   uv run python -m beam.tools.clock_check
+   ```
+
+   For 5 minutes it PINGs the board over USB and, through the BT05, over Bluetooth, as
+   `beam-` and the last 4 hex digits of its id (`--ble -`: the cable alone, while no BT05
+   is wired). It ends `result: every check within`; a line `OUTSIDE` is a board to look
+   at before it times a race ([Accuracy](../../README.md#accuracy)).
+
+`Ctrl-C` in the REPL of step 4 stops `main.py`; powering the board off and on starts it
+again.
 
 ## Over Bluetooth
 
