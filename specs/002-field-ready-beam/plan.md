@@ -39,7 +39,7 @@ Bluetooth (FR-002); a beam's optics at most 10,000 tenge (FR-020)
 beam/                         everything for the beam (FR-017)
   README.md                   the kits: parts and prices, wiring, flashing, the apps, trouble
   firmware/
-    core/beam.py              the board logic every chip runs: breaks, light, commands, links
+    core/beamcore.py          the board logic every chip runs: breaks, light, commands, links
     rp2040/main.py, README.md the RP2040-Zero: USB, and the BT05 on UART0 (GP0, GP1)
     esp32c3/main.py, README.md the ESP32-C3 SuperMini: USB, and Bluetooth of its own
   enclosures/
@@ -53,7 +53,7 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
 ## Decisions
 
 1. **One core, a main per chip.** The break logic is the same on every chip; only pins, the LED and
-   the links differ. Flashing copies `core/beam.py` and the chip's `main.py`.
+   the links differ. Flashing copies `core/beamcore.py` and the chip's `main.py`.
 2. **Answers to the asker, news to all.** A board may have two links (USB and Bluetooth). A PONG,
    HOLDOFF, FLASH, ERROR or a HELLO asked for goes back on the link that asked; a BREAK, a change
    of STATUS and the HELLO at start go to every link.
