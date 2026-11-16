@@ -23,10 +23,13 @@ def test_the_registry_lists_test_connectors_custom_and_stubs():
     assert chips["dummy-chips"].test and chips["dummy-chips"].available
     assert not chips["llrp"].available
     beam = {c.name: c for c in connectors.connectors_for("beam")}
-    assert {"dummy-beam", "custom", "beam-rp2040", "beam-ble"} <= set(beam)
+    boards = {"beam-rp2040", "beam-rp2040-ble", "beam-esp32c3", "beam-esp32c3-ble"}
+    assert {"dummy-beam", "custom", *boards} <= set(beam)
     assert beam["beam-rp2040"].available and not beam["beam-rp2040"].test
     assert beam["beam-rp2040"].settings == {"port": "", "hold_off_ms": 1000}
-    assert connectors.find("beam-ble").kind == "beam"
+    assert beam["beam-esp32c3-ble"].settings == {"device": "", "hold_off_ms": 1000}
+    assert connectors.find("beam-rp2040-ble").kind == "beam"
+    assert all(connectors.runs_itself(name) for name in boards)
     assert connectors.find("nothing") is None
     assert connectors.builtin("dummy-beam")[0] == "beam"
     assert connectors.builtin("llrp") is None

@@ -80,10 +80,10 @@ set of files. Use real copies.
 
 Crossings are typed by hand by default. The **Event source** group switches to a
 light beam or to timing chips, through a small program the chronometer starts on
-**Start** and stops on **Stop** or on exit. Its devices: the beam board
-(`Beam board RP2040 (USB)`, built from `firmware/beam_rp2040/`), test devices
-("Test beam", "Test chips", replaying a chip reads file) and a command of your
-own; chip readers and the Bluetooth beam are listed as not available yet.
+**Start** and stops on **Stop** or on exit. Its devices: the beam boards, an
+RP2040-Zero or an ESP32-C3, over USB or Bluetooth (`beam/README.md` says how to build,
+flash and set one up), test devices ("Test beam", "Test chips", replaying a chip reads
+file) and a command of your own; chip readers are listed as not available yet.
 
 - **Beam records** says what a break is. A rider's cutoff: it comes in at the
   bottom slot with the number typed in Next, the slots above moving up, as a

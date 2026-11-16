@@ -64,7 +64,7 @@ class Connector:
         self.bridge = Bridge(spec)
         self.started = False
         self.link: Any = None
-        self.next_ping = self.reopen = 0.0
+        self.next_ping = self.reopen = self.next_hello = 0.0
         self.status: tuple[str, str] | None = None  # the last said
         self.unknown: set[str] = set()  # commands not known, each said once
 
@@ -109,27 +109,39 @@ class Connector:
 
     def open_board(self, now: float) -> None:
         port = board_port(self.port, self.spec)
+        link = None
         try:
             if port is None:
                 raise OSError(f"no {self.spec.label} found on USB")
             # Exclusive: two programs on one port would each get half its lines. A
             # write gives up after 1 s: a board that reads no more must not hang this.
-            self.link = self.serial.Serial(
+            link = self.serial.Serial(
                 port, timeout=None, exclusive=True, write_timeout=1
             )
+            if not self.spec.lines:  # DTR first: RTS off with DTR on is the bootloader
+                link.dtr = False
+                link.rts = False
         except (OSError, ValueError, self.serial.SerialException) as error:
+            if link is not None:  # open, but not as it is to be: let go, try again
+                link.close()
             self.reopen = now + REOPEN_AFTER_S
             self.send({"type": "status", "state": "disconnected", "detail": str(error)})
             return
-        # The board may have started again: its clock with it, so no old round
-        # trip counts, and a ping number once used is not used again.
-        self.bridge = Bridge(
-            self.spec, next_ping=self.bridge.next_ping, seqs=self.bridge.seqs
-        )
+        self.link = link
         threading.Thread(target=self.listen, args=(self.link,), daemon=True).start()
-        self.send({"type": "status", "state": "connecting", "detail": port})
+        self.opened(port, now)
+
+    def opened(self, where: str, now: float) -> None:
+        """A link to the board is up: asked who it is, its clock read anew."""
+        # The board may have started again: its clock with it, so no old round
+        # trip counts, and a ping number once used is not used again; the counts
+        # taken stay, to ask for what it counted while no link was up.
+        self.bridge = Bridge(
+            self.spec, next_ping=self.bridge.next_ping, counts=self.bridge.counts
+        )
+        self.send({"type": "status", "state": "connecting", "detail": where})
         self.write(f"\nHOLDOFF {self.hold_off_ms}\nHELLO\nSTATUS\n")
-        self.next_ping = now
+        self.next_ping, self.next_hello = now, now + protocol.HELLO_EVERY_S
 
     def tick(self, now: float) -> None:
         if self.started and self.link is None and now >= self.reopen:
@@ -138,9 +150,14 @@ class Connector:
             return
         if now >= self.next_ping:
             self.write(self.bridge.ping(now_ms()) + "\n")
-            self.next_ping = now + protocol.PING_EVERY_S
+            self.next_ping = now + self.bridge.ping_every_s
         for event in self.bridge.release(now_ms()):
             self.send(event)
+        if now >= self.next_hello:  # its count: a break whose line was lost shows
+            self.write("HELLO\n")
+            self.next_hello = now + protocol.HELLO_EVERY_S
+        while self.bridge.outbox:  # RESEND: breaks counted while no link was up
+            self.write(self.bridge.outbox.pop(0) + "\n")
         # A board whose main.py has stopped keeps its port open: only PING tells.
         if self.bridge.silent(now_ms()):
             self.send(

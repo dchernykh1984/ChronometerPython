@@ -94,10 +94,18 @@ jobs:
           sep=":"; [ "$RUNNER_OS" = "Windows" ] && sep=";"
           # Pin PyInstaller so a future major release cannot break builds.
           pyi=(uv run --with "pyinstaller>=6,<7" pyinstaller)
-          # serial: pyserial picks its port backends by platform at run time.
+          # serial: pyserial picks its port backends by platform at run time;
+          # bleak its Bluetooth backend, each on its platform's own bindings.
           common=(--noconfirm --windowed \
                   --collect-submodules app --collect-submodules serial \
+                  --collect-submodules bleak \
                   --add-data "app/app.ico${sep}app")
+          case "$RUNNER_OS" in
+            macOS) common+=(--collect-submodules CoreBluetooth \
+                            --collect-submodules libdispatch) ;;
+            Windows) common+=(--collect-submodules winrt) ;;
+            *) common+=(--collect-submodules dbus_fast) ;;
+          esac
           if [ "$RUNNER_OS" = "macOS" ]; then
             # --name sets the .app folder name, which is what the dock shows.
             # The zip around it keeps the artifact name, so download URLs are
@@ -116,6 +124,10 @@ jobs:
             plist="dist/${APP_BUNDLE_NAME}.app/Contents/Info.plist"
             plutil -replace CFBundleShortVersionString -string "$version" "$plist"
             plutil -replace CFBundleVersion -string "$version" "$plist"
+            # Without it macOS ends the app the moment its Bluetooth beam
+            # connector touches Bluetooth, instead of asking the judge.
+            plutil -replace NSBluetoothAlwaysUsageDescription -string \
+              "The chronometer reads the beam board over Bluetooth." "$plist"
             # Editing the plist breaks the ad-hoc signature PyInstaller
             # applied ("plist or signature have been modified"), so reseal it.
             codesign --force --sign - "dist/${APP_BUNDLE_NAME}.app"

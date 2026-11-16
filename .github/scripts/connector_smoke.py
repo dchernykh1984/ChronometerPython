@@ -2,8 +2,10 @@
 
 Usage: connector_smoke.py <command...>. "--connector <name>" is appended, so the
 command is the frozen chronometer, or "python -m app.main" in a checkout. Exits 0 when
-each connector says a protocol 1 beam hello first and then ends cleanly; the beam
-board's must also try a port, which only a build with pyserial in it can.
+each connector says a protocol 1 beam hello first and then ends cleanly; a beam board
+on USB must also try a port, which only a build with pyserial in it can, and one on
+Bluetooth must look for its board, which only a build with bleak's backend can: on a
+runner with no Bluetooth either says the board is not there.
 """
 
 from __future__ import annotations
@@ -19,6 +21,11 @@ LINE_S = 30
 STOP_S = 30
 # A port no computer has: opening it fails, which says pyserial is there to try.
 NO_PORT = "COM250" if sys.platform == "win32" else "/dev/no-such-beam-board"
+NO_BOARD = "beam-0000"  # a Bluetooth board no runner has in range
+TRIES = {
+    "beam-rp2040": {"port": NO_PORT},
+    "beam-esp32c3-ble": {"device": NO_BOARD},
+}
 
 
 def read_line(out: IO[bytes], seconds: float) -> dict[str, Any] | None:
@@ -50,8 +57,8 @@ def smoke(command: list[str], name: str) -> int:
         hello.get("protocol"),
         hello.get("kind"),
     ) == ("hello", 1, "beam")
-    if ok and name == "beam-rp2040":
-        start = {"cmd": "start", "settings": {"port": NO_PORT}}
+    if ok and name in TRIES:
+        start = {"cmd": "start", "settings": TRIES[name]}
         child.stdin.write((json.dumps(start) + "\n").encode())
         child.stdin.flush()
         status = read_line(child.stdout, LINE_S)
@@ -67,7 +74,7 @@ def smoke(command: list[str], name: str) -> int:
 
 
 def main(command: list[str]) -> int:
-    for name in ("dummy-beam", "beam-rp2040"):
+    for name in ("dummy-beam", *TRIES):
         if code := smoke(command, name):
             return code
     return 0

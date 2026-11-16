@@ -2,7 +2,9 @@
 
 specs/001-event-sources/contracts/beam-board-protocol.md: a board's lines as events of
 the connector protocol, its microseconds moved onto this computer's clock by PING round
-trips, half a trip each way. Nothing here touches a port: usb_serial.py does that.
+trips. Over USB a trip is short and even, and its middle is the board's moment; over
+Bluetooth it waits for the radio, so the shortest trip each way is taken instead.
+Nothing here touches a port or a radio: usb_serial.py and ble.py do that.
 """
 
 from __future__ import annotations
@@ -13,17 +15,24 @@ from typing import Any
 
 from app.connectors.boards import Board
 
-LONGEST_TRIP_MS = 20.0  # a round trip longer than this says nothing about the clock
-SAMPLES = 9  # round trips kept, their median the offset
+LONGEST_TRIP_MS = 20.0  # a USB round trip longer than this says nothing about the clock
+SAMPLES = 9  # USB round trips kept, their median the offset
 STEP_MS = 50.0  # an offset this far from the median: this computer's clock stepped
+RADIO_SAMPLES = 16  # Bluetooth round trips kept: the shortest way each way of these
+RADIO_READY = 4  # Bluetooth round trips before the board's clock counts as read
+RADIO_STEP_MS = 100.0  # beyond a radio trip's own spread: the clock stepped
 PING_EVERY_S = 2.0
-SILENT_MS = 3 * PING_EVERY_S * 1000  # a PING unanswered this long: the board stopped
+HELLO_EVERY_S = 5.0  # its count: a last break whose line was lost is asked for again
+RADIO_PING_EVERY_S = 1.0  # more trips over Bluetooth: more chances of a short one
+SILENT_MS = 6000.0  # a PING unanswered this long: the board stopped
 SILENT = "the board answers no PING: is main.py running on it?"
 BLOCKED_MS = 2000.0  # longer than any rider takes to cross the beam
 BLOCKED = "the beam is blocked: no break can be seen until the light is back"
 UNSTEADY = "the light flickers on the sensor: no break can be seen; aim it again"
 HELD_MS = 3000.0  # a break waits this long for the board's clock, then takes its line's
+RADIO_HELD_MS = 10_000.0  # over Bluetooth the clock takes RADIO_READY answers first
 HELD_MAX = 64
+RESENT_WITHIN_MS = 10_000.0  # a break asked for again and not come by then: said
 
 
 def parse(line: str) -> tuple[str, list[str]]:
@@ -32,24 +41,38 @@ def parse(line: str) -> tuple[str, list[str]]:
     return (words[0].upper(), words[1:]) if words else ("", [])
 
 
-def pair(rest: list[str]) -> tuple[int, int] | None:
-    """The two whole numbers a BREAK or a PONG carries, else None."""
-    if len(rest) != 2 or not all(word.isdigit() for word in rest):
+def numbers(rest: list[str], count: int) -> list[int] | None:
+    """The ``count`` whole numbers a BREAK or a PONG carries, else None."""
+    if len(rest) != count or not all(word.isdigit() for word in rest):
         return None
-    return int(rest[0]), int(rest[1])
+    return [int(word) for word in rest]
+
+
+def trip(
+    sent_ms: float, got_ms: float, got_us: int, sent_us: int
+) -> tuple[float, float]:
+    """A PING's way there and its PONG's way back, each the arriving clock less the
+    leaving one: their difference is twice the offset, their sum the round trip with
+    the board's own wait left out."""
+    return got_us / 1000 - sent_ms, got_ms - sent_us / 1000
 
 
 @dataclass
 class ClockSync:
-    """The board's microseconds onto this computer's milliseconds, from round trips
-    whose middle is taken as the moment the board answered."""
+    """Over USB: the board's microseconds onto this computer's milliseconds, from
+    round trips short enough that half of one each way is near the truth."""
 
     offsets: list[float] = field(default_factory=list)
 
-    def add(self, sent_ms: float, got_ms: float, board_us: int) -> None:
-        if got_ms - sent_ms > LONGEST_TRIP_MS:
+    @property
+    def read(self) -> bool:
+        return bool(self.offsets)
+
+    def add(self, sent_ms: float, got_ms: float, got_us: int, sent_us: int) -> None:
+        there, back = trip(sent_ms, got_ms, got_us, sent_us)
+        if there + back > LONGEST_TRIP_MS:
             return
-        offset = (sent_ms + got_ms) / 2 - board_us / 1000
+        offset = (back - there) / 2
         # Round trips this short agree within half of one; one that does not saw the
         # computer's clock set anew, and the offsets before it no longer hold.
         if self.offsets and abs(offset - statistics.median(self.offsets)) > STEP_MS:
@@ -64,30 +87,90 @@ class ClockSync:
 
 
 @dataclass
+class RadioSync:
+    """Over Bluetooth: a message waits for the radio's next connection event, up to
+    tens of milliseconds, and a trip's two ways seldom wait alike. The shortest way
+    there and the shortest way back of the last trips are each near the radio's bare
+    delay, so half their difference is the offset; the board's random wait before a
+    PONG gives the way back its short ones too."""
+
+    trips: list[tuple[float, float]] = field(default_factory=list)
+
+    @property
+    def read(self) -> bool:
+        return len(self.trips) >= RADIO_READY
+
+    @property
+    def offset(self) -> float:
+        return (min(b for _, b in self.trips) - min(t for t, _ in self.trips)) / 2
+
+    def add(self, sent_ms: float, got_ms: float, got_us: int, sent_us: int) -> None:
+        there, back = trip(sent_ms, got_ms, got_us, sent_us)
+        if self.read and abs((back - there) / 2 - self.offset) > RADIO_STEP_MS:
+            self.trips.clear()  # the computer's clock set anew
+        self.trips.append((there, back))
+        del self.trips[:-RADIO_SAMPLES]
+
+    def to_host_ms(self, board_us: int) -> int | None:
+        if not self.read:
+            return None
+        return round(board_us / 1000 + self.offset)
+
+
+@dataclass
+class Counts:
+    """One board's breaks by count, kept across its link going and coming back:
+    each taken once, those missed asked for again."""
+
+    last: int = 0  # the highest count taken, or the one the first HELLO gave
+    taken: dict[int, int] = field(default_factory=dict)  # seq: t_us, since its start
+    wanted: dict[int, float] = field(default_factory=dict)  # seq: asked for at, ms
+    said: set[int] = field(default_factory=set)  # wanted ones said as never come
+
+    def restart(self) -> None:
+        """The board started again: its counts begin anew."""
+        self.last, self.taken, self.wanted, self.said = 0, {}, {}, set()
+
+
+@dataclass
 class Bridge:
-    """One board, from its HELLO on: what it says, as events for the chronometer."""
+    """One board, from its HELLO on: what it says, as events for the chronometer,
+    and the lines it is to be sent beside the PINGs (``outbox``)."""
 
     spec: Board  # what the board is to say of itself
-    sync: ClockSync = field(default_factory=ClockSync)
+    sync: ClockSync | RadioSync = field(default_factory=ClockSync)
     pings: dict[int, float] = field(default_factory=dict)  # sent at, by number
     next_ping: int = 1
     board: str = ""  # what its HELLO said: no line counts before it
     held: list[tuple[int, int, str, float]] = field(default_factory=list)  # BREAKs
     dark: str | None = None  # STATUS blocked or unsteady: no break can be seen
-    seqs: dict[str, int] = field(default_factory=dict)  # last BREAK, by board id
+    counts: dict[str, Counts] = field(default_factory=dict)  # by board id
     board_id: str = ""
     dark_since: float = 0.0
+    outbox: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.spec.transport == "ble" and isinstance(self.sync, ClockSync):
+            self.sync = RadioSync()
+
+    @property
+    def radio(self) -> bool:
+        return self.spec.transport == "ble"
+
+    @property
+    def ping_every_s(self) -> float:
+        return RADIO_PING_EVERY_S if self.radio else PING_EVERY_S
 
     def ping(self, sent_ms: float) -> str:
         """The next PING line for the board, its sending time kept."""
         n, self.next_ping = self.next_ping, self.next_ping + 1
         self.pings[n] = sent_ms
-        for unanswered in [k for k in self.pings if k <= n - 4 * SAMPLES]:
+        for unanswered in [k for k in self.pings if k <= n - 4 * RADIO_SAMPLES]:
             del self.pings[unanswered]
         return f"PING {n}"
 
     def silent(self, now_ms: float) -> bool:
-        """A PING unanswered for SILENT_MS: the board has stopped, its port open."""
+        """A PING unanswered for SILENT_MS: the board has stopped, its link up."""
         return any(now_ms - sent > SILENT_MS for sent in self.pings.values())
 
     def unseeing(self, now_ms: float) -> str | None:
@@ -96,67 +179,127 @@ class Bridge:
             return None
         return BLOCKED if self.dark == "blocked" else UNSTEADY
 
-    def answered(self, n: int, board_us: int, got_ms: float) -> None:
+    def answered(self, n: int, got_us: int, sent_us: int, got_ms: float) -> None:
         """PONG n: a round trip for the clock, and the board is there."""
         sent = self.pings.pop(n, None)
         for lost in [k for k in self.pings if k < n]:
             del self.pings[lost]  # a later one answered: the board is there
         if sent is not None:
-            self.sync.add(sent, got_ms, board_us)
+            self.sync.add(sent, got_ms, got_us, sent_us)
 
-    def hello(self, rest: list[str]) -> list[dict[str, Any]]:
-        """HELLO: from now on the board counts, and runs the firmware it is to."""
-        self.board = " ".join(rest)
+    def hello(self, rest: list[str], got_ms: float) -> list[dict[str, Any]]:
+        """HELLO: from now on the board counts, and runs the firmware it is to; what
+        it counted while no link was up is asked for again."""
+        first = not self.board  # asked again every few seconds: said once
+        self.board = " ".join(rest[:3])  # its count left out: it changes at each break
         self.board_id = rest[2] if len(rest) > 2 else ""
         said = [{"type": "status", "state": "connected", "detail": self.board}]
         runs = rest[1] if len(rest) > 1 else "?"
-        if runs != self.spec.firmware:
+        if runs != self.spec.firmware and first:
             said.append(
                 {
                     "type": "error",
                     "message": f"the board runs firmware {runs}, the chronometer "
                     f"reads {self.spec.firmware}: flash the board again "
-                    "(firmware/ in the repository)",
+                    "(beam/firmware/ in the repository)",
                 }
             )
+        if len(rest) > 3 and rest[3].isdigit():
+            self.catch_up(int(rest[3]), got_ms)
         return said
 
-    def missing(self, seq: int) -> list[dict[str, Any]]:
-        """Breaks the board counted that never came: its link was down meanwhile,
-        though not its power. A count begun again is the board started again."""
-        last, self.seqs[self.board_id] = self.seqs.get(self.board_id, 0), seq
-        if not 0 < last < seq - 1:
+    def catch_up(self, seq: int, got_ms: float) -> None:
+        """The count the board's HELLO gave against the counts taken from it."""
+        counts = self.counts.get(self.board_id)
+        if counts is None:
+            # The first HELLO: breaks before it were not this program's, but those
+            # already come on this link, waiting for it, are.
+            first = min([seq + 1, *(one[0] for one in self.held)])
+            self.counts[self.board_id] = Counts(last=first - 1)
+        elif seq > counts.last:
+            self.resend(counts, counts.last + 1, seq, got_ms)  # missed while down
+        elif seq < counts.last:
+            counts.restart()  # it started again, and counted while no link was up
+            # Its clock with it: a radio link that stayed up keeps no trip of the old
+            # one, so its breaks wait for new trips, not the old uptime's offset.
+            self.sync = RadioSync() if self.radio else ClockSync()
+            if seq:
+                self.resend(counts, 1, seq, got_ms)
+
+    def resend(self, counts: Counts, first: int, last: int, now_ms: float) -> None:
+        for seq in range(first, last + 1):
+            counts.wanted.setdefault(seq, now_ms)
+        self.outbox.append(f"RESEND {first}")
+
+    def take(self, seq: int, board_us: int, got_ms: float) -> bool:
+        """Whether a BREAK is a break this program has not had; a gap before it is
+        asked for again."""
+        counts = self.counts.get(self.board_id)
+        if counts is None:  # no count from a HELLO (another firmware's): from this one
+            counts = self.counts[self.board_id] = Counts(last=seq - 1)
+        if seq in counts.taken:
+            if counts.taken[seq] == board_us:
+                return False  # said again: had already
+            counts.restart()  # the same count, another time: it started again
+        elif seq < counts.last and seq not in counts.wanted:
+            counts.restart()  # a lower count, not asked for: it started again
+        if seq > counts.last + 1:
+            self.resend(counts, counts.last + 1, seq - 1, got_ms)
+        counts.taken[seq] = board_us
+        counts.wanted.pop(seq, None)
+        counts.last = max(counts.last, seq)
+        return True
+
+    def overdue(self, now_ms: float) -> list[dict[str, Any]]:
+        """Breaks asked for again that have not come within RESENT_WITHIN_MS: they
+        never came, the link down as they did. Said once; taken still, if late."""
+        events = []
+        for counts in self.counts.values():
+            late = sorted(
+                seq
+                for seq, asked in counts.wanted.items()
+                if now_ms - asked > RESENT_WITHIN_MS and seq not in counts.said
+            )
+            if not late:
+                continue
+            counts.said.update(late)
+            span = f"{late[0]}" if len(late) == 1 else f"{late[0]} to {late[-1]}"
+            events.append(
+                {
+                    "type": "error",
+                    "message": f"the board's break(s) {span} did not arrive: its link "
+                    "was down as they came; check that finish by other means",
+                }
+            )
+        return events
+
+    def beam(self, seq: int, board_us: int, text: str, got_ms: float) -> list[Any]:
+        if not self.take(seq, board_us, got_ms):
             return []
-        span = f"{last + 1}" if last + 2 == seq else f"{last + 1} to {seq - 1}"
+        at = self.sync.to_host_ms(board_us)
         return [
             {
-                "type": "error",
-                "message": f"the board's break(s) {span} did not arrive: its link "
-                "was down as they came; check that finish by other means",
+                "type": "beam",
+                "seq": seq,
+                "time_ms": round(got_ms) if at is None else at,
+                "device_time": text,
             }
         ]
 
-    def beam(self, seq: int, board_us: int, text: str, got_ms: float) -> list[Any]:
-        at = self.sync.to_host_ms(board_us)
-        beam = {
-            "type": "beam",
-            "seq": seq,
-            "time_ms": round(got_ms) if at is None else at,
-            "device_time": text,
-        }
-        return [beam, *self.missing(seq)]
-
     def release(self, now_ms: float | None = None) -> list[dict[str, Any]]:
         """Breaks that waited for the board's HELLO and its clock: timed by the
-        board's clock once it is read. Given up on HELD_MS after the first came,
-        they take the time their lines came, and that is said."""
+        board's clock once it is read. Given up on after the first came, they take
+        the time their lines came, and that is said. And breaks asked for again
+        that never came."""
+        events = [] if now_ms is None else self.overdue(now_ms)
         if not self.held or not self.board:
-            return []
-        read = bool(self.sync.offsets)
-        if not read and (now_ms is None or now_ms - self.held[0][3] <= HELD_MS):
-            return []
+            return events
+        wait = RADIO_HELD_MS if self.radio else HELD_MS
+        read = self.sync.read
+        if not read and (now_ms is None or now_ms - self.held[0][3] <= wait):
+            return events
         held, self.held = self.held, []
-        events = [event for one in held for event in self.beam(*one)]
+        events += [event for one in held for event in self.beam(*one)]
         if not read:
             events.append(
                 {
@@ -171,20 +314,19 @@ class Bridge:
         """Events for the chronometer from one board line, received at ``got_ms``."""
         word, rest = parse(line)
         if word == "HELLO" and rest[:1] == [self.spec.hello]:
-            return self.hello(rest)
-        numbers = pair(rest)
-        if word == "BREAK" and numbers is not None:
-            if self.board and self.sync.offsets:
-                return self.beam(*numbers, rest[1], got_ms)
+            return self.hello(rest, got_ms)
+        if word == "BREAK" and (pair := numbers(rest, 2)) is not None:
+            if self.board and self.sync.read:
+                return self.beam(pair[0], pair[1], rest[1], got_ms)
             # Before the HELLO, or the clock read: a rider all the same, so it
             # waits, and one from a board that never says HELLO never counts.
             if len(self.held) < HELD_MAX:
-                self.held.append((*numbers, rest[1], got_ms))
+                self.held.append((pair[0], pair[1], rest[1], got_ms))
             return []
         if not self.board:
             return []  # left from before the HELLO asked for, or another firmware's
-        if word == "PONG" and numbers is not None:
-            self.answered(*numbers, got_ms)
+        if word == "PONG" and (pong := numbers(rest, 3)) is not None:
+            self.answered(pong[0], pong[1], pong[2], got_ms)
             return self.release()
         if word == "STATUS":
             dark = rest[0] if rest in (["blocked"], ["unsteady"]) else None

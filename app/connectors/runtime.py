@@ -29,7 +29,11 @@ _LONGEST_WAIT_S = 3600.0
 def run(name: str) -> int:
     """The process entry for ``--connector <name>``; returns the exit code."""
     board = boards().get(name)
-    if board is not None:  # a loop of its own: a port to read as well as commands
+    if board is not None:  # a loop of its own: a link to read as well as commands
+        if board.transport == "ble":
+            from app.connectors.boards import ble
+
+            return ble.run(board)
         from app.connectors.boards import usb_serial
 
         return usb_serial.run(board)
