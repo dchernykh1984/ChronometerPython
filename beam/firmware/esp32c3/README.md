@@ -68,6 +68,17 @@ The blue LED is lit while the light reaches the sensor, for aiming, and for `FLA
    STATUS beam
    ```
 
+5. Check its clock: every board, each time it is flashed. Close the chronometer (and the
+   REPL), then from the repository's folder:
+
+   ```bash
+   uv run python -m beam.tools.clock_check
+   ```
+
+   For 5 minutes it PINGs the board over USB and over its own Bluetooth, as `beam-` and
+   the last 4 hex digits of its id. It ends `result: every check within`; a line `OUTSIDE`
+   is a board to look at before it times a race ([Accuracy](../../README.md#accuracy)).
+
 ## Over USB
 
 In the chronometer: Device `Beam board ESP32-C3 (USB)`. Both apps open its port with DTR

@@ -16,6 +16,7 @@ kit every time.
 | [`firmware/rp2040/`](firmware/rp2040/README.md) | The RP2040-Zero: USB, and Bluetooth through a BT05 module. |
 | [`firmware/esp32c3/`](firmware/esp32c3/README.md) | The ESP32-C3 SuperMini: USB, and Bluetooth of its own. |
 | [`enclosures/`](enclosures/README.md) | 3D-printed enclosures (PETG, TPU gaskets): the receiver with its lens, the laser's box, a tripod collar. |
+| [`tools/`](tools/clock_check.py) | The clock check run on every board flashed: how its clock maps onto the computer's, over USB and Bluetooth. |
 
 What the boards say, and what a program reading them does, is one contract:
 [`specs/001-event-sources/contracts/beam-board-protocol.md`](../specs/001-event-sources/contracts/beam-board-protocol.md).
@@ -50,11 +51,16 @@ reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which
    [ESP32-C3](firmware/esp32c3/README.md#wiring).
 2. **Flash it.** Put MicroPython on the board once, then copy two files onto it: the chip's
    `main.py` and `firmware/core/beamcore.py`. The chip's README has the commands.
-3. **Set the sensor.** The sensor module has two LEDs: power, and one that lights while
+3. **Check its clock.** With the board on USB and the chronometer closed, from the
+   repository's folder: `uv run python -m beam.tools.clock_check`. For 5 minutes it PINGs
+   the board over USB and Bluetooth at once, then says each of spec 002's hypotheses
+   (FR-022) within or OUTSIDE, and last `result: every check within`. Every board, each
+   time it is flashed: one with a line OUTSIDE is looked at before it times a race.
+4. **Set the sensor.** The sensor module has two LEDs: power, and one that lights while
    light reaches the sensor. Turn its trimmer until that LED is just lit in the light the
    sensor will see, and goes out when the sensor is covered. Behind the lens, the
    laser's focused spot is far brighter than daylight, so there is room on either side.
-4. **Enclose it** ([`enclosures/README.md`](enclosures/README.md)), and set it up: the
+5. **Enclose it** ([`enclosures/README.md`](enclosures/README.md)), and set it up: the
    receiver and the emitter on tripods, 10 to 12 m apart. Aim the laser at the lens until
    the board's LED shows the light on the sensor.
 
@@ -119,9 +125,19 @@ app's own help says more.
 
 ## Accuracy
 
-The board stamps a break within microseconds. Over USB the chronometer maps the board's
-clock onto its own within about 1 ms. Over Bluetooth, the shortest trip each way is taken
-from the last 16 PINGs, which aims at 2 ms (spec 002, FR-002). Kit 1's BT05 has its own
-UART in the way: the board subtracts the characters' time, but the module's own delays
-are measured in the field test (tasks T015): two kits, one beam 0.5 m under the other,
-and a weight dropped from rest above them (SC-010).
+The board stamps a break within microseconds. The chronometer maps the board's clock onto
+its own anew at every answer to its PINGs, never once for the race: over USB from the
+median of the last 9, within about 1 ms; over Bluetooth from the shortest trip each way of
+the last 16, which aims at 2 ms (spec 002, FR-002). So over Bluetooth the mapping may move
+by a millisecond or two from one rider to the next, but its error never piles up with the
+crystal's drift (10 to 30 ppm, up to 108 ms an hour), and a link that came back is read
+again by itself.
+
+The clock check (step 3 of Building one) measures this on every board: the cable's
+mapping, which half a round trip bounds; its move from one answer to the next; the
+crystal's rate; and Bluetooth's mapping against the cable's at the same moments, where
+Kit 1's BT05 shows if its UART makes one way longer than the other (the board subtracts
+the characters' time, not the module's own delays). The prototype's figures, warm and in
+the cold, come here once measured (task T022). The field test then times real breaks: two
+kits, one beam 0.5 m under the other, and a weight dropped from rest above them (SC-010,
+task T015).
