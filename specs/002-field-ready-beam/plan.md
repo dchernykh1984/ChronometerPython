@@ -89,3 +89,12 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
     hand magnifier's): FR-009's 2 cm of wavering at 10 m leaves the spot on it with room to spare.
     The sensor slides in its tube to find the focus; another lens changes two numbers in the
     Blender script.
+11. **A clock read all the time, checked on every board.** The mapping is read anew at every
+    answer, never once at the connection (FR-022): set once, its own error would stay for the
+    race and the crystal's 10 to 30 ppm (36 to 108 ms an hour) would pile on it; read all the
+    time, the drift counts only over its last answers, 18 s at most, 0.5 ms at 30 ppm. Whether
+    that holds is measured on every board flashed by `beam/tools/clock_check.py`: it PINGs the
+    board over USB and Bluetooth at once at the chronometer's pace, maps its clock as the
+    chronometer does, and says each hypothesis within or OUTSIDE. Half a USB round trip bounds
+    the cable's mapping; over Bluetooth no trip does, so the cable's mapping at the same
+    moments is the reference, and a lopsided way through the radio shows against it.
