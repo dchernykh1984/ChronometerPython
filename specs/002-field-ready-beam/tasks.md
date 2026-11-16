@@ -37,6 +37,8 @@
   gaskets, tripod mount; STL and the .blend; `beam/enclosures/README.md`
 - [x] T013 `beam/README.md`: the two kits, parts with prices, wiring, flashing, the apps, trouble
 - [x] T014 `CLAUDE.md` and `AGENTS.md`: the beam folder and its rules
+- [x] T021 `beam/tools/clock_check.py`: the clock check of FR-022, over USB and Bluetooth at
+  once, in each chip's flashing steps; `tests/test_beam_clock_check.py`
 
 ## Later (needs the parts, or a decision)
 
@@ -49,3 +51,7 @@
 - [ ] T019 The knowledge-base article on the site (FR-021), once a kit has worked at a race
 - [ ] T020 Say how long a link was down when it comes back (FR-006): today the action log's
   "disconnected" and "connected" lines show it by their times only; both apps
+- [ ] T022 The prototype's first flashing (SC-012): the clock check on both kits, warm and after
+  an hour in the cold (outdoors, or a fridge); its figures into `beam/README.md`'s Accuracy, and
+  FR-022's hypotheses changed where they are not what was measured. Every board flashed after
+  it is checked the same way, warm (each chip's README, Flashing)

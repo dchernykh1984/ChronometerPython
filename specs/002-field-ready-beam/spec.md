@@ -251,6 +251,18 @@ unpinned kit is built differently each time.
 - **FR-021**: Once a kit works at a race, an article MUST be published in the cycling site's
   knowledge base: what the beam is, what to buy, how to build, flash and set it up, and how both
   chronometers read it, pointing to the repository's beam folder.
+- **FR-022**: The board's clock MUST be mapped anew at every PING's answer for as long as the
+  link is up, never set once at the connection and kept. Set once, the mapping's own error (up
+  to 2 ms over Bluetooth) would stay for the whole race, with the crystal's drift piling up on
+  it; read all the time, it moves by about that much at most from one rider to the next, and a
+  link that came back is read again by itself, with no question to the judge. The hypotheses
+  this rests on MUST be checked on the prototype's first flashing, and on every board flashed
+  over USB after it: the mapping within 1 ms over USB and 2 ms over Bluetooth (FR-002); its
+  move from one answer to the next about 0.3 ms over USB (0.5 ms at most) and 1 to 3 ms over
+  Bluetooth; the board's crystal within 30 ppm of the computer's clock, and on the prototype
+  how far that moves in the cold; and the way through the radio as long one way as the other,
+  which the BT05's UART could make otherwise. A board outside any of them is looked at before
+  it times a race.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -289,6 +301,8 @@ unpinned kit is built differently each time.
   within 2 ms with both boards on the cable, within 4 ms with both on Bluetooth.
 - **SC-011**: The site's knowledge base has the article of FR-021, and an organiser who reads it
   finds every part to buy and every step to build, flash and use a kit.
+- **SC-012**: The clock check says every hypothesis of FR-022 within on both kits' first
+  flashing, warm and after an hour in the cold, and on every board flashed after them.
 
 ## Assumptions
 
