@@ -16,7 +16,7 @@ the network is best effort.
 | `app/paths.py` | Resolves where data lives (see below). |
 | `tests/` | pytest; `conftest.py` holds the offscreen Qt `win` fixture. |
 | `data/` | Runtime data files. |
-| `beam/` | Everything for the laser beam: `README.md` (the kits, parts and prices, wiring, flashing, both apps), `firmware/` (one core, `core/beamcore.py`, and a `main.py` per chip, `rp2040/` and `esp32c3/`), `enclosures/` (the 3D-printed parts, made in Blender). The firmware's tests (`tests/test_beam_firmware.py`) run with the rest, outside the coverage gate, which measures `app/` only. |
+| `beam/` | Everything for the laser beam: `README.md` (the kits, parts and prices, wiring, flashing, both apps), `firmware/` (one core, `core/beamcore.py`, and a `main.py` per chip, `rp2040/` and `esp32c3/`), `enclosures/` (the 3D-printed parts, made in Blender), `tools/` (`clock_check.py`, the clock check every board gets when flashed). The firmware's tests (`tests/test_beam_firmware.py`) run with the rest, outside the coverage gate, which measures `app/` only. |
 | `app/connectors/boards/` | The beam boards the chronometer reads itself: the contract's reader (`protocol.py`), the USB transport (`usb_serial.py`), the Bluetooth one (`ble.py`, through `bleak`), one module per chip (`rp2040.py`, `esp32c3.py`), each a USB device and a Bluetooth one. |
 
 `app/models.py` is a port of an older C++ chronometer; several helpers say so in
@@ -72,6 +72,9 @@ outcome is appended to the in-app action log, not shown in a dialog. See the
   reader reads only the board its `device` setting names. The clock is mapped from the
   shortest trip each way of the last 16 PONGs (`RadioSync`), never from a round trip's
   middle: a radio reply waits for its next connection event.
+- The clock is mapped anew at every PONG, never once at the connection and kept
+  (spec 002, FR-022, the owner's choice). `beam/tools/clock_check.py` measures what it
+  rests on, on every board flashed; a change to the mapping is checked with it.
 - `bleak` runs in the connector process, never in the UI's. Its backend for each system is
   collected in `.github/workflows/build.yml`. The macOS bundle needs
   `NSBluetoothAlwaysUsageDescription`, or macOS ends the app at its first Bluetooth call.
