@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QMessageBox,
     QPushButton,
@@ -49,7 +50,9 @@ from app.chips import (
     unknown_line,
 )
 from app.connector_host import ConnectorHost, builtin_command
-from app.connectors import connectors_for, find, runs_itself
+from app.connectors import BOARDS, connectors_for, find, runs_itself
+from app.connectors.boards import many as board_picks
+from app.connectors.boards import scan as board_scan
 from app.device_files import side_file
 from app.http_io import (
     fetch_groups,
@@ -541,19 +544,21 @@ class MainWindow(QMainWindow):
         self._lbl_test_data.setStyleSheet("color: red; font-weight: bold;")
         self._lbl_test_data.setVisible(False)
         self._lbl_clock = QLabel(self._device_clock.described())
+        self._boards_panel = self._build_boards_panel()
         grid.addWidget(QLabel("Source:"), 0, 0)
         grid.addWidget(self._combo_source, 0, 1, 1, 2)
         grid.addWidget(QLabel("Device:"), 1, 0)
         grid.addWidget(self._combo_connector, 1, 1, 1, 2)
         grid.addWidget(QLabel("Settings:"), 2, 0)
         grid.addWidget(self._edit_connector_settings, 2, 1, 1, 2)
-        grid.addWidget(QLabel("Beam records:"), 3, 0)
-        grid.addWidget(self._combo_beam_records, 3, 1, 1, 2)
-        grid.addWidget(self._btn_source_start, 4, 1)
-        grid.addWidget(self._btn_source_stop, 4, 2)
-        grid.addWidget(self._lbl_source_state, 5, 0, 1, 3)
-        grid.addWidget(self._lbl_test_data, 6, 0, 1, 3)
-        grid.addWidget(self._lbl_clock, 7, 0, 1, 3)
+        grid.addWidget(self._boards_panel, 3, 0, 1, 3)
+        grid.addWidget(QLabel("Beam records:"), 4, 0)
+        grid.addWidget(self._combo_beam_records, 4, 1, 1, 2)
+        grid.addWidget(self._btn_source_start, 5, 1)
+        grid.addWidget(self._btn_source_stop, 5, 2)
+        grid.addWidget(self._lbl_source_state, 6, 0, 1, 3)
+        grid.addWidget(self._lbl_test_data, 7, 0, 1, 3)
+        grid.addWidget(self._lbl_clock, 8, 0, 1, 3)
         index = self._combo_source.findData(self._sources["source"])
         self._combo_source.setCurrentIndex(max(index, 0))
         # The source kind and connector the Settings field shows.
@@ -570,6 +575,168 @@ class MainWindow(QMainWindow):
         self._btn_source_start.clicked.connect(self._on_source_start)
         self._btn_source_stop.clicked.connect(self._on_source_stop)
         return box
+
+    def _build_boards_panel(self) -> QWidget:
+        """The beam boards around, picked by their checks; Find and Blink (spec 003,
+        FR-001 to FR-003). Shown for Beam boards only."""
+        panel = QWidget()
+        layout = QGridLayout(panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self._boards_found: list[dict] = []
+        self._boards_search: QProcess | None = None
+        self._blinks: list[QProcess] = []
+        self._reading: set[str] = set()  # the boards the source running reads
+        self._list_boards = QListWidget()
+        self._list_boards.setMaximumHeight(110)
+        self._list_boards.itemChanged.connect(self._on_board_checked)
+        self._btn_find_boards = QPushButton("Find boards")
+        self._btn_find_boards.clicked.connect(self._on_find_boards)
+        self._btn_blink = QPushButton("Blink")
+        self._btn_blink.setToolTip(
+            "The chosen board's LED flashes 5 times. An ESP32-C3's blue LED is lit "
+            "while the laser is on its sensor: block the beam to see it flash."
+        )
+        self._btn_blink.clicked.connect(self._on_blink)
+        layout.addWidget(QLabel("Boards:"), 0, 0)
+        layout.addWidget(self._list_boards, 0, 1, 1, 2)
+        layout.addWidget(self._btn_find_boards, 1, 1)
+        layout.addWidget(self._btn_blink, 1, 2)
+        return panel
+
+    def _picked_boards(self) -> list[dict]:
+        boards = connector_settings(self._sources, BOARDS).get("boards")
+        if not isinstance(boards, list):
+            return []
+        return [one for one in boards if isinstance(one, dict)]
+
+    def _show_boards(self) -> None:
+        """The boards found and those picked, checked; a pick is changed only while
+        no source runs, as the next Start reads it."""
+        self._list_boards.blockSignals(True)
+        self._list_boards.clear()
+        for board, picked, here in board_scan.listed(
+            self._boards_found, self._picked_boards()
+        ):
+            item = QListWidgetItem(board_scan.label(board, here))
+            item.setData(Qt.ItemDataRole.UserRole, board)
+            flags = item.flags() & ~Qt.ItemFlag.ItemIsUserCheckable
+            if self._host is None:
+                flags |= Qt.ItemFlag.ItemIsUserCheckable
+            item.setFlags(flags)
+            item.setCheckState(
+                Qt.CheckState.Checked if picked else Qt.CheckState.Unchecked
+            )
+            if not here:
+                item.setForeground(Qt.GlobalColor.gray)
+            self._list_boards.addItem(item)
+        self._list_boards.blockSignals(False)
+
+    def _on_board_checked(self, _item: QListWidgetItem) -> None:
+        """The pick as the checks have it, kept (FR-002)."""
+        settings = connector_settings(self._sources, BOARDS)
+        settings["boards"] = [
+            board_scan.pick_of(item.data(Qt.ItemDataRole.UserRole))
+            for item in (
+                self._list_boards.item(i) for i in range(self._list_boards.count())
+            )
+            if item.checkState() == Qt.CheckState.Checked
+        ]
+        set_connector_settings(self._sources, BOARDS, settings)
+        self._save_sources()
+        if self._settings_for[1] == BOARDS:
+            self._edit_connector_settings.setText(json.dumps(settings))
+
+    def _on_find_boards(self) -> None:
+        """The boards around, from beam-scan: Bluetooth looks for 5 s, in a process
+        of its own, as bleak runs in none of the window's (CLAUDE.md)."""
+        if self._boards_search is not None:
+            return  # one search at a time
+        process = QProcess(self)
+        process.finished.connect(lambda *_: self._on_boards_found(process))
+        process.errorOccurred.connect(
+            lambda error: self._on_search_failed(process, error)
+        )
+        self._boards_search = process
+        self._btn_find_boards.setEnabled(False)
+        self._btn_find_boards.setText("Searching...")
+        program = builtin_command("beam-scan")
+        process.start(program[0], program[1:])
+
+    def _search_ended(self, process: QProcess) -> bool:
+        """The search of ``process`` over; False for one over already."""
+        if self._boards_search is not process:
+            return False
+        self._boards_search = None
+        self._btn_find_boards.setEnabled(True)
+        self._btn_find_boards.setText("Find boards")
+        return True
+
+    def _on_search_failed(
+        self, process: QProcess, error: QProcess.ProcessError
+    ) -> None:
+        if error == QProcess.ProcessError.FailedToStart and self._search_ended(process):
+            self._append_log("boards search could not start")
+            process.deleteLater()
+
+    def _on_boards_found(self, process: QProcess) -> None:
+        output = bytes(process.readAllStandardOutput().data())
+        if not self._search_ended(process):
+            return
+        process.deleteLater()
+        self._boards_found, errors = board_scan.found_in(output)
+        for error in errors:
+            self._append_log(f"boards search: {error}")
+        self._append_log(f"boards search: {len(self._boards_found)} found")
+        self._show_boards()
+
+    def _on_blink(self) -> None:
+        """The chosen board's LED blinked: by the source reading it, else by a
+        beam-blink of its own, as a board takes one reader at a time (FR-003)."""
+        item = self._list_boards.currentItem()
+        if item is None:
+            self._append_log("blink: choose a board in the list first")
+            return
+        board = item.data(Qt.ItemDataRole.UserRole)
+        key = board_picks.key_of(board)
+        name = board.get("name") or key
+        if self._host is not None and key in self._reading:
+            if self._host.tell({"cmd": "blink", "board": key}):
+                self._append_log(f"blink {name}: its LED flashes 5 times")
+            else:
+                self._append_log(f"blink {name}: the source is starting, try again")
+            return
+        process = QProcess(self)
+        process.finished.connect(lambda *_: self._on_blinked(process, name))
+        process.errorOccurred.connect(
+            lambda error: self._on_blink_failed(process, name, error)
+        )
+        self._blinks.append(process)
+        program = builtin_command("beam-blink")
+        process.start(program[0], program[1:])
+        process.write(cp.start({"boards": [board_scan.pick_of(board)]}))
+        self._append_log(f"blink {name}: reaching it")
+
+    def _on_blink_failed(
+        self, process: QProcess, name: str, error: QProcess.ProcessError
+    ) -> None:
+        if error == QProcess.ProcessError.FailedToStart and process in self._blinks:
+            self._blinks.remove(process)
+            self._append_log(f"blink {name}: could not start")
+            process.deleteLater()
+
+    def _on_blinked(self, process: QProcess, name: str) -> None:
+        if process not in self._blinks:
+            return
+        self._blinks.remove(process)
+        _, errors = board_scan.found_in(bytes(process.readAllStandardOutput().data()))
+        for error in errors:
+            self._append_log(f"blink {error}")
+        ok = process.exitStatus() == QProcess.ExitStatus.NormalExit
+        if not errors and ok and process.exitCode() == 0:
+            self._append_log(f"blink {name}: its LED flashed 5 times")
+        elif not errors:
+            self._append_log(f"blink {name}: failed, exit code {process.exitCode()}")
+        process.deleteLater()
 
     def _source_kind(self) -> str:
         return str(self._combo_source.currentData())
@@ -626,6 +793,9 @@ class MainWindow(QMainWindow):
             settings = connector_settings(self._sources, name) if name else {}
             self._edit_connector_settings.setText(json.dumps(settings) if name else "")
             self._edit_connector_settings.setPlaceholderText("")
+        self._boards_panel.setVisible(name == BOARDS)
+        if name == BOARDS:
+            self._show_boards()
 
     def _save_sources(self) -> None:
         if not save_sources(self._sources):
@@ -668,6 +838,8 @@ class MainWindow(QMainWindow):
                 self._show_connector_settings()
                 return False
             set_connector_settings(self._sources, name, settings)
+            if name == BOARDS:
+                self._show_boards()
         self._save_sources()
         return True
 
@@ -714,6 +886,8 @@ class MainWindow(QMainWindow):
         host.state_changed.connect(self._on_source_state)
         host.log.connect(self._append_log)
         self._host = host
+        picked = self._picked_boards() if name == BOARDS else []
+        self._reading = {board_picks.key_of(one) for one in picked}
         self._lbl_test_data.setVisible(info.test)
         # The file paths stay as they are while a device writes next to them: a path
         # typed letter by letter would scatter its reads over half-typed names.
@@ -729,6 +903,7 @@ class MainWindow(QMainWindow):
 
     def _stop_source(self, wait: bool = False) -> None:
         host, self._host = self._host, None
+        self._reading = set()
         if host is not None:
             # A late state of this host must not cover the next one's, but what its
             # program still reports until it ends counts: freed once it has ended.
@@ -754,6 +929,8 @@ class MainWindow(QMainWindow):
         self._combo_beam_records.setEnabled(
             not locked and self._source_kind() == "beam"
         )
+        if self._connector_name() == BOARDS:  # the pick's checks locked with it
+            self._show_boards()
 
     def _on_host_ended(self, host: ConnectorHost) -> None:
         if host in self._stopping:

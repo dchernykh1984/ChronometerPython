@@ -22,20 +22,20 @@ def test_the_registry_lists_test_connectors_custom_and_stubs():
     assert "dummy-beam" not in chips
     assert chips["dummy-chips"].test and chips["dummy-chips"].available
     assert not chips["llrp"].available
-    beam = {c.name: c for c in connectors.connectors_for("beam")}
-    boards = {"beam-rp2040", "beam-rp2040-ble", "beam-esp32c3", "beam-esp32c3-ble"}
-    assert {"dummy-beam", "custom", *boards} <= set(beam)
-    assert beam["beam-rp2040"].available and not beam["beam-rp2040"].test
-    assert beam["beam-rp2040"].settings == {"port": "", "hold_off_ms": 1000}
-    assert beam["beam-esp32c3-ble"].settings == {"device": "", "hold_off_ms": 1000}
-    assert connectors.find("beam-rp2040-ble").kind == "beam"
-    assert all(connectors.runs_itself(name) for name in boards)
+    beam = [c.name for c in connectors.connectors_for("beam")]
+    # The boards first, then the test beam and the custom command (spec 003, FR-006);
+    # the single-board devices are gone from the list, Beam boards reads them all.
+    assert beam == ["beam-boards", "dummy-beam", "custom"]
+    boards = connectors.find("beam-boards")
+    assert boards.available and not boards.test
+    assert boards.settings == {"boards": [], "hold_off_ms": 1000}
+    assert connectors.find("beam-rp2040") is None
     assert connectors.find("nothing") is None
     assert connectors.builtin("dummy-beam")[0] == "beam"
     assert connectors.builtin("llrp") is None
-    # A board runs a loop of its own, not the pull-based one: run all the same.
-    assert connectors.builtin("beam-rp2040") is None
-    assert connectors.runs_itself("beam-rp2040") and connectors.runs_itself("replay")
+    # The boards run a loop of their own, not the pull-based one: run all the same.
+    assert connectors.builtin("beam-boards") is None
+    assert connectors.runs_itself("beam-boards") and connectors.runs_itself("replay")
     assert not connectors.runs_itself("custom") and not connectors.runs_itself("llrp")
 
 

@@ -13,6 +13,9 @@ import threading
 import types
 from typing import IO, Any, cast
 
+import pytest
+
+from app import sources_config as sc
 from app.connectors import runtime
 from app.connectors.boards import ble, rp2040
 from app.connectors.boards import many as m
@@ -348,3 +351,42 @@ def test_the_list_has_the_boards_found_then_those_picked_and_not_found():
     assert s.label(first, False) == (
         "beam-rp2040 (USB, the first port of its kind, not found by the last search)"
     )
+
+
+# -- a board chosen before spec 003 ------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("saved", "boards", "hold_off"),
+    [
+        (
+            "beam_connector=beam-esp32c3-ble\nsettings.beam-esp32c3-ble="
+            '{"device":"beam-b6b0","hold_off_ms":800}\n',
+            [{"link": "ble", "device": "beam-b6b0", "name": "beam-b6b0"}],
+            800,
+        ),
+        (  # no port: the first with the board's USB ids, as before
+            "beam_connector=beam-rp2040\n",
+            [{"link": "usb", "port": "", "kind": "beam-rp2040", "name": "beam-rp2040"}],
+            1000,
+        ),
+        ("beam_connector=beam-rp2040-ble\n", [], 1000),  # none named: none picked
+        (  # picked in Beam boards already: kept
+            'beam_connector=beam-esp32c3\nsettings.beam-boards={"boards":[],'
+            '"hold_off_ms":5}\n',
+            [],
+            5,
+        ),
+    ],
+)
+def test_a_single_board_device_chosen_before_is_that_board_in_beam_boards(
+    tmp_path, saved, boards, hold_off
+):
+    path = tmp_path / "sources.txt"
+    path.write_text(saved)
+    cfg = sc.load_sources(str(path))
+    assert cfg["beam_connector"] == "beam-boards"
+    assert sc.connector_settings(cfg, "beam-boards") == {
+        "boards": boards,
+        "hold_off_ms": hold_off,
+    }

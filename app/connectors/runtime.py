@@ -36,7 +36,7 @@ def run(name: str) -> int:
         from app.connectors.boards import scan
 
         return scan.run()
-    board = boards().get(name)
+    board = boards().get(name)  # one board, as before spec 003: not listed any more
     if board is not None:  # a loop of its own: a link to read as well as commands
         if board.transport == "ble":
             from app.connectors.boards import ble

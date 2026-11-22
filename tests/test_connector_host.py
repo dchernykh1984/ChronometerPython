@@ -437,3 +437,29 @@ def test_an_error_line_written_in_two_pieces_is_logged_whole():
     host.start(_python(code), {})
     assert _wait_until(lambda: "connector: half and half" in logs)
     host.stop(wait=True)
+
+
+ECHO = "\n".join(
+    [
+        "import json, sys",
+        HELLO % (1, "beam"),
+        "for line in sys.stdin:",
+        "    cmd = json.loads(line)",
+        "    if cmd.get('cmd') == 'blink':",
+        "        said = {'type': 'error', 'message': 'blink ' + cmd['board']}",
+        "        print(json.dumps(said), flush=True)",
+        "    elif cmd.get('cmd') == 'stop':",
+        "        break",
+    ]
+)
+
+
+def test_a_command_reaches_the_connector_running_and_none_before():
+    host, events, _, _ = _host()
+    assert not host.tell({"cmd": "blink", "board": "AA"})  # nothing runs
+    host.start(_python(ECHO), {})
+    assert _wait_until(lambda: host.state == "running")
+    assert host.tell({"cmd": "blink", "board": "AA"})
+    assert _wait_until(lambda: events)
+    assert events == [cp.Error("blink AA")]
+    host.stop(wait=True)

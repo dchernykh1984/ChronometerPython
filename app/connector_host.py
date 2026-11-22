@@ -152,6 +152,14 @@ class ConnectorHost(QObject):
             process.kill()
             process.waitForFinished(1000)
 
+    def tell(self, command: dict[str, Any]) -> bool:
+        """A command for the connector running, as a board's blink; False when none
+        has said hello yet."""
+        if self._process is None or self.state != "running":
+            return False
+        self._process.write(cp.encode(command))
+        return True
+
     # -- the process ------------------------------------------------------------
 
     def _launch(self) -> None:

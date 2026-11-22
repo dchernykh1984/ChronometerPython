@@ -10,7 +10,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.connectors import find
+from app.connectors import BOARDS, find
+from app.connectors.boards import boards
 from app.models import read_file_lines
 from app.paths import app_path
 from app.results_file import write_in_one_step
@@ -22,7 +23,7 @@ BEAM_RECORDS = ("riders", "groups")
 DEFAULTS = {
     "source": "hand",
     "beam_records": "riders",
-    "beam_connector": "dummy-beam",
+    "beam_connector": BOARDS,  # the boards first (spec 003, FR-006)
     "chips_connector": "dummy-chips",
     "dead_time_s": "5",
     "start_protocol": "data/start.txt",
@@ -40,7 +41,31 @@ def load_sources(path: str = SOURCES_PATH) -> dict[str, str]:
         cfg["source"] = "hand"
     if cfg["beam_records"] not in BEAM_RECORDS:
         cfg["beam_records"] = "riders"
+    _carry_over_board(cfg)
     return cfg
+
+
+def _carry_over_board(cfg: dict[str, str]) -> None:
+    """A board chosen as one of the single-board devices before spec 003: the same
+    board picked in Beam boards, which took their place."""
+    board = boards().get(cfg["beam_connector"])
+    if board is None:
+        return
+    cfg["beam_connector"] = BOARDS
+    if f"settings.{BOARDS}" in cfg:
+        return  # picked there already
+    old = connector_settings(cfg, board.name)
+    if board.transport == "ble":
+        device = str(old.get("device") or "")
+        picks = [{"link": "ble", "device": device, "name": device}] if device else []
+    else:  # no port: the first with the board's USB ids, as before
+        port = str(old.get("port") or "")
+        picks = [
+            {"link": "usb", "port": port, "kind": board.hello, "name": board.hello}
+        ]
+    set_connector_settings(
+        cfg, BOARDS, {"boards": picks, "hold_off_ms": old.get("hold_off_ms", 1000)}
+    )
 
 
 def save_sources(cfg: dict[str, str], path: str = SOURCES_PATH) -> bool:
