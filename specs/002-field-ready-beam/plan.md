@@ -94,7 +94,7 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
     Blender script.
 11. **A clock read all the time, checked on every board.** The mapping is read anew at every
     answer, never once at the connection (FR-022): set once, its own error would stay for the
-    race and the crystal's tens of ppm (the prototype's +46 and -39, 140 to 170 ms an hour)
+    race and the crystal's tens of ppm (the prototype's about +46 and -41, 150 to 170 ms an hour)
     would pile on it; read all the time, the drift counts only over its last answers, 18 s at
     most, 1.1 ms at 60 ppm, of which the median of 9 lags about half. Whether
     that holds is measured on every board flashed by `beam/tools/clock_check.py`: it PINGs the

@@ -132,7 +132,7 @@ at every answer to its PINGs, never once for the race: over USB from the median 
 last 9; over Bluetooth from the shortest trip each way of the last 32, a PING every 0.5 s
 (spec 002, FR-002).
 So the mapping may move a little from one rider to the next, but its error never piles up
-with the crystal's drift (the prototype's: +46 and -39 ppm, 140 to 170 ms an hour), and a
+with the crystal's drift (the prototype's: about +46 and -41 ppm, 150 to 170 ms an hour), and a
 link that came back is read again by itself.
 
 The clock check (step 3 of Building one) measures this on every board: the cable's
