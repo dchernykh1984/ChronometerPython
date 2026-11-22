@@ -2,9 +2,10 @@
 
 NTP is asked of several servers, a few times each, and each one's shortest round trip
 taken; a server that is not synchronised, or that disagrees with the others by more
-than its round trip allows, is not. The clock is the system's monotonic one plus the
-offset so measured, its rate followed from one measurement to the next, so it keeps
-world time while the internet is gone; with no measurement, the system's time as it is.
+than its round trip allows, is not. The clock is a monotonic one that goes on while the
+computer sleeps, plus the offset so measured, its rate followed from one measurement to
+the next, so it keeps world time while the internet is gone; with no measurement, the
+system's time as it is.
 It never runs backwards for a correction under a second, and it never sets the system's
 clock. A laptop has no GNSS: the phone's app adds it.
 """
@@ -15,6 +16,7 @@ import os
 import socket
 import statistics
 import struct
+import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -147,8 +149,18 @@ def measure(
     return combine(best)
 
 
+# The clock the device clock runs on: one no one sets, that goes on while the computer
+# sleeps. Python's monotonic one stops then on macOS (mach_absolute_time) and on Linux,
+# and a laptop closed between two heats, the internet gone, would wake its sleep behind
+# world time; on Windows it is QueryPerformanceCounter's, which goes on.
+_ASLEEP_TOO = {"darwin": "CLOCK_MONOTONIC_RAW", "linux": "CLOCK_BOOTTIME"}
+_CLOCK_ID: int | None = getattr(time, _ASLEEP_TOO.get(sys.platform, ""), None)
+
+
 def _monotonic() -> float:
-    return time.monotonic()
+    if _CLOCK_ID is None:
+        return time.monotonic()
+    return time.clock_gettime(_CLOCK_ID)
 
 
 def _system() -> float:

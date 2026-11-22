@@ -6,6 +6,8 @@ from __future__ import annotations
 import itertools
 import socket
 import struct
+import sys
+import time
 from typing import Any
 
 import pytest
@@ -160,6 +162,19 @@ def test_a_round_keeps_each_server_s_shortest_trip():
     }
     found = dt.measure(lambda: 0.0, ("a", "b", "c"), lambda s, _: answers[s])
     assert found == (101.0, 5.0)
+
+
+def test_the_clock_runs_on_one_that_goes_on_while_the_computer_sleeps(monkeypatch):
+    """Python's monotonic clock stops asleep on macOS and Linux: a laptop closed
+    between two heats would wake behind world time by its sleep."""
+    asleep_too = {"darwin": "CLOCK_MONOTONIC_RAW", "linux": "CLOCK_BOOTTIME"}
+    assert dt._CLOCK_ID == getattr(time, asleep_too.get(sys.platform, ""), None)
+    monkeypatch.setattr(dt, "_CLOCK_ID", 77)
+    monkeypatch.setattr(time, "clock_gettime", lambda clock: {77: 42.5}[clock])
+    assert dt._monotonic() == 42.5
+    monkeypatch.setattr(dt, "_CLOCK_ID", None)  # Windows: the monotonic one goes on
+    monkeypatch.setattr(time, "monotonic", lambda: 7.25)
+    assert dt._monotonic() == 7.25
 
 
 def test_unmeasured_the_clock_is_the_system_s_and_says_so():
