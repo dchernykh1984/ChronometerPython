@@ -172,3 +172,21 @@ def test_a_search_or_a_blink_that_cannot_start_is_said(win, monkeypatch):
     win._on_blink()
     assert _wait_until(lambda: not win._blinks)
     assert _log(win)[-1] == "blink beam-rp2040: could not start"
+
+
+def test_a_board_picked_by_its_name_before_is_the_board_found(win, monkeypatch):
+    _choose(win, "beam", "beam-boards")
+    by_name = {
+        "link": "ble",
+        "device": "beam-7c1c",
+        "name": "beam-7c1c",
+    }  # carried over
+    sources.set_connector_settings(win._sources, "beam-boards", {"boards": [by_name]})
+    _found(win, monkeypatch)
+    assert _rows(win) == [
+        ("beam-rp2040 (USB, COM3)", False),
+        ("beam-7c1c (Bluetooth, -61 dBm)", True),  # once, checked
+    ]
+    win._list_boards.item(0).setCheckState(Qt.CheckState.Checked)
+    picks = sources.connector_settings(win._sources, "beam-boards")["boards"]
+    assert picks == [USB, {"link": "ble", "name": "beam-7c1c", "device": "AA"}]

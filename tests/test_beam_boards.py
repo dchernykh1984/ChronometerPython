@@ -387,6 +387,9 @@ def test_the_list_has_the_boards_found_then_those_picked_and_not_found():
         "beam-b6b0 (Bluetooth, not found by the last search)",
     ]
     assert s.label(gone, False, read=True) == "beam-b6b0 (Bluetooth, read now)"
+    # Picked by its name in an older chronometer: the board found of that name, once.
+    by_name = {"link": "ble", "device": "BEAM-7C1C", "name": "BEAM-7C1C"}
+    assert s.listed([near], [by_name]) == [(near, True, True)]
     first = {"link": "usb", "kind": "beam-rp2040"}  # carried over with no port
     assert s.label(first, False) == (
         "beam-rp2040 (USB, the first port of its kind, not found by the last search)"
