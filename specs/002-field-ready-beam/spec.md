@@ -34,6 +34,11 @@ the wind (FR-019, SC-007, research 11, task T023); this spec takes that over wit
   hundredths; the chronometer still keeps milliseconds in its files, as data. The light
   sensor's own delay, the same at both ends when both are beams, is measured by the falling
   weight (SC-010).
+- Q: What is a kit by default, and how is it powered? -> A: A receiver and an emitter, each on
+  its own USB-C power bank, as every part of the judging system is powered over USB-C. The
+  receiver is a board with Bluetooth, the ESP32-C3 SuperMini or the RP2040-Zero with a BT05,
+  and the light sensor; the emitter is the KY-008 laser on a USB-C power module (5.1 kOhm from
+  CC1 and CC2 to GND), with no wire to the receiver.
 
 ## User Scenarios & Testing *(mandatory)*
 
