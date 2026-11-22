@@ -191,7 +191,9 @@ unpinned kit is built differently each time.
   onto the host's clock; no link delay, USB or Bluetooth, may move it.
 - **FR-002**: The mapping of the board's clock onto the host's MUST stay within 2 ms of the truth
   over Bluetooth, although a round trip there takes 15 to 60 ms (the contract's 20 ms limit on
-  round trips is for USB), and within 1 ms over USB as today.
+  round trips is for USB), and within 3 ms over USB: the most half its round trip allows, 2.0 to
+  2.5 ms on the prototype read by a Mac, where the cable's and the radio's mappings agree within
+  0.5 ms on average.
 - **FR-003**: A break over Bluetooth MUST be stamped by the board's clock, never by when its
   message arrived, as long as the clock can be mapped: one that comes before the mapping waits
   for it. Only when no mapping comes within 10 s is it stamped by its arrival, rather than held
@@ -257,7 +259,7 @@ unpinned kit is built differently each time.
   it; read all the time, it moves by about that much at most from one rider to the next, and a
   link that came back is read again by itself, with no question to the judge. The hypotheses
   this rests on MUST be checked on the prototype's first flashing, and on every board flashed
-  over USB after it: the mapping within 1 ms over USB and 2 ms over Bluetooth (FR-002); its
+  over USB after it: the mapping within 3 ms over USB and 2 ms over Bluetooth (FR-002); its
   move from one answer to the next about 0.3 ms over USB (0.5 ms at most) and 1 to 3 ms over
   Bluetooth; the board's crystal within 60 ppm of the computer's clock (the prototype's: +46
   and -39), and on the prototype
