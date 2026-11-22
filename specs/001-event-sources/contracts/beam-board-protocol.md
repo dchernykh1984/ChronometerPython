@@ -1,4 +1,4 @@
-# Contract: the beam board's lines, version 0.4
+# Contract: the beam board's lines, version 0.5
 
 A beam board (`beam/firmware/`) times each break of its light with its own clock and talks over
 a USB serial port, Bluetooth, or both. Every program that reads one keeps to this contract: the
@@ -48,7 +48,7 @@ counting past the 30-bit ticks' wrap.
 | `STATUS unknown` | Asked `STATUS` before any state has held. |
 | `PONG <n> <got_us> <sent_us>` | Asked `PING <n>`: when the `PING` came, its first character where the link's own transfer time is known (the BT05's UART), its end otherwise; and when this answer went, over the BT05's UART when its first 20 characters had crossed it, as the module sends nothing before. The board waits a random 0 to 49 ms between the two. |
 | `HOLDOFF <ms>` | Asked `HOLDOFF <ms>`: the hold-off is now that. |
-| `FLASH <n> <t_us>` | Asked `FLASH <n>`: its LED lit for 100 ms, for cameras. |
+| `FLASH <n> <t_us>` | Asked `FLASH <n>`: its LED changed for 100 ms, for cameras and for a judge's Blink: lit, or put out where a one-colour LED is lit already (the ESP32-C3's, lit for the light on its sensor). Since 0.5; before, a lit one stayed lit. |
 | `ERROR unknown: <line>` | A line it did not understand, the first 40 characters of it. Never on the BT05's UART, where the module's own replies (`OK`, `+NAME=...`) would come back as one. |
 
 Anything else on a link (a MicroPython traceback, the REPL, the BT05's replies) is not the board's

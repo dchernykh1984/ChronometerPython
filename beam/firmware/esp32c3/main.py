@@ -94,9 +94,17 @@ def board():
     # Pulled up: a loose wire reads as a blocked beam, which the reader says, not as
     # noise, which would be phantom breaks, nor as light, none at all.
     led = machine.Pin(LED_PIN, machine.Pin.OUT, value=1)
+    shown = ["blocked"]  # the light's state the LED shows, a flash aside
 
     def show(state):
-        led.value(0 if state in ("beam", "flash") else 1)
+        # One colour: lit for the light on the sensor. A flash lit as well would be no
+        # flash with the laser on, so it is the other way round (contract 0.5, FLASH).
+        if state == "flash":
+            lit = shown[0] != "beam"
+        else:
+            shown[0] = state
+            lit = state == "beam"
+        led.value(0 if lit else 1)  # lit at a low pin
 
     ble = BleLink(bluetooth.BLE(), "beam-" + board_id[-4:])
     links = [beamcore.UsbLink(), ble]
