@@ -188,10 +188,18 @@ def test_no_board_picked_or_one_of_no_kind_known_is_said(serial, bleak):
     chronometer = Chronometer()
     connector = m.Many(cast(IO[str], chronometer), serial, bleak)
     nano = {"link": "usb", "port": "COM9", "kind": "beam-nano"}
-    connector.configure({"boards": [nano, "COM3", {"link": "usb"}]})
+    by_name = {"link": "ble", "name": "beam-7c1c"}  # typed by hand: no address
+    connector.configure({"boards": [nano, "COM3", by_name]})
     assert chronometer.next()["message"] == (
         "COM9: a USB board of no kind known ('beam-nano'): find the boards again "
         "and pick it"
+    )
+    assert chronometer.next()["message"] == (
+        "a board picked with no address or port ('COM3'): find the boards again and "
+        "pick it"
+    )
+    assert chronometer.next()["message"].startswith(
+        "a board picked with no address or port ({'link': 'ble', 'name': 'beam-7c1c'})"
     )
     assert chronometer.next() == {
         "type": "status",
