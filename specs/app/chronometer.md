@@ -2,7 +2,8 @@
 
 Written from the code (`app/main_window.py`, `app/models.py`, `app/http_io.py`, `app/paths.py`) on
 2026-10-28 and brought up to date with the event sources of `specs/001-event-sources` on
-2026-10-29. Where the code does not say why, this file does not guess.
+2026-10-29, and with the boards around and the device clock of `specs/003-boards-and-device-time`
+on 2026-11-22. Where the code does not say why, this file does not guess.
 
 ## Slots
 
@@ -41,12 +42,15 @@ reports what a device sees: **Device** picks it, **Settings** holds its settings
 - Connectors today: "Test beam" and "Test chips" make events up, and a red "TEST CONNECTOR" warning
   shows while one runs; "Replay a chip reads file" plays a raw reads file back; "Custom command"
   runs any program that speaks `specs/001-event-sources/contracts/connector-protocol.md`. The beam
-  boards are read by the program itself: "Beam board RP2040 (USB)", "Beam board RP2040 + BT05
-  (Bluetooth)", "Beam board ESP32-C3 (USB)" and "Beam board ESP32-C3 (Bluetooth)", each keeping
-  to `specs/001-event-sources/contracts/beam-board-protocol.md` (`beam/README.md` says how to build
-  one). A USB board's Settings name its port, else the first with its USB ids; a Bluetooth one's
-  name the board (`device`, as `beam-1a2b`), and with none named the boards in range are said and
-  none is read. LLRP, RaceResult and R2000 are listed as "not available yet".
+  boards are read by the program itself, "Beam boards" first in the beam's list (spec 003): **Find
+  boards** lists the boards around, on USB (by their USB ids, found again by their serial number
+  in any socket) and on Bluetooth (with their signal), a check picks one or several, and every
+  break of every board picked is a cutoff of its own; **Blink** flashes the chosen board's LED.
+  Each board keeps to `specs/001-event-sources/contracts/beam-board-protocol.md` (`beam/README.md`
+  says how to build one). LLRP, RaceResult and R2000 are listed as "not available yet".
+- Every cutoff, by hand or by a device, is stamped on the device clock (`app/device_time.py`):
+  the computer's clock corrected to world time by NTP every 64 s, shown under the source as
+  "Clock: the internet, within N ms", or "the system's, not checked" while no server answered.
 - A connector starts only on **Start**, also after the program restarts, and stops on **Stop** or
   when the window closes; what it reports until it has ended still counts. The line under the
   buttons shows its state and the chip crossings waiting. While it runs, and until its program has
