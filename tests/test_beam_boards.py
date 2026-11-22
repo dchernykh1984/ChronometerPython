@@ -299,26 +299,33 @@ def _radio(seen: dict[str, tuple[Device, Heard]] | Exception) -> Any:
     return types.SimpleNamespace(BleakScanner=types.SimpleNamespace(discover=discover))
 
 
-def _port(device: str, vid: int | None, pid: int | None) -> types.SimpleNamespace:
-    return types.SimpleNamespace(device=device, vid=vid, pid=pid)
+def _port(device: str, vid: int | None, pid: int | None, **serial: str) -> Any:
+    return types.SimpleNamespace(device=device, vid=vid, pid=pid, **serial)
 
 
 def test_the_boards_on_usb_are_found_by_their_ports_ids():
     found = s.on_usb(
         [
-            _port("COM9", 0x303A, 0x1001),
-            _port("COM3", 0x2E8A, 0x0005),
+            _port("COM9", 0x303A, 0x1001, serial_number="7C:4F:AD:4B:B6:B0"),
+            _port("COM3", 0x2E8A, 0x0005),  # a port that says no serial number
             _port("COM4", 0x2E8A, 0x000C),  # a Raspberry Pi Debug Probe
             _port("COM1", None, None),
         ]
     )
     assert found == [
-        {"link": "usb", "name": "beam-rp2040", "port": "COM3", "kind": "beam-rp2040"},
+        {
+            "link": "usb",
+            "name": "beam-rp2040",
+            "port": "COM3",
+            "kind": "beam-rp2040",
+            "serial": "",
+        },
         {
             "link": "usb",
             "name": "beam-esp32c3",
             "port": "COM9",
             "kind": "beam-esp32c3",
+            "serial": "7C:4F:AD:4B:B6:B0",  # found by it in any socket
         },
     ]
 

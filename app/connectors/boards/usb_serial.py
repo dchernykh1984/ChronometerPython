@@ -32,14 +32,20 @@ def now_ms() -> float:
     return time.time() * 1000
 
 
-def board_port(chosen: str, spec: Board) -> str | None:
-    """The port named, else the first serial port with the board's USB ids."""
-    if chosen:
+def board_port(chosen: str, spec: Board, serial: str = "") -> str | None:
+    """The port of the board of USB serial number ``serial`` wherever it is plugged in
+    now (macOS and Linux name a port by its socket), else the port named, else the
+    first serial port with the board's USB ids."""
+    if chosen and not serial:
         return chosen
     from serial.tools import list_ports
 
+    ports = list_ports.comports()
+    same = sorted(p.device for p in ports if serial and p.serial_number == serial)
+    if same or chosen:
+        return same[0] if same else chosen
     ours = (spec.vendor, spec.product)
-    found = [p.device for p in list_ports.comports() if (p.vid, p.pid) == ours]
+    found = [p.device for p in ports if (p.vid, p.pid) == ours]
     return sorted(found)[0] if found else None
 
 
@@ -61,6 +67,7 @@ class Connector:
     def __init__(self, stdout: IO[str], serial: Any, spec: Board) -> None:
         self.stdout, self.serial, self.spec = stdout, serial, spec  # serial: pyserial
         self.port, self.hold_off_ms = "", HOLD_OFF_MS
+        self.serial_number = ""  # the board's own, found by it in any socket
         self.inbox: queue.Queue[tuple[str, Any]] = queue.Queue()
         self.bridge = Bridge(spec)
         self.started = False
@@ -119,7 +126,7 @@ class Connector:
             pass  # the listening thread says the port is gone
 
     def open_board(self, now: float) -> None:
-        port = board_port(self.port, self.spec)
+        port = board_port(self.port, self.spec, self.serial_number)
         link = None
         try:
             if port is None:
@@ -185,6 +192,7 @@ class Connector:
         """The settings the chronometer starts it with: its port, its hold-off."""
         settings = settings if isinstance(settings, dict) else {}
         self.port = str(settings.get("port") or "")
+        self.serial_number = str(settings.get("serial") or "")
         given = settings.get("hold_off_ms", HOLD_OFF_MS)
         ms = hold_off(given)
         if ms is None:

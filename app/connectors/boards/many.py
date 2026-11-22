@@ -147,7 +147,10 @@ class Many:
                 )
                 continue
             where = "device" if pick.get("link") == "ble" else "port"
-            link.configure({**settings, where: pick.get(where)})  # and its hold-off
+            # Its hold-off, and on USB its serial number, found by in any socket.
+            link.configure(
+                {**settings, where: pick.get(where), "serial": pick.get("serial")}
+            )
             link.started = True
             self.links[key], self.names[key] = link, named
         if not self.links:

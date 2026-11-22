@@ -461,6 +461,27 @@ def test_the_port_named_is_used_else_the_first_micropython_rp2040_one(monkeypatc
     assert u.board_port("", rp2040.BOARD) is None
 
 
+def test_a_board_picked_by_its_serial_number_is_found_in_any_socket(monkeypatch):
+    """macOS and Linux name a port by its socket: the board plugged into another one
+    is read all the same."""
+    pi, micropython = rp2040.BOARD.vendor, rp2040.BOARD.product
+    moved = types.SimpleNamespace(
+        device="/dev/cu.usbmodem2101", vid=pi, pid=micropython, serial_number="E661"
+    )
+    other = types.SimpleNamespace(
+        device="/dev/cu.usbmodem101", vid=pi, pid=micropython, serial_number="FFFF"
+    )
+    tools = types.ModuleType("serial.tools")
+    tools.list_ports = types.SimpleNamespace(comports=lambda: [other, moved])  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "serial", types.ModuleType("serial"))
+    monkeypatch.setitem(sys.modules, "serial.tools", tools)
+    assert u.board_port("/dev/cu.usbmodem101", rp2040.BOARD, "E661") == moved.device
+    assert u.board_port("/dev/cu.usbmodem101", rp2040.BOARD, "0000") == other.device
+    assert (
+        u.board_port("", rp2040.BOARD, "0000") == other.device
+    )  # the first of its ids
+
+
 # -- the loop, with a board on a fake port ------------------------------------
 
 
@@ -1084,7 +1105,7 @@ def test_a_board_missing_is_said_once_not_at_every_retry(monkeypatch):
 
 def test_no_board_on_usb_is_said_once_by_its_name(monkeypatch, serial):
     monkeypatch.setattr(u, "REOPEN_AFTER_S", 0.0)
-    monkeypatch.setattr(u, "board_port", lambda chosen, spec: None)
+    monkeypatch.setattr(u, "board_port", lambda chosen, spec, serial: None)
     chronometer = Chronometer()
     ended = _run(u.Connector(chronometer, serial, rp2040.BOARD), chronometer)
     chronometer.tell({"cmd": "start", "settings": {}})

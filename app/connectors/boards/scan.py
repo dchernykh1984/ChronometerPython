@@ -42,6 +42,8 @@ def on_usb(ports: list[Any]) -> list[dict[str, Any]]:
                     "name": spec.hello,
                     "port": port.device,
                     "kind": spec.hello,
+                    # The board found by it in any socket, its port renamed or not.
+                    "serial": str(getattr(port, "serial_number", None) or ""),
                 }
             )
     return found
