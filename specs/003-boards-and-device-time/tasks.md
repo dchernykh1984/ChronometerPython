@@ -5,18 +5,18 @@ ChronometerAndroid's PR, which keeps to the same spec.
 
 ## Desktop (ChronometerPython)
 
-- [ ] T001 `app/device_time.py`: SNTP of several servers, the best answers, the offset and how far it
+- [x] T001 `app/device_time.py`: SNTP of several servers, the best answers, the offset and how far it
   may be off (plan, decision 5); the device clock, never running backwards (decision 7); tests
-- [ ] T002 The device clock in the window: a round at start and every 64 s on a thread; every stamp
+- [x] T002 The device clock in the window: a round at start and every 64 s on a thread; every stamp
   on it, a connector's event corrected as it arrives; the clock line and the action log (decisions
   8, 9); Qt-level tests
-- [ ] T003 `beam-boards`: several boards at once, a bridge each, every break out, the states summed,
+- [x] T003 `beam-boards`: several boards at once, a bridge each, every break out, the states summed,
   a `blink` command; a HELLO of either kind taken (decision 1); tests
-- [ ] T004 `beam-scan` and `beam-blink` (decisions 2, 3); tests
-- [ ] T005 The source box: Beam boards, the test beam, the custom command in that order; the list of
+- [x] T004 `beam-scan` and `beam-blink` (decisions 2, 3); tests
+- [x] T005 The source box: Beam boards, the test beam, the custom command in that order; the list of
   boards with Find and Blink, the pick kept; an old single-board pick carried over (decisions 1, 4);
   Qt-level tests
-- [ ] T006 The connector protocol's `found` message and `blink` command
+- [x] T006 The connector protocol's `found` message and `blink` command
   (`specs/001-event-sources/contracts/connector-protocol.md`); the frozen builds' smoke test on
   `beam-boards`; README, `beam/README.md`, CLAUDE.md and AGENTS.md
 
