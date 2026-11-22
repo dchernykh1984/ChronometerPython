@@ -24,8 +24,9 @@ the name keeps its own).
   as two readers would each get half of every line.
 - Bluetooth Low Energy: the serial service 0xFFE0 and its characteristic 0xFFE1, the HM-10's,
   which the ESP32-C3 offers too. The board's characters come as notifications of at most 20 bytes;
-  commands go as writes without response of at most 20 bytes. A program enables the notifications
-  and joins the pieces into lines.
+  commands go as writes of at most 20 bytes: without response where 0xFFE1 takes them (the
+  ESP32-C3), with response where it does not (the prototype's BT05, an MLT-BT05 v6.1, drops any
+  other). A program enables the notifications and joins the pieces into lines.
 - ASCII lines, each ended by `\r\n` from the board, by `\n` (or `\r`) towards it. The board reads
   at most 64 characters of a line and drops the rest.
 - A line is counted only with its line end: one cut short as the link ended may be a `BREAK` with

@@ -58,9 +58,10 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
    HOLDOFF, FLASH, ERROR or a HELLO asked for goes back on the link that asked; a BREAK, a change
    of STATUS and the HELLO at start go to every link.
 3. **One Bluetooth profile.** Both boards offer the HM-10's serial service, 0xFFE0 with the
-   characteristic 0xFFE1 (notify, and write without response): the BT05 has it, the ESP32-C3's
-   firmware offers the same, so each app has one Bluetooth path. Lines travel in pieces of at most
-   20 bytes; the app joins them.
+   characteristic 0xFFE1 (notify, and write): the BT05 has it, the ESP32-C3's firmware offers the
+   same, so each app has one Bluetooth path. The app writes without response where 0xFFE1 takes
+   it (the ESP32-C3), with response where not (the prototype's BT05). Lines travel in pieces of
+   at most 20 bytes; the app joins them.
 4. **The clock over Bluetooth.** A round trip there is 15 to 60 ms and lopsided: a reply waits for
    the radio's next connection event. So `PONG <n> <got_us> <sent_us>` gives both of the board's
    moments, the board waits a random 0-49 ms before it answers, so that its answers fall anywhere
