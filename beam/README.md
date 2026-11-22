@@ -95,11 +95,12 @@ reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which
    and `Custom command` follow it).
 3. Find boards. Within some 5 to 15 s (Bluetooth is looked on for 5 s, by a program of the
    chronometer's own that a portable build unpacks first) the list shows the boards around:
-   those on USB by their port, `beam-rp2040 (USB, COM5)`, those on Bluetooth by their name and signal, the
-   nearest first, `beam-7c1c (Bluetooth, -61 dBm)`. Check the boards to read, one or
-   several: every break of every board checked is a cutoff of its own, none merged. The
-   checks are kept, and the next Start reads them again. A board checked but not found by
-   the last search stays in the list, grey.
+   those on USB by their port, `beam-rp2040 (USB, COM5)`, those on Bluetooth by their name
+   and signal, the nearest first, `beam-7c1c (Bluetooth, -61 dBm)`. Check the boards to
+   read, one or several: every break of every board checked is a cutoff of its own, none
+   merged. The checks are kept, and the next Start reads them again. A board checked but
+   not found by the last search stays in the list, grey; one the source reads now is
+   `read now`, as a board connected is found by no search.
 4. Blink: the board chosen in the list flashes its LED 5 times, to tell which one it is.
    While the source runs, Blink goes through it; before, the chronometer reaches the board
    for a moment. An ESP32-C3's blue LED is lit while the laser is on its sensor: block the
@@ -157,6 +158,8 @@ off. The app's README says more.
 | `source error: <board>: the board's break(s) 6 to 7 did not arrive: ...` | The link was down while the board saw riders, and it no longer keeps them (it keeps its last 128): check those finishes by other means. |
 | `source error: <board>: the board's clock could not be read: ...` | No PING was answered in time: the breaks are timed by when they came, which over Bluetooth may be tens of ms late. |
 | `source disconnected <board>: the board answers no PING: is main.py running on it?` | The board runs no `main.py`, or it stopped: power it off and on; if it says so again, copy the files again. |
+| `boards search stopped: it took too long, or failed` | The search ran for over a minute and was stopped, a Bluetooth stack waiting on a question say: Find boards again. |
+| `blink <board>: stopped: it took too long, or failed` | The same for a blink before Start. |
 | `blink <board>: not reached within 20 s: ...` | Blink before Start found no such board: it is off, out of range, or read by another program or a phone. |
 | `source error: <board>: not connected, so not blinked` | Blink while the source runs, for a board not connected now. |
 
