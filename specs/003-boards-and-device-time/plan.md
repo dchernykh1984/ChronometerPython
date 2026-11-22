@@ -61,8 +61,10 @@ never holds up timing (FR-015); no new dependency on either side.
    own clock did) and, when NTP answered within the hour, within 1 s of NTP's, else within a minute
    of the phone's own clock (FR-010). A mock location is no fix. Otherwise it is dropped and the
    judge told: a jammed or spoofed GNSS at a start.
-7. **The device clock.** `now = the monotonic clock + the offset measured`, or the system's time as
-   it is while none is. The first correction is taken at once; after it, a correction that sets
+7. **The device clock.** `now = a monotonic clock + the offset measured`, or the system's time as it
+   is while none is; the monotonic clock is one that goes on while the device sleeps (a laptop closed
+   between two heats): CLOCK_MONOTONIC_RAW on macOS, CLOCK_BOOTTIME on Linux, QueryPerformanceCounter
+   on Windows, elapsedRealtime on Android. The first correction is taken at once; after it, a correction that sets
    the clock forward is taken at once, one that would set it back is eased in at a tenth of the
    time running, so the clock never runs backwards (FR-012); one of over a second (a system clock
    set wrong by hand) is taken at once and said, as the cutoffs before it were on the old clock.
