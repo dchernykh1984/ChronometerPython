@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.7.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.6.0...v0.7.0) (2026-11-22)
+
+
+### Features
+
+* **beam:** find the boards around on USB and Bluetooth ([5df96b1](https://github.com/dchernykh1984/ChronometerPython/commit/5df96b1b7ca70f3e31e5346cc576f9f708d31d94))
+* **beam:** pick the boards from a list in the window, with Blink ([8cd3a6d](https://github.com/dchernykh1984/ChronometerPython/commit/8cd3a6d58a812a0c1748f58463d6a5e2576bab96))
+* **beam:** read every board picked at once, each break a cutoff of its own ([bfd2254](https://github.com/dchernykh1984/ChronometerPython/commit/bfd2254a4bdb7135445385bb991a5dd429d1e29d))
+* **clock:** every stamp on the device's clock, and the judge shown where it comes from ([1c8fe7d](https://github.com/dchernykh1984/ChronometerPython/commit/1c8fe7d902c747cdb5bfa80eb5fcb84f0f4f1189))
+* **clock:** measure the device's clock against world time by NTP ([bf33ec7](https://github.com/dchernykh1984/ChronometerPython/commit/bf33ec7c3cb7cd4d57999bebf25a2feb4d35e97c))
+
+
+### Bug Fixes
+
+* **beam:** a board picked by its name before is the board found of that name, listed once ([fcca460](https://github.com/dchernykh1984/ChronometerPython/commit/fcca460298b05c153650aedb1c5b0c1685e550fa))
+* **beam:** a board picked on USB is found by its serial number in any socket ([c1ebc7a](https://github.com/dchernykh1984/ChronometerPython/commit/c1ebc7acd7846a73548c4ddd75f53f0d9d7c34c4))
+* **beam:** a board picked with no address or port is said, not left out unseen ([01d6dd3](https://github.com/dchernykh1984/ChronometerPython/commit/01d6dd30f7194b26efc93009882a2e3843f23ea6))
+* **beam:** a board the source reads is said read in the list, not lost ([6148a85](https://github.com/dchernykh1984/ChronometerPython/commit/6148a85349bd276c430195d0ba232178237da03a))
+* **beam:** a flash due for a board let go since is not written ([2b5e91a](https://github.com/dchernykh1984/ChronometerPython/commit/2b5e91a82eb5fb9c79db3d7a57f2a269ca586d85))
+* **beam:** a name a device around advertises keeps no control character, nor cuts a log line ([6b8192b](https://github.com/dchernykh1984/ChronometerPython/commit/6b8192b035b34743870dc9a37ba1be6682e13f79))
+* **beam:** a search or a blink that hangs is stopped after a minute, and said ([3236c78](https://github.com/dchernykh1984/ChronometerPython/commit/3236c782d65a0f2b7fde690ef5ad4db07019fa8a))
+* **beam:** at stop every board's waiting breaks go out before any link is let go ([4f1b0b6](https://github.com/dchernykh1984/ChronometerPython/commit/4f1b0b694c62a7d91f35c42ed09e3f3cdbfff8b7))
+* **beam:** the board chosen in the list stays chosen as the source starts and stops ([0554275](https://github.com/dchernykh1984/ChronometerPython/commit/05542759c4d1337a1c7a739aa248f240156a472e))
+* **clock:** an NTP server's addresses are tried in turn, an IPv6 one going nowhere passed by ([7938374](https://github.com/dchernykh1984/ChronometerPython/commit/79383749a71da32970e7b3fce942064e3d69a93e))
+* **clock:** the device clock runs on a clock that goes on while the computer sleeps ([a1a4d1b](https://github.com/dchernykh1984/ChronometerPython/commit/a1a4d1b313da1253a15f704624f9e459f729bfcf))
+
+
+### Documentation
+
+* **beam:** a board on USB found by its serial number in any socket ([af9685a](https://github.com/dchernykh1984/ChronometerPython/commit/af9685a0e4f5a64257e263f03541c8ef436b893f))
+* **beam:** how long a search for the boards really takes ([9addea6](https://github.com/dchernykh1984/ChronometerPython/commit/9addea6fe6275cab13b1803a46cf58a40baf3cea))
+* **beam:** the Android app's boards picked from a list ([459ffdf](https://github.com/dchernykh1984/ChronometerPython/commit/459ffdfe2764a4904e04956ff1c74a66d4b8aec1))
+* **beam:** the log's lines of a search or a blink stopped, and a board read now ([0096e2f](https://github.com/dchernykh1984/ChronometerPython/commit/0096e2f991eb226210fd76f39a7d46fd25d4243f))
+* **specs:** GNSS's checks and the best source as the phone builds them, its tasks done ([359515c](https://github.com/dchernykh1984/ChronometerPython/commit/359515c4454bba0950359155112ebdfc6d79f42f))
+* **specs:** the boards around listed within 15 s, as a portable build unpacks first ([054a275](https://github.com/dchernykh1984/ChronometerPython/commit/054a275bbc242ddac913423f2e48670684aa7c42))
+* **specs:** the boards around picked from a list, and a clock that knows world time ([d43b062](https://github.com/dchernykh1984/ChronometerPython/commit/d43b062b744d16c5f1c01d197f7008387994aa19))
+* **specs:** the chronometer as it works today, with its boards around and device clock ([4d5700c](https://github.com/dchernykh1984/ChronometerPython/commit/4d5700c359606be25b75f369037de6c4965c1f84))
+* **specs:** the device clock on a monotonic clock that goes on while it sleeps ([e9e92e4](https://github.com/dchernykh1984/ChronometerPython/commit/e9e92e4edf5e665ea8c2fc1dd2fb8ff2f59c56a7))
+* **specs:** the plan and FR-012 as built, the desktop tasks done ([3f2d2d3](https://github.com/dchernykh1984/ChronometerPython/commit/3f2d2d368e4adc76a96ea757426f997c625c2e26))
+* the boards picked from a list, Blink and the device clock ([6eeab6f](https://github.com/dchernykh1984/ChronometerPython/commit/6eeab6f7b8fd36a3d075e0b1fa861bd3506ec86c))
+
 ## [0.6.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.5.0...v0.6.0) (2026-11-22)
 
 
