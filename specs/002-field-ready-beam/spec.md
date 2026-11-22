@@ -39,6 +39,8 @@ the wind (FR-019, SC-007, research 11, task T023); this spec takes that over wit
   receiver is a board with Bluetooth, the ESP32-C3 SuperMini or the RP2040-Zero with a BT05,
   and the light sensor; the emitter is the KY-008 laser on a USB-C power module (5.1 kOhm from
   CC1 and CC2 to GND), with no wire to the receiver.
+- Q: FR-008 asked for the power level, which a power bank does not tell: what now? -> A: No level
+  is reported; the power banks last the whole race (the owner).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -91,8 +93,8 @@ phone; cut the link for a minute mid-race; every break arrives, each with its ri
 3. **Given** a board on Bluetooth whose link drops for 60 s, **When** the link is back, **Then**
    every break it saw meanwhile reaches the app, each with its board time, and the app says that
    the link was down and for how long.
-4. **Given** a board on its own power, **When** its power runs low, **Then** the app tells the judge
-   well before it runs out.
+4. **Given** a board on its own USB-C power bank, **When** a 10-hour race day goes by, **Then** it is
+   still timing, its power bank one checked on the table to last the race.
 
 ---
 
@@ -218,17 +220,16 @@ unpinned kit is built differently each time.
 - **FR-004**: The beam MUST work over a USB cable and over Bluetooth alike, on the desktop
   chronometer and on the Android app; the judge chooses the link, and the choice is kept.
 - **FR-005**: The board MUST speak the same lines of the one contract over both links; anything new
-  the Bluetooth link needs (a battery level, breaks kept while the link was down) is added to the
+  the Bluetooth link needs (breaks kept while the link was down, say) is added to the
   contract first, for both apps and every board.
 - **FR-006**: A board on Bluetooth MUST keep timing when its link drops, keep at least the last 100
   breaks it saw meanwhile, and send them with their board times once the link is back; the app
   says the link was down and for how long.
 - **FR-007**: With several boards in range, the judge MUST pick a board by a name or id the board
   shows; an app MUST never read a board it was not told to.
-- **FR-008**: A board on Bluetooth MUST run on its own power (a battery or a power bank) for at least
-  10 hours, report its power level, and warn the judge when 20% is left. [NEEDS CLARIFICATION: the
-  default kit's USB-C power bank tells the board nothing of its charge: drop the level and the
-  warning for a power bank, or give the receiver a battery it can measure?]
+- **FR-008**: A board on Bluetooth MUST run on its own power, a USB-C power bank, for at least 10
+  hours, a race day. It reports no power level: a power bank tells the board nothing of its
+  charge, so one that lasts the race is chosen, run with its load on the table first.
 - **FR-009**: The beam MUST report no break when only the beam wavers -- the spot moving up to 2 cm
   at 10 m -- and MUST report every crossing of a rider (spec 001, FR-019).
 - **FR-010**: The receiver MUST NOT be blinded by the sun nor make breaks of its own from sunlight
@@ -289,7 +290,7 @@ unpinned kit is built differently each time.
 ### Key Entities *(include if feature involves data)*
 
 - **Beam board**: a board the apps read; its name or id, firmware version, link (USB or Bluetooth),
-  power level, and the breaks it keeps while its link is down.
+  and the breaks it keeps while its link is down.
 - **Break**: a crossing as the board saw it -- its count, its time on the board's clock, its time on
   the host's clock.
 - **Firmware variant**: the firmware for one chip or board; its version, its pinned build, its
@@ -305,8 +306,7 @@ unpinned kit is built differently each time.
   the same light; one crossing over the cable and over Bluetooth differs by at most 2 ms.
 - **SC-002**: With the Bluetooth link cut for 60 s mid-race and restored, every break seen meanwhile
   appears in the app with its right time; none is lost.
-- **SC-003**: A board on its own power runs a 10-hour race day with its link up, and the judge is
-  warned at 20% power left.
+- **SC-003**: A board on its own USB-C power bank runs a 10-hour race day with its link up.
 - **SC-004**: Spec 001's SC-007 at 10 m: 5 minutes of shaking the stands, the spot moving up to 2 cm,
   no break; 50 hand sweeps, 50 breaks.
 - **SC-005**: With the sun low in the receiver's view for 10 minutes, no break of its own, and a hand

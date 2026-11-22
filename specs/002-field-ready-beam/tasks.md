@@ -45,7 +45,8 @@
 - [ ] T015 Field test on the hardware: SC-001 (cable against Bluetooth), SC-010 (the falling weight);
   calibrate the BT05's lopsided trip if it shows; check the BT05 takes its name and 115200 baud,
   and that opening the ESP32-C3's USB port does not reset it into its bootloader
-- [ ] T016 The power level (FR-008), once the power is chosen
+- [x] T016 The power level (FR-008): dropped (2026-11-22); each side runs on a USB-C power bank
+  checked on the table to last the race (beam/README.md, The two kits)
 - [ ] T017 An external LED for FLASH on the ESP32-C3 (FR-015)
 - [ ] T018 The way of sealing (FR-013), after the first printed enclosures
 - [ ] T019 The knowledge-base article on the site (FR-021), once a kit has worked at a race

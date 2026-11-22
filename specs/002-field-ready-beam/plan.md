@@ -85,9 +85,10 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
 8. **Picking a board.** The ESP32-C3 advertises `beam-<4 hex>`, the RP2040 renames its BT05 the
    same way. The app is told a board's name or address (`device` in its settings) and reads no
    other; with none told, it lists the boards it finds and connects to none (FR-007).
-9. **Not yet.** The power level (FR-008) waits for the power choice (a power bank cannot be read);
-   FLASH on the ESP32-C3 lights its small LED, which no camera sees at 10 m: an external LED comes
-   with the enclosures. Both are listed in tasks.md.
+9. **Not yet, and not at all.** No power level (FR-008): the power is a USB-C power bank, which
+   cannot be read, chosen to last the race. Not yet: FLASH on the ESP32-C3 lights its small LED,
+   which no camera sees at 10 m: an external LED comes with the enclosures. Both are in
+   tasks.md.
 10. **The lens.** The first receiver is made for a 60 mm lens of about 100 mm focal length (a 3x
     hand magnifier's): FR-009's 2 cm of wavering at 10 m leaves the spot on it with room to spare.
     The sensor slides in its tube to find the focus; another lens changes two numbers in the
