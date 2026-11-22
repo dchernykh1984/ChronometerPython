@@ -196,8 +196,9 @@ class Many:
         due = [f for f in self.flashes if f[0] <= now]
         self.flashes = [f for f in self.flashes if f[0] > now]
         for _, key, n in due:
-            if self.links[key].link is not None:  # not lost since
-                self.links[key].write(f"FLASH {n}\n")
+            board = self.links.get(key)  # not let go since, as a twin
+            if board is not None and board.link is not None:  # nor lost
+                board.write(f"FLASH {n}\n")
         return True
 
     def drop_twins(self) -> None:
