@@ -65,7 +65,7 @@ def test_a_board_within_every_hypothesis_says_so():
     # A hair under 20: the first answers, before 9 are kept, lag the clock less.
     assert (
         said[4]
-        == "  the board's crystal ahead of this clock: 19.91 ppm (within 30 ppm)"
+        == "  the board's crystal ahead of this clock: 19.91 ppm (within 60 ppm)"
     )
     assert said[5] == "Bluetooth: 300 answers, a round trip 46.50 ms (median)"
     assert "(within 2 ms)" in said[8]
