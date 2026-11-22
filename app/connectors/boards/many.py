@@ -221,9 +221,12 @@ class Many:
             )
 
     def close(self) -> None:
+        # Every board's breaks still waiting for its clock first: a Bluetooth link takes
+        # up to 2 s to let go, and the chronometer kills the connector 3 s after stop.
         for link in self.links.values():
             for event in link.bridge.release(float("inf")):
-                link.send(event)  # a break still waiting for the clock: not lost
+                link.send(event)
+        for link in self.links.values():
             if link.link is not None:
                 link.link.close()
 
