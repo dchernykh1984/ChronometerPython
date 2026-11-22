@@ -13,7 +13,7 @@ import statistics
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.connectors.boards import Board
+from app.connectors.boards import Board, boards
 
 LONGEST_TRIP_MS = 20.0  # a USB round trip longer than this says nothing about the clock
 SAMPLES = 9  # USB round trips kept, their median the offset
@@ -169,6 +169,13 @@ class Bridge:
             del self.pings[unanswered]
         return f"PING {n}"
 
+    def ours(self, name: str) -> bool:
+        """A HELLO's name this board's: its kind's, or any board's for a board whose
+        kind is known only from its HELLO (one picked on Bluetooth, spec 003)."""
+        if self.spec.hello:
+            return name == self.spec.hello
+        return name in {board.hello for board in boards().values()}
+
     def silent(self, now_ms: float) -> bool:
         """A PING unanswered for SILENT_MS: the board has stopped, its link up."""
         return any(now_ms - sent > SILENT_MS for sent in self.pings.values())
@@ -313,7 +320,7 @@ class Bridge:
     def from_board(self, line: str, got_ms: float) -> list[dict[str, Any]]:
         """Events for the chronometer from one board line, received at ``got_ms``."""
         word, rest = parse(line)
-        if word == "HELLO" and rest[:1] == [self.spec.hello]:
+        if word == "HELLO" and self.ours(rest[0] if rest else ""):
             return self.hello(rest, got_ms)
         if word == "BREAK" and (pair := numbers(rest, 2)) is not None:
             if self.board and self.sync.read:

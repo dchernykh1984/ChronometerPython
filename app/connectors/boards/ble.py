@@ -102,13 +102,25 @@ class RadioConnector(Connector):
     """The connector of usb_serial.py, its link Bluetooth: opened on its own loop, as
     finding and connecting a board takes seconds the chronometer must not wait."""
 
-    def __init__(self, stdout: IO[str], bleak: Any, spec: Board) -> None:
+    def __init__(
+        self,
+        stdout: IO[str],
+        bleak: Any,
+        spec: Board,
+        loop: asyncio.AbstractEventLoop | None = None,
+        scan_lock: asyncio.Lock | None = None,
+    ) -> None:
         super().__init__(stdout, None, spec)
         self.bleak = bleak
         self.device = ""
         self.pending = False  # a board being found and connected
-        self.loop = asyncio.new_event_loop()
-        threading.Thread(target=self.loop.run_forever, daemon=True).start()
+        # Several boards read at once share one loop, and find and connect their
+        # boards one after the other: two scans at once may each find nothing.
+        if loop is None:
+            loop = asyncio.new_event_loop()
+            threading.Thread(target=loop.run_forever, daemon=True).start()
+        self.loop = loop
+        self.scan_lock = scan_lock or asyncio.Lock()
 
     def configure(self, settings: object) -> None:
         super().configure(settings)
@@ -143,15 +155,18 @@ class RadioConnector(Connector):
             return wanted in {name.lower() for name in names}
 
         scanner = self.bleak.BleakScanner
-        device = await scanner.find_device_by_filter(named, timeout=SCAN_S)
-        if device is None:
-            raise LookupError(f"no {self.spec.label} named {self.device!r} in range")
-        link = RadioLink(self.loop, self.inbox, device.name or self.device)
-        link.client = self.bleak.BleakClient(
-            device,
-            disconnected_callback=lambda _: self.inbox.put(("lost", (link, LOST))),
-        )
-        await link.client.connect()
+        async with self.scan_lock:  # a connection made while another scans may fail
+            device = await scanner.find_device_by_filter(named, timeout=SCAN_S)
+            if device is None:
+                raise LookupError(
+                    f"no {self.spec.label} named {self.device!r} in range"
+                )
+            link = RadioLink(self.loop, self.inbox, device.name or self.device)
+            link.client = self.bleak.BleakClient(
+                device,
+                disconnected_callback=lambda _: self.inbox.put(("lost", (link, LOST))),
+            )
+            await link.client.connect()
         try:
             await link.client.start_notify(CHARACTERISTIC, link.heard)
             # A write without response to a characteristic that offers none is
