@@ -125,19 +125,31 @@ app's own help says more.
 
 ## Accuracy
 
-The board stamps a break within microseconds. The chronometer maps the board's clock onto
-its own anew at every answer to its PINGs, never once for the race: over USB from the
-median of the last 9, within about 1 ms; over Bluetooth from the shortest trip each way of
-the last 16, which aims at 2 ms (spec 002, FR-002). So over Bluetooth the mapping may move
-by a millisecond or two from one rider to the next, but its error never piles up with the
-crystal's drift (10 to 30 ppm, up to 108 ms an hour), and a link that came back is read
-again by itself.
+The board stamps a break within a fraction of a millisecond: the RP2040 in a hard
+interrupt, the ESP32-C3 in a scheduled one (its MicroPython has no other), which a garbage
+collection may hold up to 1.2 ms. The chronometer maps the board's clock onto its own anew
+at every answer to its PINGs, never once for the race: over USB from the median of the
+last 9; over Bluetooth from the shortest trip each way of the last 16 (spec 002, FR-002).
+So the mapping may move a little from one rider to the next, but its error never piles up
+with the crystal's drift (the prototype's: +46 and -39 ppm, 140 to 170 ms an hour), and a
+link that came back is read again by itself.
 
 The clock check (step 3 of Building one) measures this on every board: the cable's
 mapping, which half a round trip bounds; its move from one answer to the next; the
 crystal's rate; and Bluetooth's mapping against the cable's at the same moments, where
-Kit 1's BT05 shows if its UART makes one way longer than the other (the board subtracts
-the characters' time, not the module's own delays). The prototype's figures, warm and in
-the cold, come here once measured (task T022). The field test then times real breaks: two
-kits, one beam 0.5 m under the other, and a weight dropped from rest above them (SC-010,
-task T015).
+Kit 1's BT05 shows if its UART makes one way longer than the other (the board counts its
+characters' time both ways). The prototype's, warm, read by a Mac (task T022, 2026-11-22):
+
+| | Kit 1: RP2040 + BT05 | Kit 2: ESP32-C3 |
+| --- | --- | --- |
+| USB round trip, median; half of it, the most the mapping can be off | 4.6 ms; 2.3 ms | 4.1 ms; 2.0 ms |
+| USB mapping's move from one answer to the next, 95% | 0.28 ms | 0.28 ms |
+| Crystal against the Mac's clock | +46 ppm | -39 ppm |
+| Bluetooth round trip, median | 43 ms | 41 ms |
+| Bluetooth mapping's move from one answer to the next, 95% | 1.05 ms | 1.28 ms |
+| Bluetooth's mapping from the cable's: on average; 90% within | +0.33 ms; 2.3 ms | +0.41 ms; 2.8 ms |
+| A break's interrupt after its edge: median; most | 63 us; 78 us | 53 us; 165 us, 1.2 ms in a garbage collection |
+
+The same after an hour in the cold is still to be measured (T022). The field test then
+times real breaks: two kits, one beam 0.5 m under the other, and a weight dropped from
+rest above them (SC-010, task T015).
