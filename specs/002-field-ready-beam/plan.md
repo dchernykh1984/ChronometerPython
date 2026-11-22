@@ -65,9 +65,11 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
 4. **The clock over Bluetooth.** A round trip there is 15 to 60 ms and lopsided: a reply waits for
    the radio's next connection event. So `PONG <n> <got_us> <sent_us>` gives both of the board's
    moments, the board waits a random 0-49 ms before it answers, so that its answers fall anywhere
-   between connection events, and the app keeps, for each way, the shortest trip of its last 16:
-   the offset is half the difference of the two. Over USB the median of 9 offsets stays, each now
-   leaving out the board's own wait.
+   between connection events, and the app keeps, for each way, the shortest trip of its last 32,
+   a PING every 0.5 s: the offset is half the difference of the two. Twice the PINGs of the
+   first try (16, every second) brought the prototype within FR-002's 2 ms (1.7 ms for 90% of
+   the time, against 2.3 to 2.8), and its largest move from 5.7 ms to 2.5. Over USB the median
+   of 9 offsets stays, each now leaving out the board's own wait.
 5. **A line's moment.** Over USB a line is timed when its end comes; over Bluetooth when its first
    piece does. On the BT05's UART the board subtracts the line's own transfer time, as the
    characters take about 1 ms each at 9600 baud.

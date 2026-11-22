@@ -84,7 +84,7 @@ every break it still keeps, its last 128, from count `seq` on, as `BREAK` lines,
    asks `RESEND <last + 1>` (a break whose line was lost on the way, the last of a race say, that no
    later break would show); a `seq` below it means the board started again, and asks `RESEND 1` when
    it is above 0. A `HELLO` asked again is said to the judge only when it says something new.
-4. Sends `PING <n>` every 2 s over USB and every 1 s over Bluetooth, `n` never used before by this
+4. Sends `PING <n>` every 2 s over USB and every 0.5 s over Bluetooth, `n` never used before by this
    program. A `PONG <n> <got_us> <sent_us>` received at `got`, its `PING` sent at `sent`, both on
    the program's clock, gives the way there `a = got_us / 1000 - sent` and the way back
    `b = got - sent_us / 1000`; the offset, the program's clock less the board's, is `(b - a) / 2`.
@@ -93,7 +93,7 @@ every break it still keeps, its last 128, from count `seq` on, as `BREAK` lines,
      from that median means the program's clock was set anew: the offsets before it no longer
      count.
    - Over Bluetooth, a trip waits for the radio's next connection event, so the offset is
-     `(min b - min a) / 2` over the last 16 `PONG`s, read once 4 have come. A `PONG` whose own
+     `(min b - min a) / 2` over the last 32 `PONG`s, read once 4 have come. A `PONG` whose own
      `(b - a) / 2` is more than 100 ms from the offset means the clock was set anew: it starts
      again.
    A line is timed when its first piece came, over USB as over Bluetooth: timed at its end, it
