@@ -154,15 +154,16 @@ class RadioConnector(Connector):
         await link.client.connect()
         try:
             await link.client.start_notify(CHARACTERISTIC, link.heard)
+            # A write without response to a characteristic that offers none is
+            # dropped on the way, and the board never hears a command: the
+            # prototype's BT05.
+            serial = link.client.services.get_characteristic(CHARACTERISTIC)
+            link.response = "write-without-response" not in serial.properties
         except Exception:
-            # Connected, but no serial service: another device of the name, say. Let
-            # go of it, or it stays held, and the board itself could not connect.
+            # Connected, but no serial service read: another device of the name, say.
+            # Let go of it, or it stays held, and the board itself could not connect.
             await link.client.disconnect()
             raise
-        # A write without response to a characteristic that offers none is dropped
-        # on the way, and the board never hears a command: the prototype's BT05.
-        serial = link.client.services.get_characteristic(CHARACTERISTIC)
-        link.response = "write-without-response" not in serial.properties
         return link
 
     async def in_range(self) -> str:

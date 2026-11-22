@@ -71,10 +71,16 @@ class Client:
         self.connected = False
         serial = types.SimpleNamespace(properties=["read", *Radio.writes, "notify"])
         self.services = types.SimpleNamespace(get_characteristic=lambda _: serial)
+        if device.name == "two-serials":  # bleak cannot tell which of two to read
+            self.services = types.SimpleNamespace(get_characteristic=self.ambiguous)
         Radio.clients.append(self)
 
     async def connect(self) -> None:
         self.connected = True
+
+    @staticmethod
+    def ambiguous(char: str) -> None:
+        raise OSError("Multiple Characteristics with this UUID, refer to your desired")
 
     async def start_notify(self, char: str, callback: Callable) -> None:
         if self.device.name == "no-serial":
@@ -314,6 +320,15 @@ def test_a_device_of_the_name_with_no_serial_service_is_let_go(bleak):
     _board_in_range("no-serial", "AA:BB")
     _, chronometer, ended = _run(bleak, {"device": "no-serial"})
     assert chronometer.next()["detail"].startswith("Characteristic 0000ffe1")
+    assert Radio.clients and not any(c.connected for c in Radio.clients)
+    chronometer.tell(None)
+    _until(lambda: ended == [0])
+
+
+def test_a_device_whose_serial_characteristic_cannot_be_read_is_let_go(bleak):
+    _board_in_range("two-serials", "AA:BB")
+    _, chronometer, ended = _run(bleak, {"device": "two-serials"})
+    assert chronometer.next()["detail"].startswith("Multiple Characteristics")
     assert Radio.clients and not any(c.connected for c in Radio.clients)
     chronometer.tell(None)
     _until(lambda: ended == [0])
