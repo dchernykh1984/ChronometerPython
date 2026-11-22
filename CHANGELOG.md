@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.1](https://github.com/dchernykh1984/ChronometerPython/compare/v0.7.0...v0.7.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* **beam:** FLASH puts a lit one-colour LED out, so Blink shows with the laser aimed (firmware 0.5) ([cbf523e](https://github.com/dchernykh1984/ChronometerPython/commit/cbf523e5028f69f2f0ddf43a0a4b620cf86b50b3))
+
+
+### Documentation
+
+* **beam:** firmware 0.5 and Blink seen on an ESP32-C3 with its laser aimed ([e061798](https://github.com/dchernykh1984/ChronometerPython/commit/e0617988a68a0123bf8585a30bf8281b62722ca0))
+* **specs:** spec 003's context and plan with firmware 0.5's one change ([ac0c3b9](https://github.com/dchernykh1984/ChronometerPython/commit/ac0c3b9e616652dac27e4d91ec551075cfd61ec6))
+
 ## [0.7.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.6.0...v0.7.0) (2026-11-22)
 
 
