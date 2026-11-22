@@ -117,14 +117,16 @@ def pick_of(board: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in board.items() if key != "rssi"}
 
 
-def label(board: dict[str, Any], found: bool) -> str:
-    """A board's line in the list: its name, its link, and its signal."""
+def label(board: dict[str, Any], found: bool, read: bool = False) -> str:
+    """A board's line in the list: its name, its link, and its signal. One the
+    source reads now is not found by a search, as a board connected advertises no
+    more: it is said read."""
     if board.get("link") == "ble":
         rssi = board.get("rssi")
         where = f"Bluetooth, {rssi} dBm" if found and rssi is not None else "Bluetooth"
     else:
         where = f"USB, {board.get('port') or 'the first port of its kind'}"
-    state = "" if found else ", not found by the last search"
+    state = "" if found else ", read now" if read else ", not found by the last search"
     return f"{board.get('name') or many.key_of(board)} ({where}{state})"
 
 
