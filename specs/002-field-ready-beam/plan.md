@@ -68,8 +68,8 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
    between connection events, and the app keeps, for each way, the shortest trip of its last 32,
    a PING every 0.5 s: the offset is half the difference of the two. Twice the PINGs of the
    first try (16, every second) brought the prototype within FR-002's 2 ms (1.7 to 1.8 ms for
-   90% of the time, against 2.3 to 2.8), and its largest move from 5.7 ms to 2.5. Over USB the median
-   of 9 offsets stays, each now leaving out the board's own wait.
+   90% of the time, against 2.3 to 2.8), and its largest move from 5.7 ms to 2.5. Over USB the
+   median of 9 offsets stays, each now leaving out the board's own wait.
 5. **A line's moment.** A line is timed when its first piece comes, over USB as over Bluetooth.
    On the BT05's UART the board subtracts the line's own transfer time, as the characters take
    about 1 ms each at 9600 baud (87 us at 115200).
