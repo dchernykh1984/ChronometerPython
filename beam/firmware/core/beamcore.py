@@ -288,7 +288,10 @@ class Board:
         self.resent()
 
     def run(self):
-        self.sensor.irq(handler=edge, trigger=machine.Pin.IRQ_RISING, hard=True)
+        try:
+            self.sensor.irq(handler=edge, trigger=machine.Pin.IRQ_RISING, hard=True)
+        except TypeError:  # the ESP32 port has no hard pin IRQ: a scheduled one
+            self.sensor.irq(handler=edge, trigger=machine.Pin.IRQ_RISING)
         self.hello()
         while True:
             self.step()
