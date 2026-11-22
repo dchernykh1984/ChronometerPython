@@ -1,19 +1,23 @@
-"""The boards picked, read at once and blinked (spec 003; app/connectors/boards/
-many.py): the fake board of test_beam_board.py on USB beside the fake one of
-test_beam_ble.py on the radio."""
+"""The boards picked, read at once, found and blinked (spec 003; app/connectors/boards/
+many.py and scan.py): the fake board of test_beam_board.py on USB beside the fake one
+of test_beam_ble.py on the radio."""
 
 from __future__ import annotations
 
+import asyncio
+import io
 import json
 import subprocess
 import sys
 import threading
+import types
 from typing import IO, Any, cast
 
 from app.connectors import runtime
 from app.connectors.boards import ble, rp2040
 from app.connectors.boards import many as m
 from app.connectors.boards import protocol as p
+from app.connectors.boards import scan as s
 from tests import test_beam_ble as tb
 from tests.test_beam_ble import ID, Advert, Device, Radio, _board_in_range
 from tests.test_beam_ble import bleak as bleak
@@ -204,12 +208,13 @@ def test_a_board_picked_on_bluetooth_is_taken_for_either_kind_s_hello():
     assert not p.Bridge(rp2040.BOARD).ours("beam-esp32c3")
 
 
-def test_the_chronometer_runs_the_boards_and_their_blink(monkeypatch):
+def test_the_chronometer_runs_the_boards_their_search_and_blink(monkeypatch):
     ran: list[Any] = []
     monkeypatch.setattr(m, "run", ran.append)
-    for name in ("beam-boards", "beam-blink"):
+    monkeypatch.setattr(s, "run", lambda: ran.append("search"))
+    for name in ("beam-boards", "beam-blink", "beam-scan"):
         runtime.run(name)
-    assert ran == [m.Many, m.Blink]
+    assert ran == [m.Many, m.Blink, "search"]
 
 
 def test_the_boards_run_as_a_process_of_their_own():
@@ -231,3 +236,115 @@ def test_the_boards_run_as_a_process_of_their_own():
     process.stdin.write(b'{"cmd":"stop"}\n')
     process.stdin.close()
     assert process.wait(timeout=10) == 0
+
+
+# -- the search ---------------------------------------------------------------------
+
+
+class Heard(Advert):
+    def __init__(self, name: str | None, uuids: list[str], rssi: int) -> None:
+        super().__init__(name, uuids)
+        self.rssi = rssi
+
+
+def _radio(seen: dict[str, tuple[Device, Heard]] | Exception) -> Any:
+    async def discover(timeout: float, return_adv: bool) -> dict[str, tuple]:
+        assert (timeout, return_adv) == (ble.SCAN_S, True)
+        if isinstance(seen, Exception):
+            raise seen
+        return seen
+
+    return types.SimpleNamespace(BleakScanner=types.SimpleNamespace(discover=discover))
+
+
+def _port(device: str, vid: int | None, pid: int | None) -> types.SimpleNamespace:
+    return types.SimpleNamespace(device=device, vid=vid, pid=pid)
+
+
+def test_the_boards_on_usb_are_found_by_their_ports_ids():
+    found = s.on_usb(
+        [
+            _port("COM9", 0x303A, 0x1001),
+            _port("COM3", 0x2E8A, 0x0005),
+            _port("COM4", 0x2E8A, 0x000C),  # a Raspberry Pi Debug Probe
+            _port("COM1", None, None),
+        ]
+    )
+    assert found == [
+        {"link": "usb", "name": "beam-rp2040", "port": "COM3", "kind": "beam-rp2040"},
+        {
+            "link": "usb",
+            "name": "beam-esp32c3",
+            "port": "COM9",
+            "kind": "beam-esp32c3",
+        },
+    ]
+
+
+def test_the_boards_on_bluetooth_are_found_the_nearest_first():
+    seen = {
+        "AA": (Device("beam-7c1c", "AA"), Heard("beam-7c1c", [], -80)),
+        "BB": (Device(None, "BB"), Heard(None, [ble.SERVICE], -50)),  # a BT05's own
+        "CC": (Device("Headphones", "CC"), Heard("Headphones", [], -40)),
+    }
+    assert asyncio.run(s.on_radio(_radio(seen))) == [
+        {"link": "ble", "name": "BB", "device": "BB", "rssi": -50},
+        {"link": "ble", "name": "beam-7c1c", "device": "AA", "rssi": -80},
+    ]
+
+
+def test_a_search_says_the_boards_found_usb_first():
+    out = io.StringIO()
+    usb = types.SimpleNamespace(comports=lambda: [_port("COM3", 0x2E8A, 0x0005)])
+    seen = {"AA": (Device("beam-7c1c", "AA"), Heard("beam-7c1c", [], -61))}
+    assert s.scan(out, usb, _radio(seen)) == 0
+    lines = [json.loads(line) for line in out.getvalue().splitlines()]
+    assert (lines[0]["type"], lines[0]["connector"]) == ("hello", "beam-scan")
+    boards, errors = s.found_in(out.getvalue().encode())
+    assert [one["link"] for one in boards] == ["usb", "ble"] and errors == []
+
+
+def test_a_search_says_what_it_could_not_look_on_and_finds_the_rest():
+    def broken() -> list[Any]:
+        raise OSError("no ports today")
+
+    out = io.StringIO()
+    off = OSError("Bluetooth device is turned off")
+    assert s.scan(out, types.SimpleNamespace(comports=broken), _radio(off)) == 0
+    boards, errors = s.found_in(out.getvalue().encode())
+    assert boards == []
+    assert errors == [
+        "USB: no ports today",
+        "Bluetooth: Bluetooth device is turned off",
+    ]
+
+
+def test_a_search_s_output_is_read_whatever_else_it_holds():
+    output = b"\n".join(
+        [
+            b"not json",
+            b"[1, 2]",
+            b'{"type": "found", "boards": "none"}',
+            b'{"type": "found", "boards": [{"link": "ble"}, "junk"]}',
+            b'{"type": "status", "state": "connected"}',
+        ]
+    )
+    assert s.found_in(output) == ([{"link": "ble"}], [])
+
+
+def test_the_list_has_the_boards_found_then_those_picked_and_not_found():
+    usb = {"link": "usb", "name": "beam-rp2040", "port": "COM3", "kind": "beam-rp2040"}
+    near = {"link": "ble", "name": "beam-7c1c", "device": "AA", "rssi": -61}
+    gone = {"link": "ble", "name": "beam-b6b0", "device": "BB"}
+    assert s.pick_of(near) == {"link": "ble", "name": "beam-7c1c", "device": "AA"}
+    rows = s.listed([usb, near], [s.pick_of(near), gone])
+    assert rows == [(usb, False, True), (near, True, True), (gone, True, False)]
+    assert [s.label(board, here) for board, _, here in rows] == [
+        "beam-rp2040 (USB, COM3)",
+        "beam-7c1c (Bluetooth, -61 dBm)",
+        "beam-b6b0 (Bluetooth, not found by the last search)",
+    ]
+    first = {"link": "usb", "kind": "beam-rp2040"}  # carried over with no port
+    assert s.label(first, False) == (
+        "beam-rp2040 (USB, the first port of its kind, not found by the last search)"
+    )
