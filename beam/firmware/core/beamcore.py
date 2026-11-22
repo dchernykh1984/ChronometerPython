@@ -55,9 +55,11 @@ _taken = 0  # breaks the IRQ has taken, ever
 
 
 def edge(_pin):
-    """Hard IRQ: the moment the light went, kept before anything else runs. One
-    edge, then none until the loop arms it again, so the chatter of a comparator
-    in the half-light never piles up, nor moves the time of the break."""
+    """The IRQ of the light's going: its moment kept at once on the RP2040 (a hard
+    IRQ), a few tens of microseconds later on the ESP32, whose port schedules it (up
+    to 1.2 ms in a garbage collection). One edge, then none until the loop arms it
+    again, so the chatter of a comparator in the half-light never piles up, nor
+    moves the time of the break."""
     global _armed, _at, _taken
     t = ticks_us()
     if _armed:
