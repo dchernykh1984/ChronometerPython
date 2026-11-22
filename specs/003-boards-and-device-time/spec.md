@@ -121,8 +121,8 @@ once with one ruler: the two cutoffs agree within SC-001.
    used as it is, and the judge is told the clock is not checked.
 4. **Given** a GNSS time that disagrees with NTP's by over a second, or jumps (jammed, spoofed),
    **When** it comes, **Then** it is not taken, and the judge is told so.
-5. **Given** a correction that moves while a race is timed, **When** the clock is read, **Then** it
-   never runs backwards: a correction that would set it back is eased in.
+5. **Given** a correction under a second that moves while a race is timed, **When** the clock is
+   read, **Then** it never runs backwards: a correction that would set it back is eased in.
 
 ### Edge Cases
 
@@ -168,9 +168,10 @@ once with one ruler: the two cutoffs agree within SC-001.
 - **FR-011**: NTP MUST be asked of several servers, several times, and the answers with the shortest
   round trips taken; an answer from a server that is not synchronised (stratum 0 or 16, the alarm
   set) MUST NOT be taken.
-- **FR-012**: The corrected clock MUST never run backwards: a correction that would set it back while
-  cutoffs are being taken is eased in, no faster than the clock runs. The first correction, before
-  any cutoff, is taken at once.
+- **FR-012**: The corrected clock MUST never run backwards for a correction under a second: one that
+  would set it back is eased in, the clock running slower until it is in, never stopped. The first
+  correction is taken at once, and so is one of over a second either way (the system's clock set
+  wrong by hand), the judge told that the cutoffs before it were on the old clock.
 - **FR-013**: The apps MUST stay independent of each other: neither takes its time, nor anything
   else, from the other.
 - **FR-014**: On the phone, the location MUST be asked for once, as timing mode starts; refused, GNSS
@@ -195,7 +196,8 @@ once with one ruler: the two cutoffs agree within SC-001.
 - **SC-002**: A judge finds and picks two boards, and has breaks from both, within a minute of
   opening the beam source.
 - **SC-003**: A GNSS time over a second off NTP's (a spoofed one) is never taken, over 20 tries.
-- **SC-004**: Over a race day of corrections, the corrected clock never runs backwards.
+- **SC-004**: Over a race day of corrections under a second, the corrected clock never runs
+  backwards.
 
 ## Assumptions
 

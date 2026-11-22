@@ -5,8 +5,8 @@ taken; a server that is not synchronised, or that disagrees with the others by m
 than its round trip allows, is not. The clock is the system's monotonic one plus the
 offset so measured, its rate followed from one measurement to the next, so it keeps
 world time while the internet is gone; with no measurement, the system's time as it is.
-It never runs backwards, and it never sets the system's clock. A laptop has no GNSS: the
-phone's app adds it.
+It never runs backwards for a correction under a second, and it never sets the system's
+clock. A laptop has no GNSS: the phone's app adds it.
 """
 
 from __future__ import annotations
