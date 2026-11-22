@@ -454,6 +454,27 @@ def test_run_takes_the_sensor_edge_on_a_hard_irq_and_says_hello(rig, monkeypatch
     assert rig.said[0].startswith("HELLO beam-test")
 
 
+def test_a_port_with_no_hard_irq_takes_the_edge_on_a_scheduled_one(rig, monkeypatch):
+    """MicroPython's ESP32 port takes no hard=: the board must start all the same."""
+
+    def irq(**kwargs: Any) -> None:
+        if "hard" in kwargs:
+            raise TypeError("extra keyword arguments given")
+        rig.board.sensor.irqs.append(kwargs)
+
+    def stop(ms: int) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(rig.board.sensor, "irq", irq)
+    monkeypatch.setattr(rig.core, "sleep_ms", stop)
+    with pytest.raises(KeyboardInterrupt):
+        rig.board.run()
+    assert rig.board.sensor.irqs == [
+        {"handler": rig.core.edge, "trigger": Pin.IRQ_RISING}
+    ]
+    assert rig.said[0].startswith("HELLO beam-test")
+
+
 def test_noise_on_a_link_is_read_as_question_marks_never_an_error(rig):
     assert rig.core.ascii_of(b"PI\xffNG\x00 1\r\n") == "PI?NG? 1\r\n"
 
