@@ -1,5 +1,80 @@
 # Changelog
 
+## [0.6.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.5.0...v0.6.0) (2026-11-22)
+
+
+### Features
+
+* **beam:** a clock check for every board flashed, over its cable and its radio at once ([e3c621a](https://github.com/dchernykh1984/ChronometerPython/commit/e3c621a9b1b79214f994977225cfc9ea9c63e89d))
+* **beam:** first enclosures from Blender: a lens tube receiver, a laser box, TPU gaskets, a tripod collar ([b73a4ca](https://github.com/dchernykh1984/ChronometerPython/commit/b73a4ca1358dd781c6079b39c5e13b3c9975d384))
+* **beam:** one firmware core for the RP2040 with its BT05 and for the ESP32-C3's Bluetooth ([91a6cd8](https://github.com/dchernykh1984/ChronometerPython/commit/91a6cd864d8db22903ecbec04f8b7b14414ca344))
+* **beam:** PING a Bluetooth board every 0.5 s, its clock from the last 32 answers ([870a335](https://github.com/dchernykh1984/ChronometerPython/commit/870a3351ab77396565672262b3b8a5d5f87996e6))
+* **beam:** read contract 0.4: both moments of a PONG, the radio's clock, breaks asked for again ([d499b11](https://github.com/dchernykh1984/ChronometerPython/commit/d499b11fe255e845d94ca5f8f47ae9c0c63d257e))
+* **beam:** read the RP2040's BT05 and the ESP32-C3 over Bluetooth on the desktop ([b8c13e6](https://github.com/dchernykh1984/ChronometerPython/commit/b8c13e67d0d60e07687812870777735104698823))
+
+
+### Bug Fixes
+
+* **beam:** a board started again under a link that stayed up has its clock read anew ([addaafc](https://github.com/dchernykh1984/ChronometerPython/commit/addaafc357d94f8e92a71d0006e442bfa51e791d))
+* **beam:** a collar in two halves that goes round the tube between its flanges, and room for the sensor's trimmer ([26f4453](https://github.com/dchernykh1984/ChronometerPython/commit/26f4453945996eb553a77de24700959a4464c68a))
+* **beam:** a flash that will not keep the BT05's baud never stops the RP2040's start ([21e5d0e](https://github.com/dchernykh1984/ChronometerPython/commit/21e5d0e5b66fcbe282dc6388c85e3c783c036ff8))
+* **beam:** a USB mapping within 3 ms, the most half its round trip allows ([5cfffc8](https://github.com/dchernykh1984/ChronometerPython/commit/5cfffc8c17b9c22b7526cf08970dd7c378faf3cb))
+* **beam:** ask the board's count every 5 s, so a last break whose line was lost comes all the same ([283ab6f](https://github.com/dchernykh1984/ChronometerPython/commit/283ab6f073b4b85ebc5ca262b98c10118ad5d0e7))
+* **beam:** check a board's crystal within 60 ppm, as the prototype's were measured ([69c6c50](https://github.com/dchernykh1984/ChronometerPython/commit/69c6c503d080e07f22159940f551361c084b8e64))
+* **beam:** cut a USB board's line at 128 characters, as over Bluetooth ([65d753b](https://github.com/dchernykh1984/ChronometerPython/commit/65d753bd273fdb25668c3ea5c44a51ddfc61476d))
+* **beam:** let go of a Bluetooth device whose serial characteristic cannot be read ([9b033ad](https://github.com/dchernykh1984/ChronometerPython/commit/9b033ad2bcc646e1e829a76d4a2b71f8a442d1cc))
+* **beam:** let go of a link opened only half: a port whose lines fail, a device with no serial service ([d63d9fa](https://github.com/dchernykh1984/ChronometerPython/commit/d63d9fa3440fb9279a5d01c4ea179a70a1c82bef))
+* **beam:** move the BT05 to 115200 by its own baud table, before its name ([f357802](https://github.com/dchernykh1984/ChronometerPython/commit/f357802ce34e8269695ef9e28bbd0beae6612d89))
+* **beam:** open an ESP32-C3's USB port with DTR and then RTS off, never its bootloader ([5adde03](https://github.com/dchernykh1984/ChronometerPython/commit/5adde03d8488f22c589d193d9922bcc37ed8a0ac))
+* **beam:** print files centred where each part was made, never moved by its neighbours ([3cabf92](https://github.com/dchernykh1984/ChronometerPython/commit/3cabf92616e372c34838e4ce9cc93da5dd8571c2))
+* **beam:** say breaks again a line a turn once the link is free, so a long RESEND never holds up the next break ([94398c0](https://github.com/dchernykh1984/ChronometerPython/commit/94398c0e1d51c8b24cf0c5df32bff3727a7a805b))
+* **beam:** start on an ESP32 too, whose pin interrupts are never hard ([375291d](https://github.com/dchernykh1984/ChronometerPython/commit/375291dfd2f928b0cc7e431e9760d607298b3747))
+* **beam:** time a PONG over the BT05 as its first notification leaves the module ([0857170](https://github.com/dchernykh1984/ChronometerPython/commit/08571701a0961fe450b0b60ddd2c1e254b263ad6))
+* **beam:** time a USB board's line by its first byte ([6de74e5](https://github.com/dchernykh1984/ChronometerPython/commit/6de74e5f6ae910a935bbb94f4ac6b3389b4b7eab))
+* **beam:** write to a Bluetooth board with response where it takes no other, as the BT05 ([544dd14](https://github.com/dchernykh1984/ChronometerPython/commit/544dd1462d75c0608dbe03122800e23a3dabab16))
+
+
+### Documentation
+
+* **agents:** the beam folder, its contract-first rule, MicroPython syntax, Bluetooth and Blender ([2491ed2](https://github.com/dchernykh1984/ChronometerPython/commit/2491ed226611973027c83a3d24b8a0ae5c273df5))
+* **agents:** the beam's clock check, and its clock read at every answer ([df37ca1](https://github.com/dchernykh1984/ChronometerPython/commit/df37ca1f78114881499e6c6b51f4940dc09b5b5e))
+* **agents:** the prototype's hardware quirks the beam's code keeps to ([814a999](https://github.com/dchernykh1984/ChronometerPython/commit/814a9995bc4fa04b502bf2b73b86d6dba30b68cc))
+* **app:** the beam boards the chronometer reads, over USB and Bluetooth ([15598b9](https://github.com/dchernykh1984/ChronometerPython/commit/15598b99caa679b991f544c95b178caa0706b5ca))
+* **beam:** a beam's cost with its board, now that the receiver counts it ([8697fa7](https://github.com/dchernykh1984/ChronometerPython/commit/8697fa706e0c713fb551a660eaecfebc526939ca))
+* **beam:** a break's interrupt is hard on the RP2040, scheduled on the ESP32 ([b811e4b](https://github.com/dchernykh1984/ChronometerPython/commit/b811e4b96b757afe5745b7e6ef1041dbff4bbd89))
+* **beam:** a kit by default, a Bluetooth receiver and a laser on a USB-C power module ([f599311](https://github.com/dchernykh1984/ChronometerPython/commit/f599311a937218efb47c9e68d0c9da3289456025))
+* **beam:** a PONG over the BT05 counts its first 20 characters' time ([8b54982](https://github.com/dchernykh1984/ChronometerPython/commit/8b5498245740b3975ddd8005c2ad9bf6f7b469e1))
+* **beam:** a power bank's low-current mode lasts 2 hours: check it for a race day ([9451e4f](https://github.com/dchernykh1984/ChronometerPython/commit/9451e4f2edfc62acccd1f31b2d466798fb79ea03))
+* **beam:** check the clock of every board flashed, and what its accuracy rests on ([27a42b7](https://github.com/dchernykh1984/ChronometerPython/commit/27a42b7d60b387d03879995e84538a94d1e4acc5))
+* **beam:** the BT05 is moved to 115200 by its own table first, then named ([dafc3ab](https://github.com/dchernykh1984/ChronometerPython/commit/dafc3ab7a1ab6353d0dcfe05118247b2d0ed4118))
+* **beam:** the prototype's clock and interrupt figures, warm ([9788b1c](https://github.com/dchernykh1984/ChronometerPython/commit/9788b1c7d3b679cfc7f9765402befc218c0e6d9c))
+* **beam:** the prototype's crystals as about +46 and -41 ppm, as they vary run to run ([2463a1d](https://github.com/dchernykh1984/ChronometerPython/commit/2463a1d19c4fc5620e65f32636cfedd39b0cbf48))
+* **beam:** the prototype's figures at Bluetooth's new pace, and what a time holds to ([e8af58f](https://github.com/dchernykh1984/ChronometerPython/commit/e8af58f2d4afaf9cfa5cb780a3e29134977edce1))
+* **beam:** the RESEND pace, the count asked every 5 s, and Android 7 in the plan ([149fe25](https://github.com/dchernykh1984/ChronometerPython/commit/149fe25a981a628ab0aed0c79297dd268831fec4))
+* **beam:** the two Bluetooth kits: what to buy and for how much, wiring, flashing, both apps ([2ae8e3a](https://github.com/dchernykh1984/ChronometerPython/commit/2ae8e3af6b665c5a7127ceccdd3b1e937a550bd9))
+* **contract:** beam board lines 0.4: Bluetooth, both moments in a PONG, RESEND ([832f6af](https://github.com/dchernykh1984/ChronometerPython/commit/832f6af1c3604dc858251cb45fac5457fdf10387))
+* **specs:** a board's commands go with response where its characteristic takes no other ([d234b88](https://github.com/dchernykh1984/ChronometerPython/commit/d234b882a48e098fc201e94ebc8887cd8f46d9e0))
+* **specs:** a board's line is timed by its first piece over USB too ([16afec2](https://github.com/dchernykh1984/ChronometerPython/commit/16afec2d19744cfe725426f90a97fba22ab37c1e))
+* **specs:** a break waits 10 s at most for the radio's clock, and how long a link was down is still to say ([499d2e4](https://github.com/dchernykh1984/ChronometerPython/commit/499d2e4fd23117f31be46ce7df7f9b4d4f09d056))
+* **specs:** a kit by default, each side on a USB-C power bank ([db1882e](https://github.com/dchernykh1984/ChronometerPython/commit/db1882e2577b90d2522dd542c820fa08f078c3aa))
+* **specs:** a power bank that runs out is a link lost, with no warning before ([f8b515a](https://github.com/dchernykh1984/ChronometerPython/commit/f8b515a25f40539d530baae76e5c3c135630874b))
+* **specs:** a time holds to a hundredth of a second, start and finish together ([ef5ee90](https://github.com/dchernykh1984/ChronometerPython/commit/ef5ee9072a8bc7a20349e8ecdda1223b42433aa6))
+* **specs:** ask for a beam ready for real races: its own time, Bluetooth, wind, weather, printed parts ([c3d4f4a](https://github.com/dchernykh1984/ChronometerPython/commit/c3d4f4afbcc676f9ace52e000240bb9cf3f9ff51))
+* **specs:** ask what FR-008's power level is once the power is a power bank ([8f594aa](https://github.com/dchernykh1984/ChronometerPython/commit/8f594aa75229b6d1b21b5566e613cf619d70d48b))
+* **specs:** Bluetooth's mapping moves about 0.5 ms from one answer to the next ([7ed437f](https://github.com/dchernykh1984/ChronometerPython/commit/7ed437f614492c813d87bce88cf5765f5a075053))
+* **specs:** name the firmware core beamcore.py, as it is on the boards ([2831946](https://github.com/dchernykh1984/ChronometerPython/commit/283194678eaefd987f650f8105871bb358cb91e0))
+* **specs:** no power level for a board on a power bank, which lasts the race ([49e6773](https://github.com/dchernykh1984/ChronometerPython/commit/49e6773cec6f04d90a888b52796970a03bb90dc8))
+* **specs:** PING a Bluetooth board every 0.5 s and map its clock from the last 32 answers ([b614f90](https://github.com/dchernykh1984/ChronometerPython/commit/b614f904ebbb9f870ab2fe5ae493fce752ab8d94))
+* **specs:** plan the two Bluetooth kits, contract 0.4 and the first enclosures ([3819845](https://github.com/dchernykh1984/ChronometerPython/commit/381984507485ec3f6ec5a7bc2a1404a175f0631c))
+* **specs:** read the board's clock at every answer, and check it on every board flashed ([9db96d5](https://github.com/dchernykh1984/ChronometerPython/commit/9db96d5b04c22e34e5bcbecacefffd9ec8349f31))
+* **specs:** require sealing, one beam folder, PETG with TPU, and a knowledge-base article ([23734d7](https://github.com/dchernykh1984/ChronometerPython/commit/23734d7ac479a80e11a94511582e400e210d332a))
+* **specs:** rewrap two lines the latest changes left past the spec's width ([a582bd5](https://github.com/dchernykh1984/ChronometerPython/commit/a582bd5e5d317223b62b66d0daa3581c4f5a35cb))
+* **specs:** ride out the wind with a lens and cap a beam's optics at 10,000 tenge ([1d647d1](https://github.com/dchernykh1984/ChronometerPython/commit/1d647d1a8dba3b7ce179cfcfb162b68b5c1c53e7))
+* **specs:** take both Bluetooth boards, the ESP32-C3 and an HM-10 on the RP2040, and a falling-weight test ([af7b6bb](https://github.com/dchernykh1984/ChronometerPython/commit/af7b6bb23972ce6e58a9a76022c823afe5b073c6))
+* **specs:** the plan gives both kits' Bluetooth figures, 1.7 to 1.8 ms ([74f19ad](https://github.com/dchernykh1984/ChronometerPython/commit/74f19ad6957f4064e29c33436ab04d06afef9933))
+* **specs:** the plan times a USB line by its first piece too, as the contract does ([2d7c89e](https://github.com/dchernykh1984/ChronometerPython/commit/2d7c89e0fb30653703b0fbc3a39f02e7afd96eea))
+* **specs:** the spec's checklist names FR-008's open question ([9cf4896](https://github.com/dchernykh1984/ChronometerPython/commit/9cf48964ab7c0f7a0b0972c61762a8d5cc734537))
+
 ## [0.5.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.4.1...v0.5.0) (2026-11-15)
 
 
