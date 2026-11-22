@@ -70,9 +70,9 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
    first try (16, every second) brought the prototype within FR-002's 2 ms (1.7 ms for 90% of
    the time, against 2.3 to 2.8), and its largest move from 5.7 ms to 2.5. Over USB the median
    of 9 offsets stays, each now leaving out the board's own wait.
-5. **A line's moment.** Over USB a line is timed when its end comes; over Bluetooth when its first
-   piece does. On the BT05's UART the board subtracts the line's own transfer time, as the
-   characters take about 1 ms each at 9600 baud.
+5. **A line's moment.** A line is timed when its first piece comes, over USB as over Bluetooth.
+   On the BT05's UART the board subtracts the line's own transfer time, as the characters take
+   about 1 ms each at 9600 baud (87 us at 115200).
 6. **The BT05 set up by the board.** At start, while nothing is connected to it, the RP2040 names
    the BT05 `beam-<last 4 hex digits of its id>` and asks it for 115200 baud, checking each answer;
    whatever fails, it keeps 9600 and goes on. Lines from the BT05 that are not commands get no
