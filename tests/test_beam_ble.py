@@ -39,6 +39,8 @@ class Radio:
     clients: ClassVar[list[Client]] = []
     kept: ClassVar[list[str]] = []  # the BREAKs the board said, whatever the link
     answers_at = 2_000_000  # the board's clock when it answers, in microseconds
+    # The writes 0xFFE1 takes: the ESP32-C3's both; the prototype's BT05 only "write".
+    writes: ClassVar[list[str]] = ["write", "write-without-response"]
 
 
 class Scanner:
@@ -64,8 +66,11 @@ class Client:
         self.device, self.gone = device, disconnected_callback
         self.notify: Callable[[Any, bytearray], None] | None = None
         self.written: list[bytes] = []
+        self.responses: list[bool] = []  # each write's kind: answered, or not
         self.commands = ""
         self.connected = False
+        serial = types.SimpleNamespace(properties=["read", *Radio.writes, "notify"])
+        self.services = types.SimpleNamespace(get_characteristic=lambda _: serial)
         Radio.clients.append(self)
 
     async def connect(self) -> None:
@@ -78,7 +83,10 @@ class Client:
         self.notify = callback
 
     async def write_gatt_char(self, char: str, data: bytes, response: bool) -> None:
-        assert (char, response) == (ble.CHARACTERISTIC, False) and len(data) <= 20
+        assert char == ble.CHARACTERISTIC and len(data) <= 20
+        self.responses.append(response)
+        if not response and "write-without-response" not in Radio.writes:
+            return  # dropped on the way, as macOS drops it: the board hears nothing
         self.written.append(data)
         self.commands += data.decode()
         while "\n" in self.commands:
@@ -122,6 +130,7 @@ def bleak(monkeypatch: pytest.MonkeyPatch) -> types.SimpleNamespace:
     monkeypatch.setattr(Radio, "off", "")
     monkeypatch.setattr(Radio, "clients", [])
     monkeypatch.setattr(Radio, "kept", [])
+    monkeypatch.setattr(Radio, "writes", ["write", "write-without-response"])
     monkeypatch.setattr(u, "now_ms", lambda: 1_000_000.0)
     monkeypatch.setattr(ble, "now_ms", lambda: 1_000_000.0)
     monkeypatch.setattr(p, "RADIO_PING_EVERY_S", 0.01)
@@ -170,9 +179,26 @@ def test_the_board_named_is_read_and_its_break_timed_by_its_clock(bleak):
         "device_time": "2500000",
     }
     assert all(len(piece) <= ble.CHUNK for piece in client.written)
+    assert not any(client.responses)  # it takes writes without response: no wait
     chronometer.tell({"cmd": "stop"})
     _until(lambda: ended == [0])
     assert not client.connected  # let go: it advertises again for the next reader
+
+
+def test_a_board_taking_only_writes_with_response_hears_its_commands(
+    bleak, monkeypatch
+):
+    """The prototype's BT05 offers 0xFFE1 no write without response: a command sent
+    so is dropped on the way, and the board would never be heard."""
+    monkeypatch.setattr(Radio, "writes", ["write"])
+    _board_in_range("beam-7c1c")
+    _, chronometer, ended = _run(bleak, {"device": "beam-7c1c"})
+    assert chronometer.next()["state"] == "connecting"
+    assert chronometer.next()["detail"] == f"beam-esp32c3 {rp2040.FIRMWARE} {ID}"
+    [client] = Radio.clients
+    assert client.responses and all(client.responses)
+    chronometer.tell(None)
+    _until(lambda: ended == [0])
 
 
 def test_with_no_board_named_the_boards_in_range_are_said_and_none_read(bleak):

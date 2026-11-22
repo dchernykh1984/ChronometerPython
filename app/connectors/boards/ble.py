@@ -55,6 +55,7 @@ class RadioLink:
         self.line = ""
         self.first_ms = 0.0
         self.lock = asyncio.Lock()  # one write's pieces never mixed with another's
+        self.response = False  # writes answered: a BT05 may take no other kind
 
     def heard(self, _sender: Any, data: bytearray) -> None:
         """A notification: some of the board's characters."""
@@ -77,7 +78,7 @@ class RadioLink:
             for at in range(0, len(data), CHUNK):
                 try:
                     await self.client.write_gatt_char(
-                        CHARACTERISTIC, data[at : at + CHUNK], response=False
+                        CHARACTERISTIC, data[at : at + CHUNK], response=self.response
                     )
                 except Exception:
                     return
@@ -154,6 +155,10 @@ class RadioConnector(Connector):
             # go of it, or it stays held, and the board itself could not connect.
             await link.client.disconnect()
             raise
+        # A write without response to a characteristic that offers none is dropped
+        # on the way, and the board never hears a command: the prototype's BT05.
+        serial = link.client.services.get_characteristic(CHARACTERISTIC)
+        link.response = "write-without-response" not in serial.properties
         return link
 
     async def in_range(self) -> str:
