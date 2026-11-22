@@ -23,22 +23,42 @@ What the boards say, and what a program reading them does, is one contract:
 
 ## The two kits
 
-Both work over a USB cable and over Bluetooth. A kit is a receiver (the board, the
-sensor and the lens) on one side of the course, and an emitter (the laser) on the other.
+Both work over a USB cable and over Bluetooth. A kit is a receiver on one side of the
+course and an emitter on the other, each on its own USB-C power bank: every part of the
+judging system is powered over USB-C. The receiver is a board with Bluetooth, the ESP32-C3
+SuperMini whose own chip has it (kit 2) or the RP2040-Zero with a BT05 (kit 1), and the
+light sensor behind the lens. The emitter is the laser on a USB-C power module and nothing
+else: it only shines, with no wire to the receiver.
 
 | Part | Kit 1 | Kit 2 | Price, KZT | Where |
 | --- | --- | --- | --- | --- |
 | Board | RP2040-Zero | ESP32-C3 SuperMini | 2,458 (the ESP32-C3) | Ozon |
 | Bluetooth | BT05 (AT-09, an HM-10 clone on the CC2541) | on the board | 2,480 (the BT05) | Ozon |
-| Light sensor | LM393 module with a photoresistor, 4 pins (VCC, GND, DO, AO) | the same | 689 | Ozon |
-| Laser | KY-008, 650 nm, 5 V | the same | 787 | Ozon |
+| Light sensor | LM393 module with a photoresistor, 3 pins (VCC, GND, DO) | the same, 4 pins (VCC, GND, DO, AO) | 689 | Ozon |
 | Lens | a 3x hand magnifier's 60 mm lens | the same | about 1,000 to 2,000 | not bought yet |
+| Laser | KY-008, 650 nm, 5 V | the same | 787 | Ozon |
+| Laser's power | a USB-C power module with 5.1 kOhm from CC1 and CC2 to GND (below) | the same | about 550 | not bought yet |
 | Dupont wires, female-female | 3 for the sensor, 4 for the BT05 | 3 for the sensor | | |
-| USB-C cables and power banks | one for each board and each laser | the same | | |
+| USB-C cables and power banks | one for the receiver, one for the emitter, with a low-current mode (below) | the same | | |
+
+**The laser's power module.** Any USB-C board that brings its VBUS and GND out to pins, with
+a 5.1 kOhm resistor from each of CC1 and CC2 to GND: without them a USB-C power bank or
+charger gives it no 5 V (a USB-A to C cable does). Documented ones: SparkFun's USB 2.0
+Type-C Connector Breakout (BOB-17110), Pololu's USB 2.0 Type-C Connector Breakout (usb07a),
+Adafruit's USB-C Breakout Board, Downstream Connection (4090). A local one, Kaspi's "Type-C
+power module" (5 V, 12 x 10 x 5 mm, 550 KZT), does not say: on one that has them a meter
+reads 5.1 kOhm from each CC pin to GND, 10.2 between the two. VBUS goes to the laser's `S`,
+GND to its `-`. Until one is bought, a board's 5 V powers the laser on the table (the
+Sensor Shield's `V` and `G` rows).
+
+**The power banks.** A laser draws 20 to 40 mA and a receiver 30 to 80: less than many power
+banks need to stay on, and they switch themselves off within a minute. Take one with a
+low-current mode (Xiaomi's and Anker's: two presses of the button), or check that one stays
+on with its load for 2 minutes.
 
 Kit 1's board, sensor and laser were bought before this list was kept. The enclosures, the
 screws and the tripods are listed in [`enclosures/README.md`](enclosures/README.md). A
-beam's emitter, receiver and lens come to about 3,000 KZT, under the spec's limit of
+beam's emitter, receiver and lens come to about 3,500 KZT, under the spec's limit of
 10,000 (FR-020).
 
 Do not buy an HC-05 or an HC-06: they are Bluetooth Classic, which neither chronometer
