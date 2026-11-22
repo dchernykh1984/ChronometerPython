@@ -68,8 +68,9 @@ Field rules:
 - `antenna`: text (port number or name). `rssi`: number, dBm. `reader`: text (address or serial).
 - `seq`: the beam's own break counter when it has one, else the connector's count from 1.
   Several boards read by one connector may each send the same `seq`: every one is a break.
-- `boards` of `found`: each `{"link": "usb", "name", "port", "kind"}` (the kind from the port's
-  USB ids) or `{"link": "ble", "name", "device", "rssi"}` (`device` the address; `rssi`, dBm),
+- `boards` of `found`: each `{"link": "usb", "name", "port", "kind", "serial"}` (the kind from
+  the port's USB ids; `serial` its USB serial number, by which `beam-boards` finds the board in any
+  socket, as macOS and Linux name a port by its socket) or `{"link": "ble", "name", "device", "rssi"}` (`device` the address; `rssi`, dBm),
   those on USB first, then the nearest on Bluetooth. A board in `beam-boards`' `settings.boards`
   is one of these, its `rssi` left out.
 
