@@ -90,13 +90,23 @@ class Connector:
         self.inbox.put(("eof", None))
 
     def listen(self, link: Any) -> None:
+        """The board's lines, each timed when its first byte came: a line read to its
+        end first, a byte at a time, was timed a millisecond or two late."""
         why = "the board's port closed"
+        line, first_ms = bytearray(), 0.0
         try:
-            for raw in link:
-                if not raw.endswith(b"\n"):
-                    continue  # cut short as the port ended: a BREAK of half its digits
-                line = raw.decode("ascii", "replace").strip()
-                self.inbox.put(("board", (line, now_ms())))  # timed as it came
+            while chunk := link.read(link.in_waiting or 1):  # waits for the first byte
+                came = now_ms()
+                for byte in chunk:
+                    if not line:
+                        first_ms = came
+                    if byte == ord("\n"):
+                        text = line.decode("ascii", "replace").strip()
+                        self.inbox.put(("board", (text, first_ms)))
+                        line = bytearray()
+                    else:
+                        line.append(byte)
+            # A line not ended as the port ended is dropped: a BREAK of half its digits.
         except Exception as error:  # whatever ends the reading ends the link
             why = str(error) or type(error).__name__
         self.inbox.put(("lost", (link, why)))  # once, naming its port: a new one stays
