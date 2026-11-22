@@ -72,6 +72,11 @@ outcome is appended to the in-app action log, not shown in a dialog. See the
   reader reads only the board its `device` setting names. The clock is mapped from the
   shortest trip each way of the last 16 PONGs (`RadioSync`), never from a round trip's
   middle: a radio reply waits for its next connection event.
+- The prototype's hardware has quirks the code keeps to, each in a test: its BT05 (an
+  MLT-BT05 v6.1) takes writes with response only (a reader picks the write from 0xFFE1's
+  properties), counts its bauds from 1200 (8 is 115200) and answers nothing for about 2 s
+  after a new name; the ESP32-C3's MicroPython has no hard pin IRQ (a scheduled one, up to
+  1.2 ms late in a garbage collection).
 - The clock is mapped anew at every PONG, never once at the connection and kept
   (spec 002, FR-022, the owner's choice). `beam/tools/clock_check.py` measures what it
   rests on, on every board flashed; a change to the mapping is checked with it.
