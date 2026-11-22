@@ -42,6 +42,7 @@ that can speak this protocol itself (a future USB or Bluetooth beam) is a connec
 | `start` | `settings`: object | Begin reporting, with the settings the judge chose for this connector. |
 | `stop` | | Stop reporting; exit soon. |
 | `ping` | `id`: integer | Answer with `pong`. |
+| `blink` | `board`: string | `beam-boards` only (spec 003): flash that board's LED a few times, the board named by its address on Bluetooth or its port on USB. A board not read is said as an `error`. |
 
 ## Events (connector to chronometer)
 
@@ -53,6 +54,7 @@ that can speak this protocol itself (a future USB or Bluetooth beam) is a connec
 | `status` | `state`: `"connecting"`, `"connected"` or `"disconnected"`; optional `detail` | The device link changed. |
 | `error` | `message`: string; optional `fatal`: boolean | Something went wrong; `fatal` means the connector cannot go on. |
 | `pong` | `id`: integer | Answer to `ping`. |
+| `found` | `boards`: array of objects | `beam-scan` only (spec 003): the beam boards around, then it ends. |
 
 Field rules:
 
@@ -65,6 +67,21 @@ Field rules:
 - `device_time`: the device's own time, as text, exactly as reported; kept for later analysis.
 - `antenna`: text (port number or name). `rssi`: number, dBm. `reader`: text (address or serial).
 - `seq`: the beam's own break counter when it has one, else the connector's count from 1.
+  Several boards read by one connector may each send the same `seq`: every one is a break.
+- `boards` of `found`: each `{"link": "usb", "name", "port", "kind"}` (the kind from the port's
+  USB ids) or `{"link": "ble", "name", "device", "rssi"}` (`device` the address; `rssi`, dBm),
+  those on USB first, then the nearest on Bluetooth. A board in `beam-boards`' `settings.boards`
+  is one of these, its `rssi` left out.
+
+## The beam boards' own connectors (spec 003)
+
+- `beam-boards` reads the boards in its `settings.boards` at once, each over its own link, and
+  says each one's `status` and `error` with its name and `: ` before the detail. A board picked
+  on two links (its USB and its Bluetooth) is read on the first to answer only, and said.
+- `beam-scan` needs no `start`: after `hello` it looks for about 5 s, says what could not be
+  looked on as `error` events, then one `found`, and ends.
+- `beam-blink` takes the one board of `settings.boards` in its `start`, flashes its LED once the
+  board answers, and ends; a board not reached within 20 s is said as an `error`.
 
 ## Examples
 

@@ -17,7 +17,8 @@ the network is best effort.
 | `tests/` | pytest; `conftest.py` holds the offscreen Qt `win` fixture. |
 | `data/` | Runtime data files. |
 | `beam/` | Everything for the laser beam: `README.md` (the kits, parts and prices, wiring, flashing, both apps), `firmware/` (one core, `core/beamcore.py`, and a `main.py` per chip, `rp2040/` and `esp32c3/`), `enclosures/` (the 3D-printed parts, made in Blender), `tools/` (`clock_check.py`, the clock check every board gets when flashed). The firmware's tests (`tests/test_beam_firmware.py`) run with the rest, outside the coverage gate, which measures `app/` only. |
-| `app/connectors/boards/` | The beam boards the chronometer reads itself: the contract's reader (`protocol.py`), the USB transport (`usb_serial.py`), the Bluetooth one (`ble.py`, through `bleak`), one module per chip (`rp2040.py`, `esp32c3.py`), each a USB device and a Bluetooth one. |
+| `app/connectors/boards/` | The beam boards the chronometer reads itself: the contract's reader (`protocol.py`), the USB transport (`usb_serial.py`), the Bluetooth one (`ble.py`, through `bleak`), one module per chip (`rp2040.py`, `esp32c3.py`); `many.py`, the `beam-boards` source, every board the judge picked read at once, each break a cutoff of its own, and `beam-blink`; `scan.py`, `beam-scan`, the boards around for the window's list (spec 003). |
+| `app/device_time.py` | The device's clock against world time: NTP of several servers, and the clock every cutoff is stamped on, which never runs backwards and never sets the system's (spec 003). No Qt. |
 
 `app/models.py` is a port of an older C++ chronometer; several helpers say so in
 their docstrings. Keep the ported behaviour unless a change is asked for.

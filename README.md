@@ -80,10 +80,22 @@ set of files. Use real copies.
 
 Crossings are typed by hand by default. The **Event source** group switches to a
 light beam or to timing chips, through a small program the chronometer starts on
-**Start** and stops on **Stop** or on exit. Its devices: the beam boards, an
-RP2040-Zero or an ESP32-C3, over USB or Bluetooth (`beam/README.md` says how to build,
-flash and set one up), test devices ("Test beam", "Test chips", replaying a chip reads
-file) and a command of your own; chip readers are listed as not available yet.
+**Start** and stops on **Stop** or on exit. Its devices: **Beam boards** first, the
+laser beam's boards, an RP2040-Zero or an ESP32-C3, over USB or Bluetooth (`beam/README.md`
+says how to build, flash and set one up); then test devices ("Test beam", "Test chips",
+replaying a chip reads file) and a command of your own; chip readers are listed as not
+available yet.
+
+- **Find boards** lists the boards around, on USB and on Bluetooth with their signal. A
+  check picks a board, one or several: every break of every board picked is a cutoff of
+  its own, nothing merged. The pick is kept, and read again at the next Start. **Blink**
+  flashes the chosen board's LED 5 times, to tell which one it is.
+- Every cutoff, by hand or by a device, is stamped on the computer's clock corrected to
+  world time by NTP, asked of several servers every minute while the internet answers;
+  the system's clock itself is never set. The line under the source says where the time
+  comes from and how far it may be off, as `Clock: the internet, within 6 ms`. With no
+  internet the last correction stays, how far it may be off growing; never measured, it
+  is the system's time, `Clock: the system's, not checked`.
 
 - **Beam records** says what a break is. A rider's cutoff: it comes in at the
   bottom slot with the number typed in Next, the slots above moving up, as a
