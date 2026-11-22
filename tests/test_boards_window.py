@@ -98,8 +98,10 @@ def test_the_pick_is_locked_while_the_source_reads_it(win, monkeypatch):
     _choose(win, "beam", "beam-boards")
     _found(win, monkeypatch)
     win._list_boards.item(0).setCheckState(Qt.CheckState.Checked)
+    win._list_boards.setCurrentRow(1)  # chosen for Blink before Start
     monkeypatch.setattr(mw.ConnectorHost, "start", lambda *_: None)
     win._on_source_start()
+    assert win._list_boards.currentRow() == 1  # still chosen after it
     assert win._reading == {"COM3"}
     win._boards_found = []  # a search now: a board connected advertises no more
     win._show_boards()
