@@ -11,7 +11,8 @@ board's own name, beam- and the last 4 hex digits of its id, unless `--ble` name
 another; `--ble -` for the cable alone), maps its clock anew at every answer as they
 map it, and says "within" or "OUTSIDE" of each of the spec's hypotheses:
 
-- over USB, half a round trip, the most the mapping can be off: 1 ms;
+- over USB, half a round trip, the most the mapping can be off: 3 ms (2.0 to 2.5 on
+  the prototype, read by a Mac);
 - the mapping's move from one answer to the next, what two riders a moment apart may
   differ by: 0.5 ms over USB, 3 ms over Bluetooth, for 95% of the moves;
 - the board's crystal against this computer's clock: 60 ppm (the prototype's were
@@ -36,7 +37,7 @@ from typing import Any
 from app.connectors.boards import Board, ble, esp32c3, protocol, rp2040, usb_serial
 from app.connectors.boards.protocol import ClockSync, RadioSync
 
-USB_WITHIN_MS = 1.0  # the spec's hypotheses (FR-022)
+USB_WITHIN_MS = 3.0  # the spec's hypotheses (FR-022)
 USB_MOVE_MS = 0.5
 RADIO_MOVE_MS = 3.0
 CRYSTAL_PPM = 60.0

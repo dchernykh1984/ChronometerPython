@@ -58,7 +58,7 @@ def test_a_board_within_every_hypothesis_says_so():
     assert said[:4] == [
         "board: beam-rp2040 0.4 e6614103",
         "USB: 150 answers, a round trip 1.00 ms (median)",
-        "  the mapping off by at most half of it: 0.50 ms (within 1 ms)",
+        "  the mapping off by at most half of it: 0.50 ms (within 3 ms)",
         "  its move from one answer to the next, 95% under: 0.04 ms (within 0.5 ms),"
         " the most 0.04 ms",
     ]
