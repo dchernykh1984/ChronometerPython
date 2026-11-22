@@ -102,6 +102,9 @@ _BACKUP_DELAY_MS = 2000  # a device burst's backup, and a failed one tried again
 # A group's riders cross the start within seconds: a break this long after its start
 # is likely the next group, its start missed as Save group was not pressed.
 _NEXT_GROUP_MS = 60_000
+# A search or a blink still running after this hangs, a Bluetooth stack waiting say:
+# it is stopped, and the button is the judge's again.
+_TOOL_MS = 60_000
 
 
 def _kept(path: str) -> str:
@@ -662,6 +665,7 @@ class MainWindow(QMainWindow):
         self._btn_find_boards.setText("Searching...")
         program = builtin_command("beam-scan")
         process.start(program[0], program[1:])
+        QTimer.singleShot(_TOOL_MS, process, process.kill)
 
     def _search_ended(self, process: QProcess) -> bool:
         """The search of ``process`` over; False for one over already."""
@@ -687,6 +691,8 @@ class MainWindow(QMainWindow):
         self._boards_found, errors = board_scan.found_in(output)
         for error in errors:
             self._append_log(f"boards search: {error}")
+        if process.exitStatus() != QProcess.ExitStatus.NormalExit:
+            self._append_log("boards search stopped: it took too long, or failed")
         self._append_log(f"boards search: {len(self._boards_found)} found")
         self._show_boards()
 
@@ -715,6 +721,7 @@ class MainWindow(QMainWindow):
         program = builtin_command("beam-blink")
         process.start(program[0], program[1:])
         process.write(cp.start({"boards": [board_scan.pick_of(board)]}))
+        QTimer.singleShot(_TOOL_MS, process, process.kill)
         self._append_log(f"blink {name}: reaching it")
 
     def _on_blink_failed(
@@ -732,8 +739,9 @@ class MainWindow(QMainWindow):
         _, errors = board_scan.found_in(bytes(process.readAllStandardOutput().data()))
         for error in errors:
             self._append_log(f"blink {error}")
-        ok = process.exitStatus() == QProcess.ExitStatus.NormalExit
-        if not errors and ok and process.exitCode() == 0:
+        if process.exitStatus() != QProcess.ExitStatus.NormalExit:
+            self._append_log(f"blink {name}: stopped: it took too long, or failed")
+        elif not errors and process.exitCode() == 0:
             self._append_log(f"blink {name}: its LED flashed 5 times")
         elif not errors:
             self._append_log(f"blink {name}: failed, exit code {process.exitCode()}")
