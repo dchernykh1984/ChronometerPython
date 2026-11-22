@@ -93,8 +93,9 @@ reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which
    `<results>.beam_breaks.txt`.
 2. Event source: Source `beam`, Device `Beam boards`, the first in the list (`Test beam`
    and `Custom command` follow it).
-3. Find boards. Within about 5 s the list shows the boards around: those on USB by their
-   port, `beam-rp2040 (USB, COM5)`, those on Bluetooth by their name and signal, the
+3. Find boards. Within some 5 to 15 s (Bluetooth is looked on for 5 s, by a program of the
+   chronometer's own that a portable build unpacks first) the list shows the boards around:
+   those on USB by their port, `beam-rp2040 (USB, COM5)`, those on Bluetooth by their name and signal, the
    nearest first, `beam-7c1c (Bluetooth, -61 dBm)`. Check the boards to read, one or
    several: every break of every board checked is a cutoff of its own, none merged. The
    checks are kept, and the next Start reads them again. A board checked but not found by
