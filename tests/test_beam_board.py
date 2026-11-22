@@ -5,6 +5,7 @@ and the loop between the two, with a board on a fake port standing in for the re
 
 from __future__ import annotations
 
+import itertools
 import json
 import queue
 import subprocess
@@ -492,6 +493,7 @@ class Port:
         self.write_timeout, self.stuck_writes = write_timeout, 0
         self.written: list[str] = []
         self.said: queue.Queue[bytes | Exception | None] = queue.Queue()
+        self.pending = b""  # come in, not yet read
 
     def __setattr__(self, name: str, value: object) -> None:
         if name in ("dtr", "rts"):  # the control lines, in the order they are set
@@ -532,11 +534,21 @@ class Port:
             Port.kept.append(line)
         self.said.put(f"{line}\r\n".encode())
 
-    def __iter__(self) -> Iterator[bytes]:
-        while (item := self.said.get()) is not None:
+    @property
+    def in_waiting(self) -> int:
+        return len(self.pending)
+
+    def read(self, size: int = 1) -> bytes:
+        """As pyserial's with no timeout: waits for the first byte; none once closed."""
+        while not self.pending:
+            item = self.said.get()
+            if item is None:
+                return b""
             if isinstance(item, Exception):
                 raise item
-            yield item
+            self.pending += item
+        data, self.pending = self.pending[:size], self.pending[size:]
+        return data
 
     def close(self) -> None:
         self.closed = True
@@ -920,6 +932,20 @@ def test_a_line_cut_short_as_the_port_ends_is_no_line(ports, serial):
     }
     chronometer.tell(None)
     _until(lambda: ended == [0])
+
+
+def test_a_line_is_timed_when_its_first_byte_came(monkeypatch, serial):
+    """Read to its end first, a byte at a time, a line was timed late by the rest of
+    it: a PONG's way back, and with it the clock, by a millisecond or two."""
+    clock = itertools.count(10.0, 15.0)  # each read comes 15 ms after the one before
+    monkeypatch.setattr(u, "now_ms", lambda: next(clock))
+    link = Port("COM7", None, True)
+    for piece in (b"PONG 1 5", b" 6\r\nHEL", None):  # "HEL": cut short as it ends
+        link.said.put(piece)
+    connector = u.Connector(Chronometer(), serial, rp2040.BOARD)
+    connector.listen(link)
+    assert connector.inbox.get_nowait() == ("board", ("PONG 1 5 6", 10.0))
+    assert connector.inbox.get_nowait() == ("lost", (link, "the board's port closed"))
 
 
 def test_a_reading_ended_by_any_error_is_said_and_the_port_opened_again(
