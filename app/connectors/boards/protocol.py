@@ -18,12 +18,12 @@ from app.connectors.boards import Board
 LONGEST_TRIP_MS = 20.0  # a USB round trip longer than this says nothing about the clock
 SAMPLES = 9  # USB round trips kept, their median the offset
 STEP_MS = 50.0  # an offset this far from the median: this computer's clock stepped
-RADIO_SAMPLES = 16  # Bluetooth round trips kept: the shortest way each way of these
+RADIO_SAMPLES = 32  # Bluetooth round trips kept: the shortest way each way of these
 RADIO_READY = 4  # Bluetooth round trips before the board's clock counts as read
 RADIO_STEP_MS = 100.0  # beyond a radio trip's own spread: the clock stepped
 PING_EVERY_S = 2.0
 HELLO_EVERY_S = 5.0  # its count: a last break whose line was lost is asked for again
-RADIO_PING_EVERY_S = 1.0  # more trips over Bluetooth: more chances of a short one
+RADIO_PING_EVERY_S = 0.5  # more trips over Bluetooth: more chances of a short one
 SILENT_MS = 6000.0  # a PING unanswered this long: the board stopped
 SILENT = "the board answers no PING: is main.py running on it?"
 BLOCKED_MS = 2000.0  # longer than any rider takes to cross the beam

@@ -129,7 +129,8 @@ The board stamps a break within a fraction of a millisecond: the RP2040 in a har
 interrupt, the ESP32-C3 in a scheduled one (its MicroPython has no other), which a garbage
 collection may hold up to 1.2 ms. The chronometer maps the board's clock onto its own anew
 at every answer to its PINGs, never once for the race: over USB from the median of the
-last 9; over Bluetooth from the shortest trip each way of the last 16 (spec 002, FR-002).
+last 9; over Bluetooth from the shortest trip each way of the last 32, a PING every 0.5 s
+(spec 002, FR-002).
 So the mapping may move a little from one rider to the next, but its error never piles up
 with the crystal's drift (the prototype's: +46 and -39 ppm, 140 to 170 ms an hour), and a
 link that came back is read again by itself.

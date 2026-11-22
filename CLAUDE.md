@@ -70,8 +70,8 @@ outcome is appended to the in-app action log, not shown in a dialog. See the
   file as 3.8.
 - Over Bluetooth both boards offer the HM-10's serial service, 0xFFE0 with 0xFFE1, and a
   reader reads only the board its `device` setting names. The clock is mapped from the
-  shortest trip each way of the last 16 PONGs (`RadioSync`), never from a round trip's
-  middle: a radio reply waits for its next connection event.
+  shortest trip each way of the last 32 PONGs (`RadioSync`, a PING every 0.5 s), never
+  from a round trip's middle: a radio reply waits for its next connection event.
 - The prototype's hardware has quirks the code keeps to, each in a test: its BT05 (an
   MLT-BT05 v6.1) takes writes with response only (a reader picks the write from 0xFFE1's
   properties), counts its bauds from 1200 (8 is 115200) and answers nothing for about 2 s
