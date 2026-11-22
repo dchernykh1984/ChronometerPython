@@ -131,9 +131,11 @@ Linux, the `bluetooth` service has to run.
 
 ## In the Android app
 
-Device `USB beam` reads either board on the phone's USB (an OTG adapter or a USB-C
-cable). Device `Bluetooth beam` reads either one over Bluetooth, by the same name. The
-app's own help says more.
+Device `Beam boards`, as on the desktop: **Find boards** in the settings lists the board
+on the phone's USB (an OTG adapter or a USB-C cable) and the boards on Bluetooth with
+their signal; a check picks one or several, every break of every board picked a cutoff
+of its own, and **Blink** flashes a board's LED. The pick changes while timing mode is
+off. The app's README says more.
 
 ## When the log says
 
