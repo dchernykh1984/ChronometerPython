@@ -360,11 +360,12 @@ def test_a_pong_gives_when_its_ping_came_and_when_it_went(rig):
 
 def test_a_ping_on_a_slow_wire_is_timed_from_its_first_character(rig):
     """On the BT05's UART a character takes its time to come: the PING began that much
-    before its line ended (7 characters with the line end, 87 us each here)."""
+    before its line ended (7 characters with the line end, 87 us each here), and the
+    PONG leaves the module only once its first 20 have crossed, as one notification."""
     rig.run(10, blocked=False)
     rig.radio.inbox = "PING 9\n"
     rig.run(13)
-    assert rig.radio.said[-1] == f"PONG 9 {10_000 - 7 * 87} {22_000}"
+    assert rig.radio.said[-1] == f"PONG 9 {10_000 - 7 * 87} {22_000 + 20 * 87}"
     assert not any(line.startswith("PONG") for line in rig.said)  # not on USB
 
 
