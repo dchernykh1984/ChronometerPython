@@ -226,7 +226,9 @@ unpinned kit is built differently each time.
 - **FR-007**: With several boards in range, the judge MUST pick a board by a name or id the board
   shows; an app MUST never read a board it was not told to.
 - **FR-008**: A board on Bluetooth MUST run on its own power (a battery or a power bank) for at least
-  10 hours, report its power level, and warn the judge when 20% is left.
+  10 hours, report its power level, and warn the judge when 20% is left. [NEEDS CLARIFICATION: the
+  default kit's USB-C power bank tells the board nothing of its charge: drop the level and the
+  warning for a power bank, or give the receiver a battery it can measure?]
 - **FR-009**: The beam MUST report no break when only the beam wavers -- the spot moving up to 2 cm
   at 10 m -- and MUST report every crossing of a rider (spec 001, FR-019).
 - **FR-010**: The receiver MUST NOT be blinded by the sun nor make breaks of its own from sunlight
