@@ -190,3 +190,20 @@ def test_a_board_picked_by_its_name_before_is_the_board_found(win, monkeypatch):
     win._list_boards.item(0).setCheckState(Qt.CheckState.Checked)
     picks = sources.connector_settings(win._sources, "beam-boards")["boards"]
     assert picks == [USB, {"link": "ble", "name": "beam-7c1c", "device": "AA"}]
+
+
+def test_a_search_or_a_blink_that_hangs_is_stopped_and_said(win, monkeypatch):
+    monkeypatch.setattr(mw, "_TOOL_MS", 300)
+    hang = "import time; time.sleep(60)"
+    _programs(monkeypatch, **{"beam-scan": hang, "beam-blink": hang})
+    _choose(win, "beam", "beam-boards")
+    win._on_find_boards()
+    assert _wait_until(lambda: win._boards_search is None)
+    assert "boards search stopped: it took too long, or failed" in _log(win)
+    assert win._btn_find_boards.isEnabled()  # the judge's again
+    win._boards_found = [USB]
+    win._show_boards()
+    win._list_boards.setCurrentRow(0)
+    win._on_blink()
+    assert _wait_until(lambda: not win._blinks)
+    assert _log(win)[-1] == "blink beam-rp2040: stopped: it took too long, or failed"
