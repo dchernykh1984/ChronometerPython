@@ -47,13 +47,19 @@ def on_usb(ports: list[Any]) -> list[dict[str, Any]]:
     return found
 
 
+def plain(name: str) -> str:
+    """A name a device around advertised, anyone's: no control character, a line end
+    among them, that would cut a line of the action log."""
+    return "".join(char for char in name if char.isprintable())
+
+
 async def on_radio(bleak: Any) -> list[dict[str, Any]]:
     """The boards on Bluetooth, the nearest first."""
     seen = await bleak.BleakScanner.discover(timeout=ble.SCAN_S, return_adv=True)
     found = [
         {
             "link": "ble",
-            "name": advert.local_name or device.name or device.address,
+            "name": plain(advert.local_name or device.name or device.address),
             "device": device.address,
             "rssi": advert.rssi,
         }
