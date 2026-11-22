@@ -164,7 +164,8 @@ once with one ruler: the two cutoffs agree within SC-001.
   be off, and MUST be told when the source changes or the clock is not checked.
 - **FR-010**: A GNSS time MUST be taken only when it is plausible: steady from one fix to the next
   (it moves as the device's own clock does, within a few milliseconds), and within 1 s of NTP's when
-  NTP has answered. Otherwise it MUST be dropped, and the judge told (GNSS jammed or spoofed).
+  NTP has answered within the hour, else within a minute of the device's own clock. Otherwise it
+  MUST be dropped, and the judge told (GNSS jammed or spoofed).
 - **FR-011**: NTP MUST be asked of several servers, several times, and the answers with the shortest
   round trips taken; an answer from a server that is not synchronised (stratum 0 or 16, the alarm
   set) MUST NOT be taken.
