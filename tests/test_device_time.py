@@ -127,6 +127,30 @@ def test_a_server_is_asked_a_few_times_and_not_again_once_silent(monkeypatch):
     assert replies == []  # nothing asked after the silence
 
 
+def test_a_server_s_addresses_are_tried_until_one_answers(monkeypatch):
+    """Its IPv6 address first, on a network whose IPv6 goes nowhere: its IPv4 one
+    answers."""
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        lambda *a, **k: [
+            (socket.AF_INET6, 2, 0, "", ("2001:db8::1", 123, 0, 0)),
+            (socket.AF_INET, 2, 0, "", ("1.2.3.4", 123)),
+        ],
+    )
+    ok = lambda c: _reply(c, WORLD_MS + 5, WORLD_MS + 5)  # noqa: E731
+    v6: list[Any] = [TimeoutError()]  # sent into nowhere: silent
+    v4: list[Any] = [ok, ok]
+
+    def opener(family: int, _kind: int) -> Sock:
+        return Sock(v6 if family == socket.AF_INET6 else v4)
+
+    ticks = iter(float(t) for t in range(0, 100, 10))
+    got = dt.ask("s", lambda: next(ticks), opener, tries=2)
+    assert [round(one.trip_ms) for one in got] == [10, 10]
+    assert v6 == [] and v4 == []
+
+
 def test_a_server_not_found_or_no_network_answers_nothing(monkeypatch):
     def nowhere(*_: object, **__: object) -> list[Any]:
         raise socket.gaierror("not found")

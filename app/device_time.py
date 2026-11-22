@@ -20,6 +20,7 @@ import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 SERVERS = (
     "time.google.com",
@@ -92,13 +93,27 @@ def ask(
     tries: int = QUERIES,
 ) -> list[Answer]:
     """The answers ``server`` gives to ``tries`` requests; none when it is not found or
-    does not answer in time."""
+    does not answer in time. Its addresses are tried in turn until one answers: the
+    IPv6 one first, say, on a network whose IPv6 goes nowhere."""
     try:
-        family, kind, _, _, address = socket.getaddrinfo(
-            server, 123, type=socket.SOCK_DGRAM
-        )[0]
-    except OSError, IndexError:
+        addresses = socket.getaddrinfo(server, 123, type=socket.SOCK_DGRAM)
+    except OSError:
         return []
+    for family, kind, _, _, address in addresses:
+        if answers := _ask_at(server, (family, kind, address), clock_ms, opener, tries):
+            return answers
+    return []
+
+
+def _ask_at(
+    server: str,
+    where: tuple[int, int, Any],
+    clock_ms: Callable[[], float],
+    opener: Callable[..., socket.socket],
+    tries: int,
+) -> list[Answer]:
+    """The answers one of ``server``'s addresses gives; a silent try ends its turn."""
+    family, kind, address = where
     answers = []
     try:
         with opener(family, kind) as sock:
@@ -116,7 +131,7 @@ def ask(
                 got = clock_ms()
                 if (one := answer(server, data, cookie, sent, got)) is not None:
                     answers.append(one)
-    except OSError:  # no socket at all: no network
+    except OSError:  # no socket of the family at all
         return answers
     return answers
 
