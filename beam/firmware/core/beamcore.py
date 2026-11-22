@@ -40,6 +40,7 @@ WAIT_US = (
     50_000  # a PONG waits up to this: its answer falls anywhere between radio events
 )
 PONGS_MAX = 8  # PONGs waiting their turn; a flood of PINGs keeps only the last
+PIECE = 20  # the characters a BT05 holds before it sends them as one notification
 LINE_MAX = 64
 READ_MAX = 256  # characters read from a link in one turn of the loop
 
@@ -269,7 +270,9 @@ class Board:
         due = [p for p in self.pongs if p[0] <= now]
         self.pongs = [p for p in self.pongs if p[0] > now]
         for _, link, n, got in due:
-            link.write(f"PONG {n} {got} {self.clock.now()}")
+            # Timed as its first piece leaves the link: a BT05 sends nothing before its
+            # UART has carried 20 characters, 1.7 ms at 115200, which no PING waits.
+            link.write(f"PONG {n} {got} {self.clock.now() + link.transfer_us(PIECE)}")
 
     def resent(self):
         """The next break asked for again, once its link is free."""

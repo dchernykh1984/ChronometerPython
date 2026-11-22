@@ -46,7 +46,7 @@ counting past the 30-bit ticks' wrap.
 | `STATUS beam`, `STATUS blocked` | The light's state once it has held 50 ms, and when asked `STATUS`. |
 | `STATUS unsteady` | No state has held 50 ms for a second: the light flickers on the sensor. |
 | `STATUS unknown` | Asked `STATUS` before any state has held. |
-| `PONG <n> <got_us> <sent_us>` | Asked `PING <n>`: when the `PING` came, its first character where the link's own transfer time is known (the BT05's UART), its end otherwise; and when this answer went. The board waits a random 0 to 49 ms between the two. |
+| `PONG <n> <got_us> <sent_us>` | Asked `PING <n>`: when the `PING` came, its first character where the link's own transfer time is known (the BT05's UART), its end otherwise; and when this answer went, over the BT05's UART when its first 20 characters had crossed it, as the module sends nothing before. The board waits a random 0 to 49 ms between the two. |
 | `HOLDOFF <ms>` | Asked `HOLDOFF <ms>`: the hold-off is now that. |
 | `FLASH <n> <t_us>` | Asked `FLASH <n>`: its LED lit for 100 ms, for cameras. |
 | `ERROR unknown: <line>` | A line it did not understand, the first 40 characters of it. Never on the BT05's UART, where the module's own replies (`OK`, `+NAME=...`) would come back as one. |
