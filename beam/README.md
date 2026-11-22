@@ -143,14 +143,20 @@ characters' time both ways). The prototype's, warm, read by a Mac (task T022, 20
 
 | | Kit 1: RP2040 + BT05 | Kit 2: ESP32-C3 |
 | --- | --- | --- |
-| USB round trip, median; half of it, the most the mapping can be off | 4.6 ms; 2.3 ms | 4.1 ms; 2.0 ms |
-| USB mapping's move from one answer to the next, 95% | 0.28 ms | 0.28 ms |
-| Crystal against the Mac's clock | +46 ppm | -39 ppm |
-| Bluetooth round trip, median | 43 ms | 41 ms |
-| Bluetooth mapping's move from one answer to the next, 95% | 1.05 ms | 1.28 ms |
-| Bluetooth's mapping from the cable's: on average; 90% within | +0.33 ms; 2.3 ms | +0.41 ms; 2.8 ms |
+| USB round trip, median; half of it, the most the mapping can be off | 4.9 ms; 2.5 ms | 4.2 ms; 2.1 ms |
+| USB mapping's move from one answer to the next, 95% | 0.32 ms | 0.31 ms |
+| Crystal against the Mac's clock | +46 ppm | -42 ppm |
+| Bluetooth round trip, median | 43 ms | 43 ms |
+| Bluetooth mapping's move from one answer to the next, 95%; most | 0.50 ms; 2.5 ms | 0.62 ms; 2.4 ms |
+| Bluetooth's mapping from the cable's: on average; 90% within | +0.16 ms; 1.7 ms | +0.40 ms; 1.8 ms |
 | A break's interrupt after its edge: median; most | 63 us; 78 us | 53 us; 165 us, 1.2 ms in a garbage collection |
 
-The same after an hour in the cold is still to be measured (T022). The field test then
+So a break's time is off by about half a millisecond as a rule: 9 in 10 within 1.8 ms over
+Bluetooth, and over USB within 2.5 ms at most (half a round trip; the cable's and the radio's
+mappings agree within 0.5 ms on average). A rider's time, a start's error and a finish's
+together, holds to a hundredth of a second, never to a thousandth: results are given in
+hundredths. The light sensor's own delay comes on top, the same at both ends when both are
+beams; the falling weight measures it (T015). The same after an hour in the cold is still to
+be measured (T022). The field test then
 times real breaks: two kits, one beam 0.5 m under the other, and a weight dropped from
 rest above them (SC-010, task T015).

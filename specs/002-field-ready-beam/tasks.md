@@ -55,4 +55,5 @@
   an hour in the cold (outdoors, or a fridge); its figures into `beam/README.md`'s Accuracy, and
   FR-022's hypotheses changed where they are not what was measured. Every board flashed after
   it is checked the same way, warm (each chip's README, Flashing). Warm: done 2026-11-22, its
-  figures in the README; the hour in the cold is still to come
+  figures in the README, every hypothesis within once Bluetooth's PINGs came every 0.5 s and
+  the USB limit was 3 ms; the hour in the cold is still to come
