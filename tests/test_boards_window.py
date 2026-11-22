@@ -101,6 +101,9 @@ def test_the_pick_is_locked_while_the_source_reads_it(win, monkeypatch):
     monkeypatch.setattr(mw.ConnectorHost, "start", lambda *_: None)
     win._on_source_start()
     assert win._reading == {"COM3"}
+    win._boards_found = []  # a search now: a board connected advertises no more
+    win._show_boards()
+    assert win._list_boards.item(0).text() == "beam-rp2040 (USB, COM3, read now)"
     item = win._list_boards.item(0)
     assert not item.flags() & Qt.ItemFlag.ItemIsUserCheckable
     assert item.checkState() == Qt.CheckState.Checked

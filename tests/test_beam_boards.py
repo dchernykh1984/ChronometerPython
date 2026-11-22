@@ -378,6 +378,7 @@ def test_the_list_has_the_boards_found_then_those_picked_and_not_found():
         "beam-7c1c (Bluetooth, -61 dBm)",
         "beam-b6b0 (Bluetooth, not found by the last search)",
     ]
+    assert s.label(gone, False, read=True) == "beam-b6b0 (Bluetooth, read now)"
     first = {"link": "usb", "kind": "beam-rp2040"}  # carried over with no port
     assert s.label(first, False) == (
         "beam-rp2040 (USB, the first port of its kind, not found by the last search)"

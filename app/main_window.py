@@ -617,7 +617,8 @@ class MainWindow(QMainWindow):
         for board, picked, here in board_scan.listed(
             self._boards_found, self._picked_boards()
         ):
-            item = QListWidgetItem(board_scan.label(board, here))
+            read = board_picks.key_of(board) in self._reading
+            item = QListWidgetItem(board_scan.label(board, here, read))
             item.setData(Qt.ItemDataRole.UserRole, board)
             flags = item.flags() & ~Qt.ItemFlag.ItemIsUserCheckable
             if self._host is None:
