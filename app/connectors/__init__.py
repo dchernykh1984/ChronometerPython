@@ -11,8 +11,6 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.connectors.boards import boards
-
 # What a built-in connector produces: pauses and the events that follow them.
 Events = Iterator[tuple[float, dict[str, Any]]]
 
@@ -41,7 +39,15 @@ class ConnectorInfo:
     settings: dict[str, Any] = field(default_factory=dict)
 
 
+BOARDS = "beam-boards"
+
 CONNECTORS = (
+    # The beam boards the chronometer reads itself (app/connectors/boards/): those the
+    # judge picked from the boards found, on USB and on Bluetooth (spec 003). First,
+    # then the test beam and the custom command (FR-006).
+    ConnectorInfo(
+        BOARDS, "beam", "Beam boards", settings={"boards": [], "hold_off_ms": 1000}
+    ),
     ConnectorInfo(
         "dummy-chips", "chips", "Test chips", test=True, settings={"period_s": 3}
     ),
@@ -59,20 +65,6 @@ CONNECTORS = (
     ConnectorInfo("llrp", "chips", "LLRP reader (Impinj, Zebra)", available=False),
     ConnectorInfo("raceresult", "chips", "RaceResult decoder", available=False),
     ConnectorInfo("r2000", "chips", "R2000 reader (serial or TCP)", available=False),
-    # The beam boards the chronometer reads itself (app/connectors/boards/): on USB
-    # a port, else the first with the board's ids; on Bluetooth the board's name.
-    *(
-        ConnectorInfo(
-            b.name,
-            "beam",
-            b.label,
-            settings={
-                "device" if b.transport == "ble" else "port": "",
-                "hold_off_ms": 1000,
-            },
-        )
-        for b in boards().values()
-    ),
 )
 
 
@@ -87,7 +79,7 @@ def find(name: str) -> ConnectorInfo | None:
 
 def runs_itself(name: str) -> bool:
     """Whether the chronometer runs this connector itself, with ``--connector``."""
-    return builtin(name) is not None or name in boards()
+    return builtin(name) is not None or name == BOARDS
 
 
 def builtin(name: str) -> tuple[str, Callable[[dict[str, Any]], Events]] | None:
