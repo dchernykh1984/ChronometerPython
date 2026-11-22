@@ -16,7 +16,7 @@ map it, and says "within" or "OUTSIDE" of each of the spec's hypotheses:
 - the mapping's move from one answer to the next, what two riders a moment apart may
   differ by: 0.5 ms over USB, 3 ms over Bluetooth, for 95% of the moves;
 - the board's crystal against this computer's clock: 60 ppm (the prototype's were
-  +47 and -41);
+  about +46 and -41);
 - Bluetooth's mapping against the cable's at the same moments: 2 ms for 90% of the
   time. A lopsided way through the radio, the BT05's say, shows here.
 """
