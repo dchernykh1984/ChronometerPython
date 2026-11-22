@@ -24,6 +24,7 @@ UART_ID, TX_PIN, RX_PIN = 0, 0, 1  # to the BT05's RXD and from its TXD
 FAST, SLOW = 115200, 9600  # the baud asked of the BT05, and its own
 BAUD_FILE = "bt05_baud.txt"
 AT_WAIT_MS = 300  # the BT05 answers an AT command well within this
+SWITCH_MS = 5000  # and at a new baud within this: the prototype's took 2.1 s
 GREEN, RED, WHITE = (0, 24, 0), (24, 0, 0), (60, 60, 60)
 COLOURS = {"beam": GREEN, "blocked": RED, "flash": WHITE}
 
@@ -90,8 +91,28 @@ def remember(baud):
             pass
 
 
+def fast_code(uart):
+    """FAST's code in the module's own baud table: four above SLOW's, which it says.
+    The prototype's MLT-BT05 counts from 1200 (SLOW its 4, FAST its 8); an HM-10
+    counts from 9600 (0 and 4)."""
+    for char in beamcore.ascii_of(ask(uart, "AT+BAUD")):
+        if char.isdigit():
+            return str(int(char) + 4)
+    return "4"
+
+
+def answering(uart):
+    """Whether the module answers on ``uart`` within SWITCH_MS: at the baud it was
+    given, which it takes only seconds after its OK."""
+    start = beamcore.ticks_us()
+    while beamcore.ticks_diff(beamcore.ticks_us(), start) < SWITCH_MS * 1000:
+        if b"OK" in ask(uart, "AT"):
+            return True
+    return False
+
+
 def bt05(name):
-    """UART0 at the BT05's baud, the module named and moved to FAST when it answers;
+    """UART0 at the BT05's baud, the module moved to FAST and named when it answers;
     at the baud remembered when it answers nothing: connected, or not there."""
     kept = remembered()
     for baud in (kept, FAST if kept == SLOW else SLOW):
@@ -100,13 +121,16 @@ def bt05(name):
             break
     else:
         return open_uart(kept), kept
-    ask(uart, "AT+NAME" + name)  # best effort: a module that will not keeps its own
-    if baud == SLOW and b"OK" in ask(uart, "AT+BAUD4"):  # 4: 115200
+    # The baud first: after a new name the MLT-BT05 answers nothing for a second or
+    # two, and a baud asked then is never taken.
+    if baud == SLOW and b"OK" in ask(uart, "AT+BAUD" + fast_code(uart)):
         fast = open_uart(FAST)
-        if b"OK" in ask(fast, "AT"):
+        if answering(fast):
             uart, baud = fast, FAST
         else:
             uart = open_uart(SLOW)
+    if name not in beamcore.ascii_of(ask(uart, "AT+NAME")):  # written only if new
+        ask(uart, "AT+NAME" + name)  # best effort: a module that will not keeps its own
     remember(baud)
     return uart, baud
 

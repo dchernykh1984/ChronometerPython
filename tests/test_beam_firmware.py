@@ -16,7 +16,7 @@ import time
 import types
 from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 
@@ -69,10 +69,12 @@ class NeoPixel(list):
 
 class Uart:
     """UART0 with a BT05 on it: what the board writes, what the module answers. The
-    module answers AT commands only at its own baud, and switches on AT+BAUD4."""
+    module answers AT commands only at its own baud, and moves by its own table."""
 
     module_baud = 9600  # the BT05's, shared by every UART opened on the same wires
     answers = True  # False: connected to a reader, or not there
+    codes: ClassVar[dict[str, int]] = {"4": 9600, "8": 115200}  # the MLT-BT05's
+    name = "BT05"  # its advertised name, kept by the module
 
     def __init__(self, uart_id: int, baud: int, **pins: Any) -> None:
         self.baud, self.pins = baud, pins
@@ -84,9 +86,16 @@ class Uart:
         command = text.strip()
         if not (Uart.answers and self.baud == Uart.module_baud):
             return
-        if command == "AT+BAUD4":
-            self.incoming += b"+BAUD=4\r\nOK\r\n"
-            Uart.module_baud = 115200
+        if command == "AT+BAUD":
+            code = next(c for c, baud in Uart.codes.items() if baud == self.baud)
+            self.incoming += f"+BAUD={code}\r\n".encode()
+        elif command.startswith("AT+BAUD"):
+            code = command.removeprefix("AT+BAUD")
+            self.incoming += f"+BAUD={code}\r\nOK\r\n".encode()
+            Uart.module_baud = Uart.codes.get(code, Uart.module_baud)
+        elif command.startswith("AT+NAME"):
+            Uart.name = command.removeprefix("AT+NAME") or Uart.name
+            self.incoming += f"+NAME={Uart.name}\r\n".encode()
         elif command.startswith("AT"):
             self.incoming += b"OK\r\n"
 
@@ -515,6 +524,8 @@ def rp2040(monkeypatch: pytest.MonkeyPatch) -> Iterator[Any]:
     import_core(monkeypatch)
     monkeypatch.setattr(Uart, "module_baud", 9600)
     monkeypatch.setattr(Uart, "answers", True)
+    monkeypatch.setattr(Uart, "codes", {"4": 9600, "8": 115200})
+    monkeypatch.setattr(Uart, "name", "BT05")
     monkeypatch.setattr(sys.modules["beamcore"], "UsbLink", lambda: "usb")
     yield import_main(monkeypatch, "rp2040")
 
@@ -523,10 +534,11 @@ def test_the_bt05_is_named_and_moved_to_115200_baud(rp2040, tmp_path, monkeypatc
     monkeypatch.chdir(tmp_path)  # the board's own files
     uart, baud = rp2040.bt05("beam-4103")
     assert (baud, uart.baud, Uart.module_baud) == (115200, 115200, 115200)
+    assert Uart.name == "beam-4103"
     assert (tmp_path / rp2040.BAUD_FILE).read_text() == "115200"
-    # The next start finds it at once at the baud it remembered.
+    # The next start finds it at once at the baud it remembered, its name kept.
     uart, baud = rp2040.bt05("beam-4103")
-    assert baud == 115200 and uart.written[:2] == ["AT\r\n", "AT+NAMEbeam-4103\r\n"]
+    assert baud == 115200 and uart.written == ["AT\r\n", "AT+NAME\r\n"]
 
 
 def test_a_bt05_that_answers_nothing_is_taken_at_the_baud_remembered(
@@ -552,12 +564,22 @@ def test_a_flash_that_will_not_keep_the_baud_never_stops_the_start(
     assert baud == 115200 and uart.baud == 115200
 
 
+def test_an_hm10_counting_its_bauds_from_9600_is_moved_by_its_own_code(
+    rp2040, tmp_path, monkeypatch
+):
+    """An HM-10's 115200 is its 4, the prototype's MLT-BT05's 4 its 9600: the one
+    code for both left that module where it was, a millisecond a character."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(Uart, "codes", {"0": 9600, "4": 115200})
+    assert rp2040.bt05("beam-4103")[1] == Uart.module_baud == 115200
+
+
 def test_a_bt05_that_will_not_move_stays_at_its_own_baud(rp2040, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     original = Uart.write
 
     def no_baud(self: Uart, text: str) -> None:
-        if text.strip() == "AT+BAUD4":
+        if text.strip() == "AT+BAUD8":
             self.written.append(text)
             return
         original(self, text)
@@ -575,7 +597,7 @@ def test_a_bt05_that_moves_but_then_says_nothing_is_kept_at_9600(
 
     def silent_after(self: Uart, text: str) -> None:
         original(self, text)
-        if text.strip() == "AT+BAUD4":
+        if text.strip() == "AT+BAUD8":
             Uart.answers = False
 
     monkeypatch.setattr(Uart, "write", silent_after)
