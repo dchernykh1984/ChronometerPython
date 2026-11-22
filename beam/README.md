@@ -110,7 +110,7 @@ reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which
 
    | Setting | Default | What |
    | --- | --- | --- |
-   | `boards` | `[]` | The boards checked, as the search found them: `{"link": "ble", "device": "<address>", "name": "beam-7c1c"}`, `{"link": "usb", "port": "COM5", "kind": "beam-rp2040"}`. |
+   | `boards` | `[]` | The boards checked, as the search found them: `{"link": "ble", "device": "<address>", "name": "beam-7c1c"}`, `{"link": "usb", "port": "COM5", "kind": "beam-rp2040", "serial": "<its USB serial number>"}`; a board on USB is found by its serial number in whichever socket it is plugged into. |
    | `hold_off_ms` | 1000 | After a break, edges this soon are the same rider's: a bike's wheels and body. 1 to 60000. |
 
 7. Start. The action log says each board's state, its name first:
