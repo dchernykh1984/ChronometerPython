@@ -153,6 +153,13 @@ def test_blink_flashes_a_board_five_times_or_says_why_not(
     _until(lambda: ended == [0])
 
 
+def test_a_flash_due_for_a_board_let_go_since_is_not_written(serial, bleak):
+    connector = m.Many(cast(IO[str], Chronometer()), serial, bleak)
+    connector.flashes = [(0.0, "COM7", 1)]  # its board let go meanwhile, a twin say
+    assert connector.tick(1.0)
+    assert connector.flashes == []
+
+
 def test_no_board_picked_or_one_of_no_kind_known_is_said(serial, bleak):
     chronometer = Chronometer()
     connector = m.Many(cast(IO[str], chronometer), serial, bleak)
