@@ -28,6 +28,10 @@ _LONGEST_WAIT_S = 3600.0
 
 def run(name: str) -> int:
     """The process entry for ``--connector <name>``; returns the exit code."""
+    if name in ("beam-boards", "beam-blink"):  # the boards picked (spec 003)
+        from app.connectors.boards import many
+
+        return many.run(many.Blink if name == "beam-blink" else many.Many)
     board = boards().get(name)
     if board is not None:  # a loop of its own: a link to read as well as commands
         if board.transport == "ble":
