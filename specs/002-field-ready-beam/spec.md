@@ -23,6 +23,18 @@ not yet is a beam for a real race: it needs a cable to the laptop or phone, a ba
 wavering laser misses, and no protection from rain. Spec 001 already asks for a beam that rides out
 the wind (FR-019, SC-007, research 11, task T023); this spec takes that over with the rest.
 
+## Clarifications
+
+### Session 2026-11-22
+
+- Q: What accuracy can the beam promise, a start and a finish together? -> A: A hundredth of a
+  second, never a thousandth. On the prototype a break's time is off by about half a
+  millisecond as a rule, 9 in 10 within 1.8 ms over Bluetooth and 2.5 ms at most over USB, so
+  a start's and a finish's errors together stay well under 10 ms. Results are given in
+  hundredths; the chronometer still keeps milliseconds in its files, as data. The light
+  sensor's own delay, the same at both ends when both are beams, is measured by the falling
+  weight (SC-010).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The board's own time, whatever the link (Priority: P1)
