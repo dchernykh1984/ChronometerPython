@@ -60,8 +60,9 @@ one that switches off gets a load beside the laser, a 47 Ohm 1 W resistor from V
 
 Kit 1's board, sensor and laser were bought before this list was kept. The enclosures, the
 screws and the tripods are listed in [`enclosures/README.md`](enclosures/README.md). A
-beam's emitter, receiver and lens come to about 3,500 KZT, under the spec's limit of
-10,000 (FR-020).
+beam's sensor, lens, laser and its power module come to about 3,500 KZT; with the
+ESP32-C3's board about 6,000, with the RP2040-Zero and its BT05 about 8,000: under the
+spec's limit of 10,000 for a beam (FR-020).
 
 Do not buy an HC-05 or an HC-06: they are Bluetooth Classic, which neither chronometer
 reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which they do.
