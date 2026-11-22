@@ -26,10 +26,12 @@ The firmware's version is `FIRMWARE` in `core/beamcore.py`. A board says it in i
 
 ## How the core works
 
-- **Breaks.** The sensor's pin raises a hard IRQ on the light's first edge. The IRQ keeps
-  the moment, and takes no other edge until the loop arms it again: once the hold-off has
-  passed and the light has held for 50 ms. A comparator's chatter in the half-light can
-  never pile up breaks or move their time.
+- **Breaks.** The sensor's pin raises an IRQ on the light's first edge: a hard one on the
+  RP2040, a scheduled one on the ESP32-C3, whose MicroPython has no other (tens of
+  microseconds later, up to 1.2 ms in a garbage collection). The IRQ keeps the moment,
+  and takes no other edge until the loop arms it again: once the hold-off has passed and
+  the light has held for 50 ms. A comparator's chatter in the half-light can never pile
+  up breaks or move their time.
 - **Links.** A board has one or two links, USB and Bluetooth. An answer goes back on the
   link its command came from; a break, a change of the light and the start's `HELLO` go
   on every link.
