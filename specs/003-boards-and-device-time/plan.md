@@ -56,15 +56,19 @@ never holds up timing (FR-015); no new dependency on either side.
    clock then follows while the internet is gone. A round at start, then every 64 s, on a thread
    of its own (FR-015).
 6. **GNSS, the phone only.** A fix's UTC time against the elapsed-realtime clock at the fix gives an
-   offset; it is taken only when two fixes in a row agree within 5 ms (the time moved as the device's
-   own clock did) and, when NTP answered within the hour, within 1 s of NTP's (FR-010). Otherwise it
-   is dropped and the judge told: a jammed or spoofed GNSS at a start.
+   offset, as far off as Android says the two are paired (100 ms where it does not, before Android
+   10); it is taken only when two fixes in a row agree within 5 ms (the time moved as the device's
+   own clock did) and, when NTP answered within the hour, within 1 s of NTP's, else within a minute
+   of the phone's own clock (FR-010). A mock location is no fix. Otherwise it is dropped and the
+   judge told: a jammed or spoofed GNSS at a start.
 7. **The device clock.** `now = the monotonic clock + the offset measured`, or the system's time as
    it is while none is. The first correction is taken at once; after it, a correction that sets
    the clock forward is taken at once, one that would set it back is eased in at a tenth of the
    time running, so the clock never runs backwards (FR-012); one of over a second (a system clock
    set wrong by hand) is taken at once and said, as the cutoffs before it were on the old clock.
-   The best source answering wins: GNSS, then NTP, then the system's time as it is (FR-007).
+   The best source answering wins (FR-007): a measurement of the source the clock follows is always
+   taken, one of another only when it is better than what the clock knows now, so GNSS wins while
+   its fixes come, and NTP once GNSS's time has gone stale; with neither, the system's time.
 8. **Every stamp on it.** The desktop's hand cutoffs and its clock's display take it; a connector's
    event, timed on the system's clock in its own process, gets the correction as it arrives; the
    phone's taps, sources and repositories take it in place of the system's millis (FR-008).

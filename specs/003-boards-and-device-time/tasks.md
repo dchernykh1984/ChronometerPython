@@ -22,11 +22,11 @@ ChronometerAndroid's PR, which keeps to the same spec.
 
 ## Android (ChronometerAndroid)
 
-- [ ] T007 The device clock: SNTP, GNSS with its plausibility (decision 6), the best source, never
+- [x] T007 The device clock: SNTP, GNSS with its plausibility (decision 6), the best source, never
   backwards; every stamp on it; tests
-- [ ] T008 The boards' finder and Blink; one Beam boards source reading several boards; the list
+- [x] T008 The boards' finder and Blink; one Beam boards source reading several boards; the list
   first in the devices, then the test sources; the pick kept, the old name carried over; tests
-- [ ] T009 The location asked as timing starts; the service's location type; the clock line;
+- [x] T009 The location asked as timing starts; the service's location type; the clock line;
   README
 
 ## Both
