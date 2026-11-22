@@ -54,4 +54,5 @@
 - [ ] T022 The prototype's first flashing (SC-012): the clock check on both kits, warm and after
   an hour in the cold (outdoors, or a fridge); its figures into `beam/README.md`'s Accuracy, and
   FR-022's hypotheses changed where they are not what was measured. Every board flashed after
-  it is checked the same way, warm (each chip's README, Flashing)
+  it is checked the same way, warm (each chip's README, Flashing). Warm: done 2026-11-22, its
+  figures in the README; the hour in the cold is still to come
