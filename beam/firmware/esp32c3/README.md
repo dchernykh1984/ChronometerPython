@@ -62,7 +62,7 @@ The blue LED is lit while the light reaches the sensor, for aiming, and for `FLA
    cover the sensor; `Ctrl-]` leaves. It says, for example:
 
    ```text
-   HELLO beam-esp32c3 0.4 a0b1c2d34e5f 0
+   HELLO beam-esp32c3 0.5 a0b1c2d34e5f 0
    BREAK 1 18734215
    STATUS blocked
    STATUS beam

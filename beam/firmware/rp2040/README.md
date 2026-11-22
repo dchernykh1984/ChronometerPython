@@ -80,7 +80,7 @@ by its address.
    (what is typed is not shown), cover the sensor; `Ctrl-]` leaves. It says, for example:
 
    ```text
-   HELLO beam-rp2040 0.4 5054316551247c1c 0
+   HELLO beam-rp2040 0.5 5054316551247c1c 0
    BREAK 1 18734215
    STATUS blocked
    STATUS beam

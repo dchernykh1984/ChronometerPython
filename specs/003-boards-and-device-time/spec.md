@@ -47,6 +47,9 @@ board stays as it is, firmware 0.4: everything here is software.
 - Q: May a laptop take its time from a phone beside it? -> A: No: the two apps stay independent of
   each other.
 - Q: Where is the finish read? -> A: Usually on a laptop, but a phone at the finish must work as well.
+- Q: An ESP32-C3's one-colour LED is lit while the laser is on its sensor, so `FLASH` showed nothing
+  there: change the board? -> A: Yes, the one change to the boards: `FLASH` puts a lit one-colour LED
+  out for its 100 ms (firmware and contract 0.5), and Blink is seen with the laser aimed.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -203,7 +206,8 @@ once with one ruler: the two cutoffs agree within SC-001.
 
 ## Assumptions
 
-- The boards stay as they are: firmware 0.4, the contract's `FLASH` already lights a board's LED.
+- The boards stay as they are, firmware 0.4, but for one change (clarifications): firmware 0.5's
+  `FLASH` puts a lit one-colour LED out, for Blink to be seen with the laser aimed.
 - NTP reaches public servers over UDP port 123; a network that blocks it leaves the system's time.
 - A laptop has no GNSS; a phone has, and the phone app may ask for the location.
 - Android 8 and later, macOS, Windows and Linux, as today.

@@ -103,8 +103,8 @@ reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which
    `read now`, as a board connected is found by no search.
 4. Blink: the board chosen in the list flashes its LED 5 times, to tell which one it is.
    While the source runs, Blink goes through it; before, the chronometer reaches the board
-   for a moment. An ESP32-C3's blue LED is lit while the laser is on its sensor: block the
-   beam to see it flash.
+   for a moment. An ESP32-C3's blue LED, lit while the laser is on its sensor, goes out for
+   each flash (firmware 0.5; with 0.4 it stayed lit, and only a blocked beam showed it).
 5. Beam records: `Rider cutoffs` for the finish, `Group starts` for the start.
 6. Settings, the JSON in the Settings field, where the checks are written too:
 
@@ -115,7 +115,7 @@ reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which
 
 7. Start. The action log says each board's state, its name first:
    `source connecting beam-7c1c: beam-7c1c (Bluetooth)` (or its USB port), then
-   `source connected beam-7c1c: beam-esp32c3 0.4 <board id>`. Cover the sensor: the
+   `source connected beam-7c1c: beam-esp32c3 0.5 <board id>`. Cover the sensor: the
    break comes in at the bottom slot, with the number typed in Next, as a hand cutoff
    does. For group starts, the first break after a group is chosen is its start.
 
@@ -154,7 +154,7 @@ off. The app's README says more.
 | `source error: <board>: the same board as <other>, read on that link only` | One board checked twice, by its port and by its name on Bluetooth: uncheck one. |
 | `source connected <board>: ...: the beam is blocked: no break can be seen until the light is back` | Blocked for over 2 s, longer than any rider takes: the laser is off the lens, someone stands in the beam, or a sensor wire is loose. |
 | `source connected <board>: ...: the light flickers on the sensor: no break can be seen; aim it again` | No state of the light has held 50 ms for about 3 s: the spot sits on the sensor's edge. Focus the lens (the enclosures' README). |
-| `source error: <board>: the board runs firmware 0.3, the chronometer reads 0.4: ...` | The board has older files than this chronometer reads: copy them again (the chip's README). |
+| `source error: <board>: the board runs firmware 0.4, the chronometer reads 0.5: ...` | The board has older files than this chronometer reads: copy them again (the chip's README). |
 | `source error: <board>: the board's break(s) 6 to 7 did not arrive: ...` | The link was down while the board saw riders, and it no longer keeps them (it keeps its last 128): check those finishes by other means. |
 | `source error: <board>: the board's clock could not be read: ...` | No PING was answered in time: the breaks are timed by when they came, which over Bluetooth may be tens of ms late. |
 | `source disconnected <board>: the board answers no PING: is main.py running on it?` | The board runs no `main.py`, or it stopped: power it off and on; if it says so again, copy the files again. |
