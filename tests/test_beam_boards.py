@@ -328,10 +328,13 @@ def test_the_boards_on_bluetooth_are_found_the_nearest_first():
         "AA": (Device("beam-7c1c", "AA"), Heard("beam-7c1c", [], -80)),
         "BB": (Device(None, "BB"), Heard(None, [ble.SERVICE], -50)),  # a BT05's own
         "CC": (Device("Headphones", "CC"), Heard("Headphones", [], -40)),
+        # Anyone's name: a line end in it would cut a line of the action log.
+        "DD": (Device(None, "DD"), Heard("beam-\nsource connected", [], -90)),
     }
     assert asyncio.run(s.on_radio(_radio(seen))) == [
         {"link": "ble", "name": "BB", "device": "BB", "rssi": -50},
         {"link": "ble", "name": "beam-7c1c", "device": "AA", "rssi": -80},
+        {"link": "ble", "name": "beam-source connected", "device": "DD", "rssi": -90},
     ]
 
 
