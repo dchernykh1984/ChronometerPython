@@ -948,6 +948,17 @@ def test_a_line_is_timed_when_its_first_byte_came(monkeypatch, serial):
     assert connector.inbox.get_nowait() == ("lost", (link, "the board's port closed"))
 
 
+def test_noise_with_no_line_end_is_cut_not_kept(serial):
+    """Another device on the port, or noise, never ending a line must not grow one
+    without end: a board line is far shorter, as over Bluetooth."""
+    link = Port("COM7", None, True)
+    for piece in (b"x" * 300 + b"\r\n", None):
+        link.said.put(piece)
+    connector = u.Connector(Chronometer(), serial, rp2040.BOARD)
+    connector.listen(link)
+    assert connector.inbox.get_nowait()[1][0] == "x" * u.LINE_MAX
+
+
 def test_a_reading_ended_by_any_error_is_said_and_the_port_opened_again(
     monkeypatch, ports, serial
 ):

@@ -21,14 +21,18 @@ import time
 from typing import IO, Any
 
 from app.connectors.boards import Board, usb_serial
-from app.connectors.boards.usb_serial import Connector, now_ms, watch_parent
+from app.connectors.boards.usb_serial import (
+    LINE_MAX,
+    Connector,
+    now_ms,
+    watch_parent,
+)
 
 SERVICE = "0000ffe0-0000-1000-8000-00805f9b34fb"  # the HM-10's serial service
 CHARACTERISTIC = "0000ffe1-0000-1000-8000-00805f9b34fb"
 CHUNK = 20  # a write's bytes at the default ATT MTU
 SCAN_S = 5.0  # how long a scan looks for the board
 CLOSE_S = 2.0  # how long a disconnect may take before the connector goes on
-LINE_MAX = 128  # a board line is far shorter: noise beyond it is cut
 LOST = "the board's Bluetooth link was lost: out of range, or switched off"
 
 

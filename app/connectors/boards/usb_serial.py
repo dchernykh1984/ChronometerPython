@@ -23,6 +23,7 @@ from app.connectors.boards.protocol import Bridge
 
 REOPEN_AFTER_S = 2.0
 HOLD_OFF_MS = 1000  # after a break, edges this soon are the same rider's
+LINE_MAX = 128  # a board line is far shorter: noise beyond it is cut
 LONGEST_HOLD_OFF_MS = 60_000
 
 
@@ -104,7 +105,7 @@ class Connector:
                         text = line.decode("ascii", "replace").strip()
                         self.inbox.put(("board", (text, first_ms)))
                         line = bytearray()
-                    else:
+                    elif len(line) < LINE_MAX:
                         line.append(byte)
             # A line not ended as the port ended is dropped: a BREAK of half its digits.
         except Exception as error:  # whatever ends the reading ends the link
