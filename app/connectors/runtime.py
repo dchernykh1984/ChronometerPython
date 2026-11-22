@@ -32,6 +32,10 @@ def run(name: str) -> int:
         from app.connectors.boards import many
 
         return many.run(many.Blink if name == "beam-blink" else many.Many)
+    if name == "beam-scan":
+        from app.connectors.boards import scan
+
+        return scan.run()
     board = boards().get(name)
     if board is not None:  # a loop of its own: a link to read as well as commands
         if board.transport == "ble":
