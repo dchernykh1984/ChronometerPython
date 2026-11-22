@@ -16,6 +16,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
+from app import device_time, models
 from app import main_window as mw
 from app import sources_config as sources
 
@@ -27,6 +28,16 @@ _DATA = Path(__file__).resolve().parents[1] / "data"
 
 def _data_state() -> dict[str, int]:
     return {p.name: p.stat().st_mtime_ns for p in _DATA.glob("*")}
+
+
+@pytest.fixture(autouse=True)
+def _no_ntp(request, monkeypatch):
+    """No window under test asks the internet for the time: its rounds answer nothing.
+    The device clock's own tests ask fake servers instead."""
+    if not request.module.__name__.endswith("test_device_time"):
+        monkeypatch.setattr(device_time, "measure", lambda *a, **k: None)
+    # Stamps read the system's clock again: a window set them to its device clock.
+    monkeypatch.setattr(models, "_clock_ms", models._system_ms)
 
 
 @pytest.fixture(scope="session", autouse=True)

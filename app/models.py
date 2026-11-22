@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import time
 import uuid
+from collections.abc import Callable
 
 from app.paths import app_path
 
@@ -136,6 +137,20 @@ def parse_time(text: str) -> int | None:
     return ((days * 24 + hours) * 60 + minutes) * 60_000 + seconds * 1000 + ms
 
 
+def _system_ms() -> float:
+    return time.time() * 1000
+
+
+_clock_ms = _system_ms  # what every stamp reads: the device's clock, once it is set
+
+
+def use_clock(clock_ms: Callable[[], float]) -> None:
+    """Every stamp from now on read off ``clock_ms``: the device's clock corrected to
+    world time (spec 003), the system's until it is set."""
+    global _clock_ms
+    _clock_ms = clock_ms
+
+
 def get_current_time(accuracy: int = 3, summer_time: bool = False) -> str:
     """
     Return current local time as 'D H:M:S[.mmm]'.
@@ -145,7 +160,7 @@ def get_current_time(accuracy: int = 3, summer_time: bool = False) -> str:
     Port of C++ getCurrentTime(accuracy).
     """
     dst = summer_time and bool(time.localtime().tm_isdst)
-    return format_time(int(time.time() * 1000), accuracy, dst)
+    return format_time(int(_clock_ms()), accuracy, dst)
 
 
 def dsq_status(reason: str = "") -> str:

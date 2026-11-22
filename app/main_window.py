@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import queue
+import threading
 import time
 from collections import Counter
 from pathlib import Path
@@ -32,6 +34,7 @@ from PySide6.QtWidgets import (
 )
 
 from app import connector_protocol as cp
+from app import device_time
 from app.chip_report import chip_report
 from app.chips import (
     ChipMap,
@@ -72,6 +75,7 @@ from app.models import (
     save_config,
     save_http_config,
     scale_time,
+    use_clock,
 )
 from app.paths import app_path
 from app.results_file import (
@@ -171,6 +175,12 @@ class MainWindow(QMainWindow):
         self._host: ConnectorHost | None = None
         # Stopped, but their program may still report until it ends.
         self._stopping: list[ConnectorHost] = []
+        # The device's clock against world time (spec 003): every stamp reads it.
+        # Its NTP rounds run on a thread of their own, taken on the 1 s tick.
+        self._device_clock = device_time.DeviceClock()
+        use_clock(self._device_clock.now_ms)
+        self._clock_results: queue.Queue[tuple[float, float] | None] = queue.Queue()
+        self._clock_busy, self._clock_next_round = False, 0.0
         self._setup_ui()
         self._reload_chip_map()  # the file used last; the site is never asked here
         self._config_path: str = _CONFIG_PATH
@@ -530,6 +540,7 @@ class MainWindow(QMainWindow):
         self._lbl_test_data = QLabel("TEST CONNECTOR: its crossings are test data")
         self._lbl_test_data.setStyleSheet("color: red; font-weight: bold;")
         self._lbl_test_data.setVisible(False)
+        self._lbl_clock = QLabel(self._device_clock.described())
         grid.addWidget(QLabel("Source:"), 0, 0)
         grid.addWidget(self._combo_source, 0, 1, 1, 2)
         grid.addWidget(QLabel("Device:"), 1, 0)
@@ -542,6 +553,7 @@ class MainWindow(QMainWindow):
         grid.addWidget(self._btn_source_stop, 4, 2)
         grid.addWidget(self._lbl_source_state, 5, 0, 1, 3)
         grid.addWidget(self._lbl_test_data, 6, 0, 1, 3)
+        grid.addWidget(self._lbl_clock, 7, 0, 1, 3)
         index = self._combo_source.findData(self._sources["source"])
         self._combo_source.setCurrentIndex(max(index, 0))
         # The source kind and connector the Settings field shows.
@@ -753,9 +765,16 @@ class MainWindow(QMainWindow):
         """A device writes next to the results file, or may until its program ends."""
         return self._host is not None or bool(self._stopping)
 
+    def _event_ms(self, time_ms: int | None) -> int:
+        """A device event's moment on the device's clock: its own, timed on the system's
+        clock in its connector's process, corrected as it comes; none, now."""
+        if time_ms is None:
+            return round(self._device_clock.now_ms())
+        return round(self._device_clock.from_system(time_ms))
+
     def _event_time(self, time_ms: int | None) -> str:
         """A device event's time as the results file writes it, summer time included."""
-        ms = round(time.time() * 1000) if time_ms is None else time_ms
+        ms = self._event_ms(time_ms)
         summer = (
             self._chk_summer_time.isChecked() and time.localtime(ms / 1000).tm_isdst
         )
@@ -768,7 +787,7 @@ class MainWindow(QMainWindow):
         if not append_line(side_file(self._results_path(), "beam_breaks"), record):
             self._append_log(f"beam break not kept in the beam file: {record}")
         if self._beam_records() == "groups":
-            at = round(time.time() * 1000) if event.time_ms is None else event.time_ms
+            at = self._event_ms(event.time_ms)
             self._start_group_by_beam(stamp, at)
         elif why := self._stamp_bottom(stamp, quiet=True):
             self._append_log(
@@ -1597,6 +1616,7 @@ class MainWindow(QMainWindow):
         second apart only until the next tick, at most a second later. A device event
         without a time of its own is rounded to the millisecond, not cut, as before."""
         delay = 1000  # a tick that fails still sets the next: the clock never stops
+        self._tend_clock()
         try:
             stamp = get_current_time(summer_time=self._chk_summer_time.isChecked())
             shown, ms = stamp.rsplit(".", 1)  # one reading: label and next tick agree
@@ -1614,6 +1634,33 @@ class MainWindow(QMainWindow):
             self._clock_failing = False
         finally:
             self._timer.start(delay)
+
+    def _tend_clock(self) -> None:
+        """Take the NTP round that has come back, start the next when it is due, and
+        show the clock: on the 1 s tick, so a round never waits on the window, nor the
+        window on a round, and closing leaves a round running behind it."""
+        while not self._clock_results.empty():
+            found = self._clock_results.get_nowait()
+            self._clock_busy = False
+            if found is not None:
+                if said := self._device_clock.take(*found, "internet"):
+                    self._append_log(said)
+        now = time.monotonic()
+        if not self._clock_busy and now >= self._clock_next_round:
+            self._clock_busy = True
+            self._clock_next_round = now + device_time.EVERY_S
+            threading.Thread(target=self._clock_round, daemon=True).start()
+        self._lbl_clock.setText(self._device_clock.described())
+
+    def _clock_round(self) -> None:
+        """One NTP round, off the window's thread: a round that fails is none, and the
+        last correction stays (FR-015)."""
+        mono = self._device_clock.mono
+        try:
+            found = device_time.measure(lambda: mono() * 1000)
+        except Exception:  # whatever goes wrong in a round only leaves the clock be
+            found = None
+        self._clock_results.put(found)
 
     def _on_number_changed(self, slot: int) -> None:
         self._update_crosses()
