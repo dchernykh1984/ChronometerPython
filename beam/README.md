@@ -52,9 +52,11 @@ GND to its `-`. Until one is bought, a board's 5 V powers the laser on the table
 Sensor Shield's `V` and `G` rows).
 
 **The power banks.** A laser draws 20 to 40 mA and a receiver 30 to 80: less than many power
-banks need to stay on, and they switch themselves off within a minute. Take one with a
-low-current mode (Xiaomi's and Anker's: two presses of the button), or check that one stays
-on with its load for 2 minutes.
+banks need to stay on, and they switch themselves off within a minute. A low-current mode
+(Xiaomi's and Anker's: two presses of the button) ends by itself after 2 hours, short of a
+race day. So run each power bank with its load on the table for as long as a race lasts;
+one that switches off gets a load beside the laser, a 47 Ohm 1 W resistor from VBUS to GND
+(about 100 mA, still over 40 hours from 10,000 mAh), or is not used.
 
 Kit 1's board, sensor and laser were bought before this list was kept. The enclosures, the
 screws and the tripods are listed in [`enclosures/README.md`](enclosures/README.md). A
