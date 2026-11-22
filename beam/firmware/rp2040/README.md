@@ -42,9 +42,13 @@ The board has one `GND` pin: the sensor, the BT05 (and the laser on the table) s
 through a Y wire or a small breadboard.
 
 At start, while nothing is connected to it, the BT05 takes AT commands. The board finds
-its baud rate, names it `beam-` and the last 4 hex digits of the board id, and moves it to
-115200 baud, where a character takes 87 us instead of 1 ms. The baud it ends at is kept in
-`bt05_baud.txt` on the board, for a start when a reader is still connected to the module.
+its baud rate and moves it to 115200 baud, where a character takes 87 us instead of 1 ms:
+by the module's own table, which the module tells (the prototype's MLT-BT05 counts from
+1200, so 115200 is its 8; an HM-10 counts from 9600, its 4), and waiting the two seconds or
+so the module takes to answer at it. Then it names it `beam-` and the last 4 hex digits of
+the board id, unless it is so named already: after a new name the module answers nothing
+for a second or two. The baud it ends at is kept in `bt05_baud.txt` on the board, for a
+start when a reader is still connected to the module.
 A module that will not take the name keeps its own: the chronometers find it by that. The
 board ends each AT command with `\r\n`, as the BT05, AT-09 and MLT-BT05 want; a genuine
 HM-10 may take those two characters into its name, so set its name by hand once, or read it

@@ -8,9 +8,10 @@ the sensor, red while it is blocked, white for FLASH), its USB serial port, and 
 same lines over Bluetooth. Without a BT05 wired the board works on USB alone.
 
 At start, while nothing is connected to it, the BT05 takes AT commands: the board finds
-its baud rate, names it beam-<last 4 hex digits of the board id>, and moves it to 115200
-baud, where a character takes 87 us instead of 1 ms; the baud it ends at is kept in a
-file, for a start when the module answers nothing (a reader still connected to it).
+its baud rate and moves it to 115200 baud, where a character takes 87 us, not 1 ms, by
+the module's own table of bauds; then names it beam-<last 4 hex digits of the board id>,
+unless it is so named. The baud it ends at is kept in a file, for a start when the
+module answers nothing (a reader still connected to it).
 """
 
 import beamcore  # ../core/beamcore.py, flashed beside this file
