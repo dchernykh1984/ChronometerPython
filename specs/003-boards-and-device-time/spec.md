@@ -60,13 +60,13 @@ command are listed after the boards.
 
 **Why this priority**: typing a board's name is where every judge stumbled first.
 
-**Independent Test**: two boards powered beside the device: both are listed within 10 s, Blink
+**Independent Test**: two boards powered beside the device: both are listed within 15 s, Blink
 lights the one pressed and no other, and picking both gives breaks from both.
 
 **Acceptance Scenarios**:
 
 1. **Given** two boards on Bluetooth and one on USB, **When** the judge asks for the boards around,
-   **Then** all three are listed within 10 s, each with its name, its link and its signal.
+   **Then** all three are listed within 15 s, each with its name, its link and its signal.
 2. **Given** the list, **When** the judge presses Blink on one board, **Then** that board's LED
    blinks and no other's does.
 3. **Given** two boards picked, **When** timing starts, **Then** both are read, and no other board in
@@ -143,7 +143,8 @@ once with one ruler: the two cutoffs agree within SC-001.
 
 - **FR-001**: Both apps MUST list the beam boards around when asked: those on Bluetooth (advertised as
   `beam-` and the end of their id, or offering the boards' serial service) and those on USB (by the
-  boards' USB ids), each with its name, its link and its signal, within 10 s.
+  boards' USB ids), each with its name, its link and its signal, within 15 s (a portable
+  desktop build first unpacks the program that looks).
 - **FR-002**: The judge MUST be able to pick one or several boards from the list; the app MUST read the
   picked ones only, never another board in range (spec 002, FR-007), remember the pick, and read
   them again by itself.
