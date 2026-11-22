@@ -195,7 +195,8 @@ unpinned kit is built differently each time.
 - The board restarts (power lost): its count and clock start anew; the app says so, as it does over
   USB today.
 - Two boards in range, a start and a finish: each app reads only the board it was told to.
-- The battery runs low mid-race: the judge is told well before the board stops.
+- The power bank runs out mid-race: the board stops and the app says its link is lost, as for any
+  link; no warning comes before (FR-008), so a power bank checked to last the race is used.
 - Rain on the optical window, condensation inside after a cold night: neither makes a break of its
   own nor hides a rider.
 - The sun low in the receiver's view, or a reflection from a car: no break of its own.
