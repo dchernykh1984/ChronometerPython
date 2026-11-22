@@ -614,7 +614,14 @@ class MainWindow(QMainWindow):
 
     def _show_boards(self) -> None:
         """The boards found and those picked, checked; a pick is changed only while
-        no source runs, as the next Start reads it."""
+        no source runs, as the next Start reads it. The board chosen stays chosen, for
+        Blink after Start."""
+        chosen = self._list_boards.currentItem()
+        chosen_key = (
+            board_picks.key_of(chosen.data(Qt.ItemDataRole.UserRole))
+            if chosen
+            else None
+        )
         self._list_boards.blockSignals(True)
         self._list_boards.clear()
         for board, picked, here in board_scan.listed(
@@ -633,6 +640,8 @@ class MainWindow(QMainWindow):
             if not here:
                 item.setForeground(Qt.GlobalColor.gray)
             self._list_boards.addItem(item)
+            if board_picks.key_of(board) == chosen_key:
+                self._list_boards.setCurrentItem(item)
         self._list_boards.blockSignals(False)
 
     def _on_board_checked(self, _item: QListWidgetItem) -> None:
