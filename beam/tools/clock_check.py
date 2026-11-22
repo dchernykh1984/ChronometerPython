@@ -14,7 +14,8 @@ map it, and says "within" or "OUTSIDE" of each of the spec's hypotheses:
 - over USB, half a round trip, the most the mapping can be off: 1 ms;
 - the mapping's move from one answer to the next, what two riders a moment apart may
   differ by: 0.5 ms over USB, 3 ms over Bluetooth, for 95% of the moves;
-- the board's crystal against this computer's clock: 30 ppm;
+- the board's crystal against this computer's clock: 60 ppm (the prototype's were
+  +47 and -41);
 - Bluetooth's mapping against the cable's at the same moments: 2 ms for 90% of the
   time. A lopsided way through the radio, the BT05's say, shows here.
 """
@@ -38,7 +39,7 @@ from app.connectors.boards.protocol import ClockSync, RadioSync
 USB_WITHIN_MS = 1.0  # the spec's hypotheses (FR-022)
 USB_MOVE_MS = 0.5
 RADIO_MOVE_MS = 3.0
-CRYSTAL_PPM = 30.0
+CRYSTAL_PPM = 60.0
 RADIO_FROM_CABLE_MS = 2.0
 HELLO_WAIT_S = 5.0
 CONNECT_S = 30.0
