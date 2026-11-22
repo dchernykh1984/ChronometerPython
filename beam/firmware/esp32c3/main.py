@@ -7,9 +7,9 @@ its bootloader), the blue LED on GPIO8 (lit while the light reaches the sensor a
 FLASH), the USB serial port, and Bluetooth Low Energy of its own.
 
 Over Bluetooth it offers the HM-10's serial service, 0xFFE0 and its characteristic
-0xFFE1 (notify, and write without response), as the RP2040's BT05 does, so a reader has
-one Bluetooth path for both boards; it is advertised as beam-<last 4 hex digits of the
-board id>, again when a reader goes.
+0xFFE1 (notify, and writes with or without response; the RP2040's BT05 takes only
+the first), so a reader has one Bluetooth path for both boards; it is advertised as
+beam-<last 4 hex digits of the board id>, again when a reader goes.
 """
 
 import beamcore  # ../core/beamcore.py, flashed beside this file
