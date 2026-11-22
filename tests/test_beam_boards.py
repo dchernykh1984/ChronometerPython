@@ -153,6 +153,30 @@ def test_blink_flashes_a_board_five_times_or_says_why_not(
     _until(lambda: ended == [0])
 
 
+def test_at_stop_every_board_s_waiting_breaks_go_before_any_link_is_let_go(
+    serial, bleak
+):
+    said: list[str] = []
+
+    class Slow:
+        """A link that takes its time to let go, as Bluetooth's does."""
+
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        def close(self) -> None:
+            said.append(f"closed {self.name}")
+
+    connector = m.Many(cast(IO[str], Chronometer()), serial, bleak)
+    connector.configure({"boards": [USB, dict(USB, port="COM8", name="other")]})
+    for key, link in connector.links.items():
+        link.link = Slow(key)
+        link.bridge.release = lambda _now, key=key: [{"type": "beam", "seq": 1}]  # type: ignore[method-assign]
+        link.send = lambda event, key=key: said.append(f"break of {key}")  # type: ignore[method-assign]
+    connector.close()
+    assert said == ["break of COM7", "break of COM8", "closed COM7", "closed COM8"]
+
+
 def test_a_flash_due_for_a_board_let_go_since_is_not_written(serial, bleak):
     connector = m.Many(cast(IO[str], Chronometer()), serial, bleak)
     connector.flashes = [(0.0, "COM7", 1)]  # its board let go meanwhile, a twin say
