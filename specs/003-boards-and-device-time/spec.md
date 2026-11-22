@@ -25,7 +25,8 @@ Two devices then disagree by far more than a hundredth of a second, the accuracy
 
 The boards are picked today by typing a name (the phone) or by choosing among four entries, two
 chips by two links (the desktop). Both apps are independent of each other, and stay so; the laser
-board stays as it is, firmware 0.4: everything here is software.
+board stays as it is but for one change, firmware 0.5's `FLASH` for Blink (clarifications):
+everything else here is software.
 
 ## Clarifications
 

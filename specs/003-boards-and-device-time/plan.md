@@ -15,7 +15,8 @@ this one, and ChronometerAndroid's.
 
 **Desktop**: Python 3.14, PySide6, pyserial, bleak (in the connector process only, CLAUDE.md), the
 stdlib's `socket` for NTP. **Android**: Kotlin, Compose, the platform's BluetoothLeScanner,
-LocationManager and DatagramSocket. **Boards**: unchanged, firmware 0.4. **Testing**: pytest with
+LocationManager and DatagramSocket. **Boards**: firmware 0.5, whose `FLASH` puts a lit one-colour LED
+out for Blink (clarifications); nothing else. **Testing**: pytest with
 the Qt `win` fixture; JUnit with Robolectric.
 
 ## Constitution Check
