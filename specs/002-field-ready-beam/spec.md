@@ -273,8 +273,8 @@ unpinned kit is built differently each time.
   this rests on MUST be checked on the prototype's first flashing, and on every board flashed
   over USB after it: the mapping within 3 ms over USB and 2 ms over Bluetooth (FR-002); its
   move from one answer to the next about 0.3 ms over USB (0.5 ms at most) and 0.5 ms over
-  Bluetooth (3 ms at most); the board's crystal within 60 ppm of the computer's clock (the prototype's: about
-  +46 and -41), and on the prototype
+  Bluetooth (3 ms at most); the board's crystal within 60 ppm of the computer's clock (the
+  prototype's: about +46 and -41), and on the prototype
   how far that moves in the cold; and the way through the radio as long one way as the other,
   which the BT05's UART could make otherwise. A board outside any of them is looked at before
   it times a race.
