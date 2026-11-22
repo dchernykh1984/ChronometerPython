@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,8 +31,8 @@
 
 ## Notes
 
-- One marker, FR-008 (2026-11-22): its power level, once the default kit runs on a USB-C power
-  bank, which tells the board nothing of its charge; the owner's to settle. Settled: FR-018, both Bluetooth boards (the ESP32-C3 SuperMini and the
+- No marker is left. Settled: FR-008 (2026-11-22), no power level, as a USB-C power bank tells
+  none and lasts the race; FR-018, both Bluetooth boards (the ESP32-C3 SuperMini and the
   RP2040-Zero with an HM-10 clone); FR-012, a lens, as the industrial sensors that reach 10 to 12 m
   cost several times FR-020's limit; FR-013, sealing is required, its way chosen once the first
   printed enclosures have been tried (the maintainer's call, so not a clarification).
