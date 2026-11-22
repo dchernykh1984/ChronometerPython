@@ -124,8 +124,17 @@ class Many:
             picks = []
         for pick in picks:
             key = key_of(pick) if isinstance(pick, dict) else ""
-            if not key or key in self.links:
-                continue  # not a board, or picked twice: read once
+            if not key:  # typed by hand, say: said, not left out unseen
+                self.send(
+                    {
+                        "type": "error",
+                        "message": "a board picked with no address or port "
+                        f"({pick!r}): find the boards again and pick it",
+                    }
+                )
+                continue
+            if key in self.links:
+                continue  # picked twice: read once
             named = str(pick.get("name") or key)
             link = self.link_for(pick, named)
             if link is None:
