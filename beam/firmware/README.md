@@ -22,7 +22,7 @@ The firmware's version is `FIRMWARE` in `core/beamcore.py`. A board says it in i
 | MicroPython for the ESP32-C3 | v1.29.0, build `ESP32_GENERIC_C3` | [`esp32c3/README.md`](esp32c3/README.md), with its SHA-256 |
 | mpremote (copies files to a board) | 1.29.0 | the chips' commands |
 | esptool (puts MicroPython on the ESP32-C3) | 5.6.0 | the ESP32-C3's commands |
-| The firmware | 0.4 | `FIRMWARE` in `core/beamcore.py` |
+| The firmware | 0.5 | `FIRMWARE` in `core/beamcore.py` |
 
 ## How the core works
 
