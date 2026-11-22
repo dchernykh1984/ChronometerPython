@@ -711,6 +711,18 @@ def test_the_esp32c3_led_is_lit_by_a_low_pin(esp32c3):
     assert led.level == 0
 
 
+def test_the_esp32c3_led_flashes_the_other_way_round_with_the_laser_on_it(esp32c3):
+    """Its one colour is lit for the light: a flash lit as well would not be seen, the
+    board being found by Blink with its laser aimed (contract 0.5)."""
+    board = esp32c3.board()
+    (led,) = _pins_of(board)
+    board.show("beam")
+    board.show("flash")
+    assert led.level == 1  # out for the flash
+    board.show("beam")  # the flash over: the light shown again
+    assert led.level == 0
+
+
 def _pins_of(board: Any) -> list[Pin]:
     """The Pins a board's show() closes over, found through its cell contents."""
     cells = board.show.__closure__ or ()
@@ -721,7 +733,7 @@ def test_the_firmware_versions_are_one(monkeypatch):
     """Every chip runs the one core: its FIRMWARE is the version of both boards."""
     fake_modules(monkeypatch, Ticks(0))
     core = import_core(monkeypatch)
-    assert core.FIRMWARE == "0.4"
+    assert core.FIRMWARE == "0.5"
 
 
 @pytest.mark.parametrize(

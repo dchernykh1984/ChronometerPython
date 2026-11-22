@@ -11,7 +11,7 @@ specs/001-event-sources/contracts/beam-board-protocol.md.
     STATUS beam|blocked   the light's state once it has held 50 ms, for aiming
     STATUS unsteady       no state has held for a second: no break can be seen
     PONG <n> <got_us> <sent_us>   PING <n>: when it came, and when this answer went
-    FLASH <n> <t_us>      the LED lit for FLASH <n>, for the cameras
+    FLASH <n> <t_us>      the LED changed for FLASH <n>, for the cameras
     HOLDOFF <ms>          the hold-off in use, after HOLDOFF <ms>
     ERROR <text>          a line it did not understand
 
@@ -30,7 +30,7 @@ import time
 import machine
 import micropython
 
-FIRMWARE = "0.4"
+FIRMWARE = "0.5"
 HOLD_OFF_MS = 1000  # one rider, one break: a bike's wheels and body pass within it
 SETTLE_US = 50_000  # a state said for aiming once it has held this long
 UNSTEADY_US = 1_000_000  # no state held this long: the light flickers on the sensor

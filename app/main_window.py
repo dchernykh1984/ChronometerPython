@@ -596,8 +596,8 @@ class MainWindow(QMainWindow):
         self._btn_find_boards.clicked.connect(self._on_find_boards)
         self._btn_blink = QPushButton("Blink")
         self._btn_blink.setToolTip(
-            "The chosen board's LED flashes 5 times. An ESP32-C3's blue LED is lit "
-            "while the laser is on its sensor: block the beam to see it flash."
+            "The chosen board's LED flashes 5 times; an ESP32-C3's blue LED, lit while "
+            "the laser is on its sensor, goes out for each flash."
         )
         self._btn_blink.clicked.connect(self._on_blink)
         layout.addWidget(QLabel("Boards:"), 0, 0)
