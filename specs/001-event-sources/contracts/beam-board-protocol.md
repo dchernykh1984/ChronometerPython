@@ -95,7 +95,9 @@ every break it still keeps, its last 128, from count `seq` on, as `BREAK` lines,
    - Over Bluetooth, a trip waits for the radio's next connection event, so the offset is
      `(min b - min a) / 2` over the last 16 `PONG`s, read once 4 have come. A `PONG` whose own
      `(b - a) / 2` is more than 100 ms from the offset means the clock was set anew: it starts
-     again. A line over Bluetooth is timed when its first piece came.
+     again.
+   A line is timed when its first piece came, over USB as over Bluetooth: timed at its end, it
+   would carry the time its last characters took to come.
    When the link is opened again, the board may have started again: no earlier offset counts.
 5. Takes each count once: a `BREAK` whose `seq` was taken from that board id already is dropped. A
    `seq` that skips some asks `RESEND <first missing>`; counts still missing 10 s later are said:
