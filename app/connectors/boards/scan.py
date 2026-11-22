@@ -100,15 +100,28 @@ def found_in(output: bytes) -> tuple[list[dict[str, Any]], list[str]]:
     return boards, errors
 
 
+def same(pick: dict[str, Any], board: dict[str, Any]) -> bool:
+    """Whether a pick is the board found: by its address or port, or, picked by its
+    name in an older chronometer, by the name the board advertises."""
+    if many.key_of(pick) == many.key_of(board):
+        return True
+    named = str(board.get("name") or "").lower()
+    radio = pick.get("link") == "ble" and board.get("link") == "ble"
+    return radio and bool(named) and many.key_of(pick).lower() == named
+
+
 def listed(
     found: list[dict[str, Any]], picked: list[dict[str, Any]]
 ) -> list[tuple[dict[str, Any], bool, bool]]:
     """The boards for the judge's list: those found, then those picked and not found
-    (out of reach, or being read); each with whether it is picked and was found."""
-    keys = {many.key_of(one) for one in picked}
-    seen = {many.key_of(one) for one in found}
-    rows = [(one, many.key_of(one) in keys, True) for one in found]
-    rows += [(one, True, False) for one in picked if many.key_of(one) not in seen]
+    (out of reach, or being read); each with whether it is picked and was found. A
+    board picked by its name is the board found of that name: listed once."""
+    rows = [(one, any(same(pick, one) for pick in picked), True) for one in found]
+    rows += [
+        (pick, True, False)
+        for pick in picked
+        if not any(same(pick, one) for one in found)
+    ]
     return rows
 
 
