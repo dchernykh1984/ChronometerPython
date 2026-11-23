@@ -78,6 +78,9 @@ def here():
     if not Path(path).is_absolute():
         texts = [t for t in bpy.data.texts if t.filepath.endswith("beam_enclosures.py")]
         path = bpy.path.abspath(texts[0].filepath) if texts else path
+    if not Path(path).is_absolute():
+        # Never Blender's working folder: build() empties the stl/ it finds there.
+        raise RuntimeError("open beam_enclosures.py from its file, then run it")
     return Path(path).parent
 
 
