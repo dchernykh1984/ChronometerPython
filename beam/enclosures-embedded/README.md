@@ -84,8 +84,8 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
    faces forward, past the end of the module's board, at its middle.
 4. **The cables.** Plug an extension cable into the board, the other into the power module.
 5. **Measure.** The module's slot is 9.5 by 14.6 mm and 30 mm deep, its trimmer reached
-   8 to 22 mm from the module's front end; the bay is 56 mm across and 28 deep; the emitter
-   60 by 26 by 20 mm inside. Parts that do not fit change the numbers at the top of
+   8 to 22 mm from the module's front end and up to 3 mm off its middle; the bay is 56 mm
+   across and 28 deep; the emitter 60 by 26 by 20 mm inside. Parts that do not fit change the numbers at the top of
    `embedded_enclosures.py`, under "what is laid in at the pauses"; then build the parts
    again (below).
 
