@@ -67,7 +67,7 @@ opened again.
 | --- | --- | --- |
 | A 3x hand magnifier, 60 mm glass lens | 1 | Its lens, out of its frame, into the hood (see "The lens" below). |
 | Red film: a lighting gel, or a red transparent folder | a 10 mm square | Over the photoresistor: it lets the red laser through and holds most of the daylight back (FR-012). |
-| A USB-C extension cable, male to female, 30 to 50 cm | 2 | One in each part: its plug in the board or the power module, laid in at the pause; its socket outside, where the power bank or the computer plugs in. |
+| A USB-C extension cable, male to female, 30 to 50 cm, one that carries data (not a charge-only one) | 2 | One in each part: its plug in the board or the power module, laid in at the pause; its socket outside, where the power bank or the computer plugs in. The receiver's board is read and flashed through it, so a charge-only one, sealed in, would end its USB link for good. |
 | Neutral-cure silicone sealant, black or grey | 1 tube | The lens in the hood, the hood on the body, the cable slots, the trimmer's hole. Not an acetic one, which smells of vinegar: its acid corrodes the boards. |
 | Clear neutral-cure silicone, or clear epoxy | a drop | The board's LED window. |
 | 1/4-20 hex nut (camera thread) | 2 | One slid into the body's boss after the print, one into the emitter's ledge at its pause. |
