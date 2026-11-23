@@ -38,19 +38,21 @@ else: it only shines, with no wire to the receiver.
 | Light sensor | LM393 module with a photoresistor, 3 pins (VCC, GND, DO) | the same, 4 pins (VCC, GND, DO, AO) | 689 | Ozon |
 | Lens | a 3x hand magnifier's 60 mm lens | the same | about 1,000 to 2,000 | not bought yet |
 | Laser | KY-008, 650 nm, 5 V | the same | 787 | Ozon |
-| Laser's power | a USB-C power module with 5.1 kOhm from CC1 and CC2 to GND (below) | the same | about 550 | not bought yet |
+| Laser's power | a copy of Adafruit's USB-C breakout 4090: 5.1 kOhm from CC1 and CC2 to GND, 20.4 x 14.2 x 5 mm (below) | the same | about 760 | Ozon |
 | Dupont wires, female-female | 3 for the sensor, 4 for the BT05 | 3 for the sensor | | |
 | USB-C cables and power banks | one for the receiver, one for the emitter, with a low-current mode (below) | the same | | |
 
-**The laser's power module.** Any USB-C board that brings its VBUS and GND out to pins, with
-a 5.1 kOhm resistor from each of CC1 and CC2 to GND: without them a USB-C power bank or
-charger gives it no 5 V (a USB-A to C cable does). Documented ones: SparkFun's USB 2.0
-Type-C Connector Breakout (BOB-17110), Pololu's USB 2.0 Type-C Connector Breakout (usb07a),
-Adafruit's USB-C Breakout Board, Downstream Connection (4090). A local one, Kaspi's "Type-C
-power module" (5 V, 12 x 10 x 5 mm, 550 KZT), does not say: on one that has them a meter
-reads 5.1 kOhm from each CC pin to GND, 10.2 between the two. VBUS goes to the laser's `S`,
-GND to its `-`. Until one is bought, a board's 5 V powers the laser on the table (the
-Sensor Shield's `V` and `G` rows).
+**The laser's power module.** Every kit takes the same board, so that both enclosures fit it
+as they are: a copy of Adafruit's USB-C Breakout Board, Downstream Connection (4090), 20.4
+by 14.2 by 5 mm by Adafruit's figures, its pins, `VBUS` and `GND` among them, in one row
+beside two mounting holes. Sellers call it a "USB Type-C adapter board, 2.54 mm, CC1 CC2,
+5.1K resistor" (on Ozon about 760 KZT). Its two 5.1 kOhm resistors, from CC1 and CC2 to GND,
+are what a USB-C power bank or charger looks for before it gives 5 V (a USB-A to C cable
+gives it without them): a meter reads 5.1 kOhm from each CC pin to GND. Adafruit's own 4090
+is the same board, and another with the two resistors does as well if it is no larger. VBUS
+goes to the laser's `S`, GND to its `-`; the other pins stay free, and its header need not
+be soldered on. Until one is bought, a board's 5 V powers the laser on the table (the Sensor
+Shield's `V` and `G` rows).
 
 **The power banks.** A laser draws 20 to 40 mA and a receiver 30 to 80: less than many power
 banks need to stay on, and they switch themselves off within a minute. A low-current mode
