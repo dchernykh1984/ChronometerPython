@@ -45,6 +45,7 @@ FR-016). It has not been printed yet.
 | M3 x 8 screw | 2 | The back cap (they cut their thread in PETG). |
 | 1/4-20 hex nut (camera thread) | 2 | Slid into the tube's boss and the laser box's ledge. |
 | Hot glue | | The laser's board. |
+| Black tape (electrical tape) | a few cm | Round the sensor module in the carriage's slot. |
 | A small bag of silica gel (as comes in a shoe box) | 2 | One in each part: it keeps the lens from misting inside. |
 | A camera tripod with a pan and tilt head | 2 | One for the receiver, one for the emitter: aiming them. |
 
@@ -84,13 +85,16 @@ The receiver:
    bead of silicone round the joint, at the hood's back edge.
 3. **Sensor.** Stick a square of red film over the photoresistor. Push the sensor module
    through the carriage's slot, its trimmer too, until the photoresistor is in front, at the
-   carriage's middle. Slide the carriage in from the back, the photoresistor towards the
-   lens, until the photoresistor is the lens's focal length behind the lens: a ruler through
-   the back then reads 166 mm less the focal length from the tube's back end to it (66 mm
-   for a 100 mm lens). A few millimetres either way do not matter. Fix the carriage there
-   with a dab of silicone on its back edge: the cartridge's nozzle reaches it through the
-   back, where a glue gun would not. Leave the tube on its side while it cures. Its trimmer
-   is set as `beam/README.md` says (step 4), with the film on.
+   carriage's middle. Close the slot's gaps round the module with black tape, so that the
+   carriage keeps every light behind it off the photoresistor: the board's own LED, and the
+   sun through the LED window, which faces the sun when the receiver's back is to it. Slide
+   the carriage in from the back, the photoresistor towards the lens, until the
+   photoresistor is the lens's focal length behind the lens: a ruler through the back then
+   reads 166 mm less the focal length from the tube's back end to it (66 mm for a 100 mm
+   lens). A few millimetres either way do not matter. Fix the carriage there with a dab of silicone on
+   its back edge: the cartridge's nozzle reaches it through the back, where a glue gun
+   would not. Leave the tube on its side while it cures. Its trimmer is set as
+   `beam/README.md` says (step 4), with the film on.
 4. **Board.** Wire the board to the sensor as `beam/README.md` says. Fix the board, and the
    BT05 in the RP2040 kit, behind the carriage with foam tape, its LED 12 mm from the tube's
    middle towards one of the two screw holes near the back: the back cap's window goes
