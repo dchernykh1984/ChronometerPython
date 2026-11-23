@@ -103,7 +103,8 @@ The receiver:
 6. **Tripod.** Slide a 1/4-20 nut into the slot in the boss's top, from the tube's back end
    side, until it drops to the bottom. The tripod's screw goes into the hole in the boss's
    face; the plastic between them takes the pull, so a tightened screw cannot pull the nut
-   out.
+   out. Tie the USB cable to a leg of the tripod, the emitter's as well: a foot caught in
+   it then pulls the tripod, not the board's socket through the silicone.
 
 The emitter:
 
