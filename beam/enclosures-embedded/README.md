@@ -83,7 +83,8 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
    them if the power bank needs one (`beam/README.md`), and check that it shines.
 2. **Fix every wire:** solder it, or put a dab of hot glue on each Dupont connector.
 3. **The photoresistor.** Stick a square of red film over it, and bend its leads so that it
-   faces forward, past the end of the module's board, at its middle.
+   faces forward, past the end of the module's board, at its middle. Leads too short to
+   bend: solder it on two short wires instead.
 4. **The cables.** Plug an extension cable into the board, the other into the power module.
 5. **Measure.** The module's slot is 9.5 by 14.6 mm and 30 mm deep, its trimmer reached 8 to
    22 mm from the module's front end and up to 3 mm off its middle; the bay is 56 mm across
