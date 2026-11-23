@@ -38,6 +38,9 @@
 - [x] T023 The second enclosures (2026-11-23): six PETG parts sealed with neutral-cure silicone, a
   100 mm hood over the lens, the tripod's nuts held by the plastic between them and the tripod;
   `beam/enclosures/`
+- [x] T024 The printed-in enclosures (2026-11-23), the owner's alternative to T023: three PETG
+  parts, the electronics laid in at a pause in the print, the lens focused by sliding its hood;
+  `beam/enclosures-embedded/`. Which of the two stays is chosen once both are printed (T018)
 - [x] T013 `beam/README.md`: the two kits, parts with prices, wiring, flashing, the apps, trouble
 - [x] T014 `CLAUDE.md` and `AGENTS.md`: the beam folder and its rules
 - [x] T021 `beam/tools/clock_check.py`: the clock check of FR-022, over USB and Bluetooth at

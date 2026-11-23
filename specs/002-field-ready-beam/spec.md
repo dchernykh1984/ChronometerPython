@@ -54,6 +54,10 @@ the wind (FR-019, SC-007, research 11, task T023); this spec takes that over wit
   that it can be opened. The receiver and the emitter each take a tripod's screw in a 1/4-20 nut
   slid into them.
 - Q: Where is the red filter? -> A: A red film on the photoresistor, no part of its own.
+- Q: Could the electronics be printed in instead: the print paused, the boards laid in, the
+  print closed over them? -> A: Built as a second version beside the first, both kept until
+  printed ones choose: three parts, the lens in the hood, focused by sliding the hood on the
+  body, the sensor's trimmer reached through a hole sealed afterwards.
 
 ## User Scenarios & Testing *(mandatory)*
 
