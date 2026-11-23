@@ -40,7 +40,7 @@ FR-016). It has not been printed yet.
 | Clear neutral-cure silicone, or clear epoxy | a drop | The board's LED window. |
 | M3 x 8 screw | 2 | The back cap (they cut their thread in PETG). |
 | 1/4-20 hex nut (camera thread) | 2 | Slid into the tube's boss and the laser box's ledge. |
-| Hot glue | | The sensor's carriage and the laser's board. |
+| Hot glue | | The laser's board. |
 | A camera tripod with a pan and tilt head | 2 | One for the receiver, one for the emitter: aiming them. |
 
 ## The lens
@@ -83,8 +83,9 @@ The receiver:
    lens, until the photoresistor is the lens's focal length behind the lens: a ruler through
    the back then reads 166 mm less the focal length from the tube's back end to it (66 mm
    for a 100 mm lens). A few millimetres either way do not matter. Fix the carriage there
-   with a dab of hot glue on its back edge. Its trimmer is set as `beam/README.md` says
-   (step 4), with the film on.
+   with a dab of silicone on its back edge: the cartridge's nozzle reaches it through the
+   back, where a glue gun would not. Leave the tube on its side while it cures. Its trimmer
+   is set as `beam/README.md` says (step 4), with the film on.
 4. **Board.** Wire the board to the sensor as `beam/README.md` says. Fix the board, and the
    BT05 in the RP2040 kit, behind the carriage with foam tape, its LED 12 mm from the tube's
    middle towards one of the two screw holes near the back: the back cap's window goes
@@ -103,9 +104,9 @@ The emitter:
 
 1. **Nut.** Slide a 1/4-20 nut into the slot at the back of the ledge until it is over the
    hole in the floor.
-2. **Laser.** Lay the KY-008 on the ledge, its barrel in the hole in the front, and fix its
-   board with a dab of hot glue: once aimed, the laser must not move. Run a bead of
-   silicone round the barrel, inside, where it meets the front wall.
+2. **Laser.** Lay the KY-008 on the ledge against the front wall, its barrel at the hole,
+   and fix its board with a dab of hot glue: once aimed, the laser must not move. Run a bead
+   of silicone round the barrel where it meets the front wall, inside.
 3. **Power.** Pass the USB cable in through the slot at the back and plug it into the power
    module. Wire the module's VBUS to the laser's `S` pin and its GND to the `-` pin, with
    the 47 Ohm 1 W load across them if the power bank needs one (`beam/README.md`). Fix the
