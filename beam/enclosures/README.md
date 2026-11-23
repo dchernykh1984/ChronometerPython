@@ -1,6 +1,6 @@
 # The beam's enclosures (second version)
 
-![Every part as printed: the receiver's four dark (print them black), the emitter's two grey](preview.png)
+![Every part as printed: the receiver's four dark (print them black), the emitter's two light](preview.png)
 
 Made in Blender 5.2 by `beam_enclosures.py`. `stl/` has one print file per part, already
 in its print orientation, in millimetres. `beam_enclosures.blend` keeps the same parts for
@@ -24,7 +24,9 @@ FR-016). It has not been printed yet.
 - **PETG.** 0.2 mm layers, 4 walls, 5 top and bottom layers, 25 to 40% infill, no supports.
   Every part lies on the print bed as exported.
 - **The receiver's four parts in black**, so that no daylight comes through their walls and
-  none is reflected inside onto the sensor. The emitter in any colour.
+  none is reflected inside onto the sensor. **The emitter in a light colour**, white or light
+  grey: in the sun it stays cooler than a dark box, and a laser diode dims and wears out when
+  it is hot.
 - The tallest part is the tube, 172 mm, standing on its front: the boss beneath it slopes at
   45 degrees towards the bed, so it needs no support. The hood is 115 mm tall, on its front
   rim. A hood of its own lets the tube print on any printer of 180 mm or more; the two in one
