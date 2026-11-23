@@ -16,7 +16,7 @@ the network is best effort.
 | `app/paths.py` | Resolves where data lives (see below). |
 | `tests/` | pytest; `conftest.py` holds the offscreen Qt `win` fixture. |
 | `data/` | Runtime data files. |
-| `beam/` | Everything for the laser beam: `README.md` (the kits, parts and prices, wiring, flashing, both apps), `firmware/` (one core, `core/beamcore.py`, and a `main.py` per chip, `rp2040/` and `esp32c3/`), `enclosures/` (the 3D-printed parts, made in Blender), `tools/` (`clock_check.py`, the clock check every board gets when flashed). The firmware's tests (`tests/test_beam_firmware.py`) run with the rest, outside the coverage gate, which measures `app/` only. |
+| `beam/` | Everything for the laser beam: `README.md` (the kits, parts and prices, wiring, flashing, both apps), `firmware/` (one core, `core/beamcore.py`, and a `main.py` per chip, `rp2040/` and `esp32c3/`), `enclosures/` and `enclosures-embedded/` (the 3D-printed parts, made in Blender: assembled, and with the electronics printed in; both kept until printed ones choose), `tools/` (`clock_check.py`, the clock check every board gets when flashed). The firmware's tests (`tests/test_beam_firmware.py`) run with the rest, outside the coverage gate, which measures `app/` only. |
 | `app/connectors/boards/` | The beam boards the chronometer reads itself: the contract's reader (`protocol.py`), the USB transport (`usb_serial.py`), the Bluetooth one (`ble.py`, through `bleak`), one module per chip (`rp2040.py`, `esp32c3.py`); `many.py`, the `beam-boards` source, every board the judge picked read at once, each break a cutoff of its own, and `beam-blink`; `scan.py`, `beam-scan`, the boards around for the window's list (spec 003). |
 | `app/device_time.py` | The device's clock against world time: NTP of several servers, and the clock every cutoff is stamped on, which never runs backwards and never sets the system's (spec 003). No Qt. |
 
@@ -85,11 +85,12 @@ outcome is appended to the in-app action log, not shown in a dialog. See the
   collected in `.github/workflows/build.yml`. The macOS bundle needs
   `NSBluetoothAlwaysUsageDescription`, or macOS ends the app at its first Bluetooth call.
   `.github/scripts/connector_smoke.py` runs a Bluetooth connector in every frozen build.
-- The enclosures are made by `beam/enclosures/beam_enclosures.py` in Blender. Change
-  the script, never an STL, and build them again. Use Blender's MCP add-on (Blender Lab's,
+- The enclosures are made in Blender by `beam/enclosures/beam_enclosures.py` and
+  `beam/enclosures-embedded/embedded_enclosures.py`. Change a script, never an STL,
+  and build its parts again. Use Blender's MCP add-on (Blender Lab's,
   `localhost:9876`: a JSON request `{"type": "execute", "code": ..., "strict_json":
   false}` ended by a NUL byte, with `__file__` set in the code), its Text Editor, or
-  `blender -b -P`. Commit the script, `stl/`, `preview.png` and the `.blend` together.
+  `blender -b -P`. Commit the script, `stl/`, the pictures and the `.blend` together.
 
 ## Commands
 
