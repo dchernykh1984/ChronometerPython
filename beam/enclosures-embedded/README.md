@@ -99,8 +99,9 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
      parts (the trimmer) facing the side with the two holes, until its board stops. Wrap a
      turn of black tape round it where it leaves the slot, so that no light in the bay
      reaches the photoresistor round it.
-   - Fix the board (and the BT05) in the bay with foam tape, the board's LED against the
-     window in the bay's wall, on the same side as the trimmer's hole.
+   - Fix the board (and the BT05) in the bay with foam tape. Stand the board on an edge
+     against the wall, its LED at the window 10 mm above the bay's floor, on the same
+     side as the trimmer's hole.
    - Lay the extension cable down into the slot in the bay's wall above the boss, its
      socket outside.
    - Put a bag of silica gel in the bay. Lay a ruler across the top: nothing may touch it.

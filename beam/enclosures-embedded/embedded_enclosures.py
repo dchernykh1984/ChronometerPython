@@ -54,6 +54,7 @@ WINDOW_D = 6.0  # the photoresistor (5 mm) looks through it
 ROOF_TOP = 2.0  # above a roof's top
 CABLE_SLOT = (6.0, 16.0)  # a cable laid in at the pause: its width, its depth
 LED_WINDOW_D = 5.0
+LED_Z = 10.0  # its middle over the bay's floor: a board stood on an edge, its LED there
 TRIM_W = 8.0  # the trimmer's hole across: a trimmer up to 3 mm off the board's middle
 NUT_AF, NUT_T, BOLT_D = 11.5, 6.0, 6.8  # a 1/4-20 nut (11.1 across flats), its bolt
 NUT_FLOOR = 1.5  # under the nut: a tripod's short screw still reaches through it
@@ -271,7 +272,7 @@ def receiver_body():
         "led_window",
         LED_WINDOW_D / 2,
         TUBE_OD / 2 - BAY[0] / 2 + 2,
-        BAY_FLOOR + 10.0,
+        BAY_FLOOR + LED_Z,
         x=BAY[0] / 2 - 1,
         segments=32,
         rot=ALONG_X,
