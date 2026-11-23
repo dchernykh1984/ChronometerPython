@@ -85,7 +85,8 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
    flash it and check its clock (`beam/README.md`, steps 1 to 3). Wire the laser to its
    power module, VBUS to its `S` pin and GND to its `-` pin, with the 47 Ohm 1 W load across
    them if the power bank needs one (`beam/README.md`), and check that it shines.
-2. **Fix every wire:** solder it, or put a dab of hot glue on each Dupont connector.
+2. **Fix every wire:** solder it, or put a dab of hot glue on each Dupont connector. Cover
+   bare pins and solder joints with tape: sealed in, two that touch cannot be parted.
 3. **The photoresistor.** Stick a square of red film over it, and bend its leads so that it
    faces forward, past the end of the module's board, at its middle. Leads too short to
    bend: solder it on two short wires instead.
