@@ -93,9 +93,10 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
 4. **The cables.** Plug an extension cable into the board, the other into the power module.
 5. **Measure.** The module's slot is 9.5 by 14.6 mm and 30 mm deep, its trimmer reached 8 to
    22 mm from the module's front end and up to 3 mm off its middle; the bay is 56 mm across
-   and 28 deep; the emitter 60 by 26 by 20 mm inside. Parts that do not fit change the
-   numbers at the top of `embedded_enclosures.py`, under "what is laid in at the pauses";
-   then build the parts again (below).
+   and 28 deep; the emitter 70 by 26 by 20 mm inside, with room behind the laser for a power
+   module up to 21 by 15 mm (the kits' is 20.4 by 14.2) and its cable's plug. Parts that do
+   not fit change the numbers at the top of `embedded_enclosures.py`, under "what is laid in
+   at the pauses"; then build the parts again (below).
 
 ## The receiver
 

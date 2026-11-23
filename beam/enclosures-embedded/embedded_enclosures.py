@@ -36,7 +36,9 @@ MODULE_SLOT = (9.5, 14.6)  # the LM393 module: through its parts, across its boa
 MODULE_DEPTH = 30.0  # how far it goes in, photoresistor first; its pins stay above
 TRIMMER = (8.0, 22.0)  # where its trimmer can be, along it from its front end
 BAY = (56.0, 28.0)  # the board, the BT05 and the wires: across, up to the pause
-EMITTER_IN = (60.0, 26.0, 20.0)  # the laser's box inside: along the beam, across, up
+# The laser's box inside: along the beam, across, up. Behind the laser's ledge, room
+# for the power module (a 20.4 mm copy of Adafruit's 4090) and the cable's plug.
+EMITTER_IN = (70.0, 26.0, 20.0)
 LASER_D = 6.4  # the KY-008's brass barrel
 LEDGE = 21.0  # the laser's board on it, against the front
 # -- the rest -----------------------------------------------------------------------
