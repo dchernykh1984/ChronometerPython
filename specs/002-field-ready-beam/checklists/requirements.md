@@ -34,8 +34,8 @@
 - No marker is left. Settled: FR-008 (2026-11-22), no power level, as a USB-C power bank tells
   none and lasts the race; FR-018, both Bluetooth boards (the ESP32-C3 SuperMini and the
   RP2040-Zero with an HM-10 clone); FR-012, a lens, as the industrial sensors that reach 10 to 12 m
-  cost several times FR-020's limit; FR-013, sealing is required, its way chosen once the first
-  printed enclosures have been tried (the maintainer's call, so not a clarification).
+  cost several times FR-020's limit; FR-013, sealing is required, and the second enclosures seal
+  every joint with neutral-cure silicone (2026-11-23), whether it holds found once they are printed.
 - Some names in the spec are the hardware's own and are part of the requirement, not a way to build
   it: Bluetooth and USB (the links the judge chooses), IP65/IP67 (the protection class asked for),
   the contract's `STATUS` and `FLASH` lines, PETG/ASA as examples of outdoor plastics, and the boards
