@@ -29,6 +29,8 @@ FR-016). It has not been printed yet.
   45 degrees towards the bed, so it needs no support. The hood is 115 mm tall, on its front
   rim. A hood of its own lets the tube print on any printer of 180 mm or more; the two in one
   piece would be about 280 mm.
+- **A 5 mm brim for the tube and the hood.** Each stands on a ring a few millimetres wide,
+  and a tall part on so little can come off the bed late in its print.
 
 ## What else to buy
 
