@@ -43,6 +43,7 @@ FR-016). It has not been printed yet.
 | M3 x 8 screw | 2 | The back cap (they cut their thread in PETG). |
 | 1/4-20 hex nut (camera thread) | 2 | Slid into the tube's boss and the laser box's ledge. |
 | Hot glue | | The laser's board. |
+| A small bag of silica gel (as comes in a shoe box) | 2 | One in each part: it keeps the lens from misting inside. |
 | A camera tripod with a pan and tilt head | 2 | One for the receiver, one for the emitter: aiming them. |
 
 ## The lens
@@ -92,11 +93,13 @@ The receiver:
    BT05 in the RP2040 kit, behind the carriage with foam tape, its LED 12 mm from the tube's
    middle towards one of the two screw holes near the back: the back cap's window goes
    there.
-5. **Back cap.** Pass the USB cable through the cap's slot and plug it into the board. Run a
-   bead of silicone round the tube's back end and push the cap in, its window over the
-   board's LED (the cap goes on two ways round). Drive the two M3 x 8 screws through the
-   tube's side holes into it, a dab of silicone on each. Fill the slot round the cable with
-   silicone, and the window with clear silicone or epoxy.
+5. **Back cap.** Put a small bag of silica gel in behind the board: the sealed tube keeps
+   the air it was closed on, and after a cold night that air's damp would mist the lens
+   from inside and hide the beam. Pass the USB cable through the cap's slot and plug it
+   into the board. Run a bead of silicone round the tube's back end and push the cap in,
+   its window over the board's LED (the cap goes on two ways round). Drive the two M3 x 8
+   screws through the tube's side holes into it, a dab of silicone on each. Fill the slot
+   round the cable with silicone, and the window with clear silicone or epoxy.
 6. **Tripod.** Slide a 1/4-20 nut into the slot in the boss's top, from the tube's back end
    side, until it drops to the bottom. The tripod's screw goes into the hole in the boss's
    face; the plastic between them takes the pull, so a tightened screw cannot pull the nut
@@ -113,8 +116,8 @@ The emitter:
    module. Wire the module's VBUS to the laser's `S` pin and its GND to the `-` pin, with
    the 47 Ohm 1 W load across them if the power bank needs one (`beam/README.md`). Fix the
    module to the floor with foam tape, and fill the slot round the cable with silicone.
-4. **Lid.** Run a bead of silicone round the box's top edge and press the lid on, its rim
-   inside.
+4. **Lid.** Put a small bag of silica gel in, as in the receiver. Run a bead of silicone
+   round the box's top edge and press the lid on, its rim inside.
 
 ## Sealing
 
