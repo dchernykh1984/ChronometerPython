@@ -114,9 +114,10 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
    to the body's back end reads the lens's focal length and 52 mm: 152 mm for a 100 mm
    lens. A few millimetres either way do not matter.
 4. **The trimmer.** Power the receiver and aim the laser at its lens. Through the hole
-   beside the module, turn the trimmer with a small screwdriver until the board's LED, in
-   its window, is just lit, and goes out when the beam is blocked (`beam/README.md`,
-   step 4). Then fill the hole with silicone.
+   beside the module, about 30 mm deep, turn the trimmer with a small screwdriver whose
+   shaft is longer than that, until the board's LED, in its window, is just lit, and goes
+   out when the beam is blocked (`beam/README.md`, step 4). Then fill the hole with
+   silicone.
 5. **Seal it.** Run a bead of silicone round the hood's back edge, on the body: where the
    hood stops is the focus, so hold it there with a strip of tape across the joint, and
    leave the receiver lying still for a day while the silicone cures. Fill the cable's
