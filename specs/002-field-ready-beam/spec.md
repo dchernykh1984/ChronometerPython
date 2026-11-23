@@ -51,7 +51,8 @@ the wind (FR-019, SC-007, research 11, task T023); this spec takes that over wit
 - Q: How many parts, and how are they sealed? -> A: As few as can be: six printed parts, the
   receiver's tube, hood, sensor carriage and back cap, and the emitter's box and lid. Every joint
   is sealed with neutral-cure silicone instead of TPU gaskets; two M3 screws hold the back cap, so
-  that it can be opened, and a 1/4-20 nut slid into each side takes a tripod.
+  that it can be opened. The receiver and the emitter each take a tripod's screw in a 1/4-20 nut
+  slid into them.
 - Q: Where is the red filter? -> A: A red film on the photoresistor, no part of its own.
 
 ## User Scenarios & Testing *(mandatory)*
