@@ -50,6 +50,10 @@ opened again.
   and OrcaSlicer add a pause on the layer slider; Cura through Extensions, Post Processing,
   Pause at height. In the slicer's preview, the last layer before the pause still has the
   bay open. These heights are for the numbers in the script, which says them when it runs.
+- **Try the pause first** on something small: printers take different pause commands,
+  and one that ignores it closes the roof over an empty bay, ten hours of print lost.
+  Have everything ready and to hand before it pauses: a long pause cools the part, and
+  some printers let the nozzle cool too, then heat it again on resuming.
 - **What is laid in stays below the pause's height:** the nozzle passes over it next.
   The cable then hangs out of the part to the end of the print: tape it to the bed beside
   the part, so that a moving bed or head cannot catch it.
