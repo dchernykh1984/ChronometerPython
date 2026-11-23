@@ -120,7 +120,8 @@ The emitter:
    hole in the floor.
 2. **Laser.** Lay the KY-008 on the ledge against the front wall, its barrel at the hole,
    and fix its board with a dab of hot glue: once aimed, the laser must not move. Run a bead
-   of silicone round the barrel where it meets the front wall, inside.
+   of silicone round the barrel where it meets the front wall, inside, and keep it off the
+   barrel's front: silicone on the laser's glass would smear the spot at 10 m.
 3. **Power.** Pass the USB cable in through the slot at the back and plug it into the power
    module. Wire the module's VBUS to the laser's `S` pin and its GND to the `-` pin, with
    the 47 Ohm 1 W load across them if the power bank needs one (`beam/README.md`). The load
