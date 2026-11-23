@@ -51,6 +51,8 @@ opened again.
   Pause at height. In the slicer's preview, the last layer before the pause still has the
   bay open. These heights are for the numbers in the script, which says them when it runs.
 - **What is laid in stays below the pause's height:** the nozzle passes over it next.
+  The cable then hangs out of the part to the end of the print: tape it to the bed beside
+  the part, so that a moving bed or head cannot catch it.
 - **Heat.** The body's bay is 12 cm above the bed, where the photoresistor (good to 70
   degrees) stays cool. The emitter's laser lies 1 cm above it while the roof prints: if the
   printer lets you, turn the bed down to 60 degrees at the pause; the part still holds.
