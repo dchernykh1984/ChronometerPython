@@ -106,7 +106,8 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
      so that no light in the bay reaches the photoresistor round it.
    - Fix the board (and the BT05) in the bay with foam tape. Stand the board on an edge
      against the wall, its LED at the window 10 mm above the bay's floor, on the same
-     side as the trimmer's hole.
+     side as the trimmer's hole. Keep the tape and the wall off its two buttons: one
+     held down keeps the board in reset, or in its bootloader at power-up.
    - Lay the extension cable down into the slot in the bay's wall above the boss, its
      socket outside.
    - Put a bag of silica gel in the bay. Lay a ruler across the top: nothing may touch it.
