@@ -86,9 +86,10 @@ reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which
    sensor will see, and goes out when the sensor is covered. Behind the lens, the
    laser's focused spot is far brighter than daylight, so there is room on either side.
 5. **Enclose it** ([`enclosures/README.md`](enclosures/README.md), or
-   [`enclosures-embedded/README.md`](enclosures-embedded/README.md)), and set it up: the
-   receiver and the emitter on tripods, 10 to 12 m apart. Aim the laser at the lens until
-   the board's LED shows the light on the sensor.
+   [`enclosures-embedded/README.md`](enclosures-embedded/README.md), which sets the
+   trimmer only after the print, through a hole), and set it up: the receiver and the
+   emitter on tripods, 10 to 12 m apart. Aim the laser at the lens until the board's LED
+   shows the light on the sensor.
 
 ## In the desktop chronometer
 
