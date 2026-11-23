@@ -78,7 +78,7 @@ TUBE_OD = TUBE_ID + 2 * WALL
 HOOD_BORE = TUBE_OD + 2 * FIT
 HOOD_BACK = OVERLAP + FOCUS_RANGE  # the hood's bore behind the lens, over the body
 # The window from the body's front: the hood pushed fully on puts it FOCAL less half
-# FOCUS_RANGE behind the lens, pulled back by FOCUS_RANGE, FOCAL and half of it.
+# FOCUS_RANGE behind the lens; pulled FOCUS_RANGE further off, FOCAL and half of it.
 SENSOR_Z = FOCAL - FOCUS_RANGE / 2 - GAP
 BAY_FLOOR = SENSOR_Z + MODULE_DEPTH
 PAUSE = on_layer(BAY_FLOOR + BAY[1])  # the receiver's: the bay open, its roof to come
