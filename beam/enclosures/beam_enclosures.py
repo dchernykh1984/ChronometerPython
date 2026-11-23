@@ -59,6 +59,7 @@ SEGMENTS = 128
 TUBE_ID = LENS_D + 2 * FIT
 TUBE_OD = TUBE_ID + 2 * WALL
 TUBE_LEN = SHOULDER + LENS_EDGE + 1.0 + FOCAL + FOCUS_RANGE + BAY
+BOSS_FACE = -(TUBE_OD / 2 + BOSS_DEPTH)  # the boss's face, under the tube (-Y)
 EMITTER_IN = (60.0, 26.0, 22.0)  # the emitter box inside: along the beam, across, up
 EMITTER_WALL = 2.4
 LEDGE = 21.0  # the laser's board on it, against the front
@@ -204,8 +205,7 @@ def receiver_tube():
 def tripod_boss():
     """Under the tube (-Y): a flat face for the tripod, sloped beneath. It reaches into
     the bore, which is cut after it, so it joins the curved wall all along."""
-    face = -(TUBE_OD / 2 + BOSS_DEPTH)
-    inner = -(TUBE_ID / 2 - 2.0)
+    face, inner = BOSS_FACE, -(TUBE_ID / 2 - 2.0)
     low, high = BOSS_Z - BOSS[1] / 2, BOSS_Z + BOSS[1] / 2
     corners = [(face, low), (face, high), (inner, high), (inner, low - (inner - face))]
     return hull(
@@ -218,15 +218,14 @@ def boss_holes():
     """The 1/4-20 nut's slot, open at the boss's top (towards the tube's back), and
     its bolt's hole from the face: the nut held by plastic between it and the tripod,
     so a tightened screw pulls it onto the boss, never out of it."""
-    face = -(TUBE_OD / 2 + BOSS_DEPTH)
-    near, far = face + NUT_FLOOR, face + NUT_FLOOR + NUT_T
+    near, far = BOSS_FACE + NUT_FLOOR, BOSS_FACE + NUT_FLOOR + NUT_T
     top = BOSS_Z + BOSS[1] / 2 + NUT_AF
     nut = hexagon(NUT_AF, turn=30.0)  # its flats along the slot
     slot = hull(
         "nut_slot",
         [(x, y, z + dz) for x, dz in nut for y in (near, far) for z in (BOSS_Z, top)],
     )
-    bolt_len = far + SCREW_ROOM - (face - 1)
+    bolt_len = far + SCREW_ROOM - (BOSS_FACE - 1)
     bolt = cylinder(
         "bolt",
         BOLT_D / 2,
@@ -246,7 +245,9 @@ def receiver_hood():
     lip = TUBE_OD - 2 * HOOD_STOP
     slope = (bore - lip) / 2
     hood = cylinder("receiver_hood", bore / 2 + HOOD_WALL, HOOD + HOOD_OVER)
-    ahead = cylinder("ahead", bore / 2, HOOD - slope + 1.2, -1)
+    # 0.2 mm into the slope: two cutters never share a face, and the step is too
+    # small to print as an overhang.
+    ahead = cylinder("ahead", bore / 2, 1 + HOOD - slope + 0.2, -1)
     under = cylinder("lip_slope", bore / 2, slope, HOOD - slope, r2=lip / 2)
     through = cylinder("lip_hole", lip / 2, slope + 2, HOOD - slope - 1)
     over = cylinder("over", bore / 2, HOOD_OVER + 1, HOOD)
@@ -291,15 +292,14 @@ def emitter_box():
     inside = box("inside", lx, ly, lz + 1, z=w)
     cut(shell, inside)  # hollowed first: the ledge then stands inside
     ledge_top = NUT_FLOOR + NUT_T + SCREW_ROOM + 1.0
-    ledge = (
-        box(  # into the walls and the floor by half a millimetre: joined, not touching
-            "ledge",
-            LEDGE + 0.5,
-            ly + 1.0,
-            ledge_top - w + 0.5,
-            x=lx / 2 - LEDGE / 2 + 0.25,
-            z=w - 0.5,
-        )
+    # Half a millimetre into the walls and the floor: joined, not touching them.
+    ledge = box(
+        "ledge",
+        LEDGE + 0.5,
+        ly + 1.0,
+        ledge_top - w + 0.5,
+        x=lx / 2 - LEDGE / 2 + 0.25,
+        z=w - 0.5,
     )
     join(shell, ledge)
     nut_x = lx / 2 - LEDGE / 2
