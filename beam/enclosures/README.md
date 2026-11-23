@@ -16,7 +16,7 @@ FR-016). It has not been printed yet.
 | `receiver_hood.stl` | 1 | Slides over the tube's front and reaches 100 mm ahead of it: keeps the sun from the side, rain and dew off the lens. |
 | `receiver_sensor_carriage.stl` | 1 | Holds the light sensor module at the lens's focus. |
 | `receiver_back_cap.stl` | 1 | Closes the tube on two screws: a slot for the USB cable, a window for the board's LED. |
-| `emitter_box.stl` | 1 | The laser's box: the laser on a ledge, its barrel through the front, the power module behind it. |
+| `emitter_box.stl` | 1 | The laser's box: the laser on a ledge, shining through a hole in the front, the power module behind it. |
 | `emitter_lid.stl` | 1 | Closes the laser's box. |
 
 ## Printing
