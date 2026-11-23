@@ -1,48 +1,46 @@
-# The beam's enclosures (first version)
+# The beam's enclosures (second version)
 
-![Every part as printed: PETG grey, TPU orange](preview.png)
+![Every part as printed: the receiver's four dark (print them black), the emitter's two grey](preview.png)
 
 Made in Blender 5.2 by `beam_enclosures.py`. `stl/` has one print file per part, already
 in its print orientation, in millimetres. `beam_enclosures.blend` keeps the same parts for
-editing. This is a first version: it has not been printed yet. It is to be tried, and then
-changed (spec 002, FR-013 and FR-016).
+editing. This second version has as few parts as can be: six, all PETG, every joint sealed
+with neutral-cure silicone instead of gaskets, two screws in all (spec 002, FR-013,
+FR-016). It has not been printed yet.
 
 ## The parts
 
-| File | Material | Count | What it is |
-| --- | --- | --- | --- |
-| `receiver_tube.stl` | PETG | 1 | The receiver's body: the lens at its top end, the sensor and the board inside. |
-| `receiver_lens_ring.stl` | PETG | 1 | Presses the lens and its two gaskets into the tube; 3 screws. |
-| `receiver_sensor_carriage.stl` | PETG | 1 | Holds the light sensor module at the lens's focus. |
-| `receiver_back_cap.stl` | PETG | 1 | Closes the tube: a slot for the USB cable, a window for the board's LED. |
-| `tripod_collar_top.stl`, `tripod_collar_bottom.stl` | PETG | 1 each | Two halves clamping the tube between its flanges; the lower one takes a camera tripod's screw. |
-| `emitter_box.stl` | PETG | 1 | The laser's box: the barrel through its front, a tripod nut underneath. |
-| `emitter_lid.stl` | PETG | 1 | Closes the laser's box; 4 screws. |
-| `tpu_lens_gasket.stl` | TPU | 2 | One on each side of the lens. |
-| `tpu_back_cap_gasket.stl` | TPU | 1 | Between the tube and its back cap. |
-| `tpu_emitter_lid_gasket.stl` | TPU | 1 | Between the laser's box and its lid. |
-| `tpu_cable_grommet.stl` | TPU | 2 | Seals a USB cable's slot: one in the back cap, one in the laser's box. Slit to take the cable. |
-| `tpu_laser_ring.stl` | TPU | 1 | Seals the laser's barrel in the box's front hole. |
+| File | Count | What it is |
+| --- | --- | --- |
+| `receiver_tube.stl` | 1 | The receiver's body: the lens against a shoulder at its front, the sensor and the board inside, a boss underneath for a camera tripod. |
+| `receiver_hood.stl` | 1 | Slides over the tube's front and reaches 100 mm ahead of it: keeps the sun from the side, rain and dew off the lens. |
+| `receiver_sensor_carriage.stl` | 1 | Holds the light sensor module at the lens's focus. |
+| `receiver_back_cap.stl` | 1 | Closes the tube on two screws: a slot for the USB cable, a window for the board's LED. |
+| `emitter_box.stl` | 1 | The laser's box: the laser on a ledge, its barrel through the front, the power module behind it. |
+| `emitter_lid.stl` | 1 | Closes the laser's box. |
 
 ## Printing
 
 - **PETG.** 0.2 mm layers, 4 walls, 5 top and bottom layers, 25 to 40% infill, no supports.
-  Print the receiver in black or another dark colour, so that no daylight comes through
-  its walls. The tube stands on its back flange: the shoulder the lens rests on is a 2.3 mm
-  overhang, which PETG prints.
-- **TPU** (95A). 0.2 mm layers, 100% infill, slow (20 to 30 mm/s), no retraction worth
-  speaking of.
-- Every part lies on the print bed as exported.
+  Every part lies on the print bed as exported.
+- **The receiver's four parts in black**, so that no daylight comes through their walls and
+  none is reflected inside onto the sensor. The emitter in any colour.
+- The tallest part is the tube, 172 mm, standing on its front: the boss beneath it slopes at
+  45 degrees towards the bed, so it needs no support. The hood is 115 mm tall, on its front
+  rim. A hood of its own lets the tube print on any printer of 180 mm or more; the two in one
+  piece would be about 280 mm.
 
 ## What else to buy
 
 | Part | Count | Where it goes |
 | --- | --- | --- |
 | A 3x hand magnifier, 60 mm glass lens | 1 | Its lens, out of its frame, into the tube (see "The lens" below). |
-| M3 x 10 screw | 6 | The lens ring and the back cap (they cut their thread in PETG). |
-| M3 x 8 screw | 4 | The emitter's lid. |
-| M3 x 25 screw and an M3 nut | 2 | The collar's halves, one each side. |
-| 1/4-20 hex nut (camera thread) | 2 | Pressed into the collar's foot and under the emitter's box. |
+| Red film: a lighting gel, or a red transparent folder | a 10 mm square | Over the photoresistor: it lets the red laser through and holds most of the daylight back (FR-012). |
+| Neutral-cure silicone sealant, black or grey | 1 tube | Every joint. Not an acetic one, which smells of vinegar: its acid corrodes the boards. |
+| Clear neutral-cure silicone, or clear epoxy | a drop | The board's LED window. |
+| M3 x 8 screw | 2 | The back cap (they cut their thread in PETG). |
+| 1/4-20 hex nut (camera thread) | 2 | Slid into the tube's boss and the laser box's ledge. |
+| Hot glue | | The sensor's carriage and the laser's board. |
 | A camera tripod with a pan and tilt head | 2 | One for the receiver, one for the emitter: aiming them. |
 
 ## The lens
@@ -53,50 +51,85 @@ face and focuses it onto the sensor, so the spot may wander up to 2.5 cm without
 being lost. A bare sensor loses it after 3 mm (spec 002, FR-009, FR-012).
 
 To find a lens's focal length, focus the sun, or a lamp across the room, onto a sheet of
-paper: the distance from the lens to the sharpest spot is its focal length. Another lens
-changes three numbers at the top of `beam_enclosures.py`: `LENS_D` (its diameter),
-`LENS_EDGE` (its thickness at the rim) and `FOCAL`. Then build the parts again (below).
+paper: the distance from the lens to the sharpest spot is its focal length. The carriage
+slides 10 mm either side of 100 mm. A lens further off changes three numbers at the top of
+`beam_enclosures.py`: `LENS_D` (its diameter), `LENS_EDGE` (its thickness at the rim) and
+`FOCAL`. Then build the parts again (below).
+
+The sensor's place needs little care. Along the tube, 5 mm off the focus still puts the whole
+spot on the photoresistor. Across it, none: a lens a little off centre puts the spot a
+millimetre aside, and turning the receiver half a degree on its tripod brings it back, as
+aiming does anyway.
+
+**A lens is a burning glass.** In the sun it focuses 2 to 3 W into a spot of about a
+millimetre. With the sun within some 17 degrees of the tube's axis, that spot falls inside
+the tube, on the carriage: it can melt it and burn the sensor. Set the receiver up with its
+back to the sun, the laser on the sunny side, and never leave it lying lens up in the sun.
+The hood keeps off the sun further aside.
 
 ## Assembly
 
-1. **Lens.** Lay a lens gasket on the shoulder at the tube's top, then the lens, then the
-   second gasket. Put the lens ring on top and fix it with 3 M3 x 10 screws, tightened
-   evenly until the gaskets are pressed.
-2. **Sensor.** Push the light sensor module through the carriage's slot, its trimmer too,
-   until its photoresistor is in front, at the carriage's middle: the lens focuses there.
-   Slide the carriage into the tube from the back, the photoresistor towards the lens.
-3. **Focus.** Aim the laser at the lens from 10 m away. Slide the carriage until the
-   sensor's LED is lit most steadily. Fix the carriage there with a drop of hot glue.
+The receiver:
+
+1. **Lens.** Lay the tube on its side. Push the lens in from the back, with the carriage,
+   until it rests on the shoulder at the front, and leave the carriage against it. From the
+   front, run a bead of silicone round the shoulder's edge, where the lens meets it. Leave
+   the tube on its side for a day while the silicone cures, then take the carriage out.
+2. **Hood.** Slide the hood over the tube's front until its lip meets the tube's end. Run a
+   bead of silicone round the joint, at the hood's back edge.
+3. **Sensor.** Stick a square of red film over the photoresistor. Push the sensor module
+   through the carriage's slot, its trimmer too, until the photoresistor is in front, at the
+   carriage's middle. Slide the carriage in from the back, the photoresistor towards the
+   lens, until the photoresistor is the lens's focal length behind the lens: a ruler through
+   the back then reads 166 mm less the focal length from the tube's back end to it (66 mm
+   for a 100 mm lens). A few millimetres either way do not matter. Fix the carriage there
+   with a dab of hot glue on its back edge. Its trimmer is set as `beam/README.md` says
+   (step 4), with the film on.
 4. **Board.** Wire the board to the sensor as `beam/README.md` says. Fix the board, and the
-   BT05 in the RP2040 kit, behind the carriage with foam tape, its LED where the back cap's
-   window will be.
-5. **Back cap.** Pass the USB cable through the cap's slot, plug it in, and close the slot
-   with a cable grommet around the cable. Fix the cap on its gasket with 3 M3 x 10 screws.
-   The board's LED shows through the cap's window. Seal the window with a drop of clear
-   epoxy, or a disc of clear plastic.
-6. **Collar.** Press a 1/4-20 nut into the lower half's foot. Put the two halves round the
-   tube at its middle and clamp them with the two M3 x 25 screws and their nuts. Put it on
-   a tripod.
-7. **Emitter.** Press a 1/4-20 nut into the box's bottom. Lay the KY-008 on the ledge
-   inside, its barrel through the TPU ring in the front hole. Bring the USB cable in
-   through a grommet in the back: its +5 V to the laser's `S` pin, its ground to its `-`
-   pin. A cut USB cable or a USB-C breakout board does. Put the lid on its gasket with 4
-   M3 x 8 screws. Put it on the second tripod.
+   BT05 in the RP2040 kit, behind the carriage with foam tape, its LED 12 mm from the tube's
+   middle towards one of the two screw holes near the back: the back cap's window goes
+   there.
+5. **Back cap.** Pass the USB cable through the cap's slot and plug it into the board. Run a
+   bead of silicone round the tube's back end and push the cap in, its window over the
+   board's LED (the cap goes on two ways round). Drive the two M3 x 8 screws through the
+   tube's side holes into it, a dab of silicone on each. Fill the slot round the cable with
+   silicone, and the window with clear silicone or epoxy.
+6. **Tripod.** Slide a 1/4-20 nut into the slot in the boss's top, from the tube's back end
+   side, until it drops to the bottom. The tripod's screw goes into the hole in the boss's
+   face; the plastic between them takes the pull, so a tightened screw cannot pull the nut
+   out.
+
+The emitter:
+
+1. **Nut.** Slide a 1/4-20 nut into the slot at the back of the ledge until it is over the
+   hole in the floor.
+2. **Laser.** Lay the KY-008 on the ledge, its barrel in the hole in the front, and fix its
+   board with a dab of hot glue: once aimed, the laser must not move. Run a bead of
+   silicone round the barrel, inside, where it meets the front wall.
+3. **Power.** Pass the USB cable in through the slot at the back and plug it into the power
+   module. Wire the module's VBUS to the laser's `S` pin and its GND to the `-` pin, with
+   the 47 Ohm 1 W load across them if the power bank needs one (`beam/README.md`). Fix the
+   module to the floor with foam tape, and fill the slot round the cable with silicone.
+4. **Lid.** Run a bead of silicone round the box's top edge and press the lid on, its rim
+   inside.
 
 ## Sealing
 
-These parts are sealed by their gaskets and grommets, and can be opened again. The way the
-kit is sealed for good is chosen once they have been tried (spec 002, FR-013). The options
-are potting the electronics in a compound, which this tube leaves room for, a conformal
-coating, or these gaskets.
+Every joint is sealed with neutral-cure silicone; nothing is a gasket. The cables stay
+plugged in: the board is re-flashed and the power bank changed through them, without
+opening anything (FR-013). A part can still be opened: cut its silicone with a knife, and
+take out the back cap's screws. Whether this keeps out rain, dust and dew, as an IP65 class,
+is found once the first ones are printed and sprayed (spec 002, T018); potting the
+electronics or a conformal coating stay the fallbacks.
 
 ## Building the parts again
 
-The script makes every part, writes `stl/`, `preview.png` and `beam_enclosures.blend`
-beside itself, and says the parts' sizes. Run it in any of these ways:
+The script makes every part, writes `stl/` (removing the files of parts it no longer
+makes), `preview.png` and `beam_enclosures.blend` beside itself, and says the parts' sizes.
+Run it in any of these ways:
 
 - **Through Blender's MCP add-on** (Blender Lab's, on `localhost:9876`): send it as one
-  request, with `__file__` set to its path. This is how these files were made.
+  request, with `__file__` set to its path.
 - **In Blender's Text Editor:** open the script, then Run Script.
 - **Headless:** `blender -b -P beam/enclosures/beam_enclosures.py`.
 
