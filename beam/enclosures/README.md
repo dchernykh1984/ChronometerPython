@@ -115,8 +115,11 @@ The emitter:
    of silicone round the barrel where it meets the front wall, inside.
 3. **Power.** Pass the USB cable in through the slot at the back and plug it into the power
    module. Wire the module's VBUS to the laser's `S` pin and its GND to the `-` pin, with
-   the 47 Ohm 1 W load across them if the power bank needs one (`beam/README.md`). Fix the
-   module to the floor with foam tape, and fill the slot round the cable with silicone.
+   the 47 Ohm 1 W load across them if the power bank needs one (`beam/README.md`). The load
+   turns half a watt into heat, its body near 100 degrees: stand it on its leads clear of
+   the walls, the floor and the lid, where it cannot soften the PETG (about 80 degrees).
+   Fix the module to the floor with foam tape, and fill the slot round the cable with
+   silicone.
 4. **Lid.** Put a small bag of silica gel in, as in the receiver. Run a bead of silicone
    round the box's top edge and press the lid on, its rim inside.
 
