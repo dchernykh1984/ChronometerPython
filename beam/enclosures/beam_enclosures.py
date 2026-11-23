@@ -67,7 +67,7 @@ EMITTER_IN = (60.0, 26.0, 22.0)  # the emitter box inside: along the beam, acros
 EMITTER_WALL = 2.4
 LEDGE = 21.0  # the laser's board on it, against the front
 
-# Print the receiver black, the emitter in any colour: so shown in the preview.
+# Print the receiver black, the emitter light: so shown in the preview.
 RECEIVER, EMITTER = (0.22, 0.22, 0.24, 1.0), (0.62, 0.64, 0.66, 1.0)
 
 
