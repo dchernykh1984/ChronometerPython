@@ -15,7 +15,7 @@ kit every time.
 | [`firmware/`](firmware/README.md) | What the boards run: one core, and a `main.py` for each chip. |
 | [`firmware/rp2040/`](firmware/rp2040/README.md) | The RP2040-Zero: USB, and Bluetooth through a BT05 module. |
 | [`firmware/esp32c3/`](firmware/esp32c3/README.md) | The ESP32-C3 SuperMini: USB, and Bluetooth of its own. |
-| [`enclosures/`](enclosures/README.md) | 3D-printed enclosures (PETG, TPU gaskets): the receiver with its lens, the laser's box, a tripod collar. |
+| [`enclosures/`](enclosures/README.md) | 3D-printed enclosures (PETG, sealed with silicone): the receiver's tube with its lens and hood, the laser's box. |
 | [`tools/`](tools/clock_check.py) | The clock check run on every board flashed: how its clock maps onto the computer's, over USB and Bluetooth. |
 
 What the boards say, and what a program reading them does, is one contract:
