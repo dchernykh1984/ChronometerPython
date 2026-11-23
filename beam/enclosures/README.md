@@ -8,6 +8,10 @@ editing. This second version has as few parts as can be: six, all PETG, every jo
 with neutral-cure silicone instead of gaskets, two screws in all (spec 002, FR-013,
 FR-016). It has not been printed yet.
 
+The other version, [`../enclosures-embedded/`](../enclosures-embedded/README.md), prints the
+electronics in: three parts, no screws, but nothing can be opened again. Both are kept
+until printed ones choose between them.
+
 ## The parts
 
 | File | Count | What it is |

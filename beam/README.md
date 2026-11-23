@@ -16,6 +16,7 @@ kit every time.
 | [`firmware/rp2040/`](firmware/rp2040/README.md) | The RP2040-Zero: USB, and Bluetooth through a BT05 module. |
 | [`firmware/esp32c3/`](firmware/esp32c3/README.md) | The ESP32-C3 SuperMini: USB, and Bluetooth of its own. |
 | [`enclosures/`](enclosures/README.md) | 3D-printed enclosures (PETG, sealed with silicone): the receiver's tube with its lens and hood, the laser's box. |
+| [`enclosures-embedded/`](enclosures-embedded/README.md) | The other version, until printed ones choose: the electronics laid in at a pause in the print and printed in, three parts. |
 | [`tools/`](tools/clock_check.py) | The clock check run on every board flashed: how its clock maps onto the computer's, over USB and Bluetooth. |
 
 What the boards say, and what a program reading them does, is one contract:
@@ -59,7 +60,8 @@ one that switches off gets a load beside the laser, a 47 Ohm 1 W resistor from V
 (about 100 mA, still over 40 hours from 10,000 mAh), or is not used.
 
 Kit 1's board, sensor and laser were bought before this list was kept. The enclosures, the
-screws and the tripods are listed in [`enclosures/README.md`](enclosures/README.md). A
+screws and the tripods are listed in [`enclosures/README.md`](enclosures/README.md), or in
+[`enclosures-embedded/README.md`](enclosures-embedded/README.md) for the printed-in version. A
 beam's sensor, lens, laser and its power module come to about 3,500 KZT; with the
 ESP32-C3's board about 6,000, with the RP2040-Zero and its BT05 about 8,000: under the
 spec's limit of 10,000 for a beam (FR-020).
@@ -83,7 +85,8 @@ reads. A BT05, AT-09, MLT-BT05 or a genuine HM-10 is Bluetooth Low Energy, which
    light reaches the sensor. Turn its trimmer until that LED is just lit in the light the
    sensor will see, and goes out when the sensor is covered. Behind the lens, the
    laser's focused spot is far brighter than daylight, so there is room on either side.
-5. **Enclose it** ([`enclosures/README.md`](enclosures/README.md)), and set it up: the
+5. **Enclose it** ([`enclosures/README.md`](enclosures/README.md), or
+   [`enclosures-embedded/README.md`](enclosures-embedded/README.md)), and set it up: the
    receiver and the emitter on tripods, 10 to 12 m apart. Aim the laser at the lens until
    the board's LED shows the light on the sensor.
 
