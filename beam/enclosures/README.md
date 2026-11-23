@@ -91,9 +91,9 @@ The receiver:
    the carriage in from the back, the photoresistor towards the lens, until the
    photoresistor is the lens's focal length behind the lens: a ruler through the back then
    reads 166 mm less the focal length from the tube's back end to it (66 mm for a 100 mm
-   lens). A few millimetres either way do not matter. Fix the carriage there with a dab of silicone on
-   its back edge: the cartridge's nozzle reaches it through the back, where a glue gun
-   would not. Leave the tube on its side while it cures. Its trimmer is set as
+   lens). A few millimetres either way do not matter. Fix the carriage there with a dab of
+   silicone on its back edge: the cartridge's nozzle reaches it through the back, where a
+   glue gun would not. Leave the tube on its side while it cures. Its trimmer is set as
    `beam/README.md` says (step 4), with the film on.
 4. **Board.** Wire the board to the sensor as `beam/README.md` says. Fix the board, and the
    BT05 in the RP2040 kit, behind the carriage with foam tape, its LED 12 mm from the tube's
