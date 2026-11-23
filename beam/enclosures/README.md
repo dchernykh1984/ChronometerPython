@@ -44,7 +44,7 @@ FR-016). It has not been printed yet.
 | Clear neutral-cure silicone, or clear epoxy | a drop | The board's LED window. |
 | M3 x 8 screw | 2 | The back cap (they cut their thread in PETG). |
 | 1/4-20 hex nut (camera thread) | 2 | Slid into the tube's boss and the laser box's ledge. |
-| Hot glue | | The laser's board. |
+| Hot glue | | The laser's board, and over the receiver's tripod nut. |
 | Black tape (electrical tape) | a few cm | Round the sensor module in the carriage's slot. |
 | A small bag of silica gel (as comes in a shoe box) | 2 | One in each part: it keeps the lens from misting inside. |
 | A camera tripod with a pan and tilt head | 2 | One for the receiver, one for the emitter: aiming them. |
@@ -107,10 +107,12 @@ The receiver:
    screws through the tube's side holes into it, a dab of silicone on each. Fill the slot
    round the cable with silicone, and the window with clear silicone or epoxy.
 6. **Tripod.** Slide a 1/4-20 nut into the slot in the boss's top, from the tube's back end
-   side, until it drops to the bottom. The tripod's screw goes into the hole in the boss's
-   face; the plastic between them takes the pull, so a tightened screw cannot pull the nut
-   out. Tie the USB cable to a leg of the tripod, the emitter's as well: a foot caught in
-   it then pulls the tripod, not the board's socket through the silicone.
+   side, until it drops to the bottom, and put a dab of hot glue over it: the slot opens
+   along the tube, and off its tripod the receiver would shake the nut out. The tripod's
+   screw goes into the hole in the boss's face; the plastic between them takes the pull, so
+   a tightened screw cannot pull the nut out. Tie the USB cable to a leg of the tripod, the
+   emitter's as well: a foot caught in it then pulls the tripod, not the board's socket
+   through the silicone.
 
 The emitter:
 
