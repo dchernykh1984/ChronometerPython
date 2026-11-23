@@ -5,10 +5,10 @@
 ![The same parts cut open: the body's cone, window, module slot and bay under its roof; the hood's shoulder; the emitter's ledge under its roof](section.png)
 
 Made in Blender 5.3 by `embedded_enclosures.py`. `stl/` has one print file per part, already
-in its print orientation, in millimetres. `embedded_enclosures.blend` keeps the same parts for
-editing. The printer pauses, the electronics are laid in, and the print closes over them:
-three parts, all PETG, no screws, the cables and the hood sealed with neutral-cure silicone
-(spec 002, FR-013, FR-016). It has not been printed yet.
+in its print orientation, in millimetres. `embedded_enclosures.blend` keeps the same parts
+for editing. The printer pauses, the electronics are laid in, and the print closes over
+them: three parts, all PETG, no screws, the cables and the hood sealed with neutral-cure
+silicone (spec 002, FR-013, FR-016). It has not been printed yet.
 
 This is one of two versions, kept side by side until printed ones choose between them. The
 other, [`../enclosures/`](../enclosures/README.md), is assembled from six parts and can be
@@ -85,11 +85,11 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
 3. **The photoresistor.** Stick a square of red film over it, and bend its leads so that it
    faces forward, past the end of the module's board, at its middle.
 4. **The cables.** Plug an extension cable into the board, the other into the power module.
-5. **Measure.** The module's slot is 9.5 by 14.6 mm and 30 mm deep, its trimmer reached
-   8 to 22 mm from the module's front end and up to 3 mm off its middle; the bay is 56 mm
-   across and 28 deep; the emitter 60 by 26 by 20 mm inside. Parts that do not fit change the numbers at the top of
-   `embedded_enclosures.py`, under "what is laid in at the pauses"; then build the parts
-   again (below).
+5. **Measure.** The module's slot is 9.5 by 14.6 mm and 30 mm deep, its trimmer reached 8 to
+   22 mm from the module's front end and up to 3 mm off its middle; the bay is 56 mm across
+   and 28 deep; the emitter 60 by 26 by 20 mm inside. Parts that do not fit change the
+   numbers at the top of `embedded_enclosures.py`, under "what is laid in at the pauses";
+   then build the parts again (below).
 
 ## The receiver
 
