@@ -54,6 +54,9 @@ BOSS_Z = 55.0  # its middle from the tube's front: the receiver's balance, about
 CABLE_SLOT = (13.0, 8.0)  # a USB-C plug passes; silicone then fills round the cable
 LED_WINDOW_D = 5.0
 LASER_D = 6.4  # the KY-008's brass barrel
+# The first layers come out squashed wider: an edge on the bed that slides into
+# another part is chamfered by this much.
+FLARE = 0.6
 SEGMENTS = 128
 
 TUBE_ID = LENS_D + 2 * FIT
@@ -142,6 +145,14 @@ def hull(name, points):
     return new_object(name, bm)
 
 
+def bed_chamfer(name, r):
+    """A cutter taking FLARE off, at 45 degrees, the edge on the bed of a part of
+    radius r."""
+    around = cylinder(name, r + 1, FLARE + 1, -1)
+    keep = cylinder(name + "_keep", r - FLARE - 1, FLARE + 1, -1, r2=r)
+    return cut(around, keep)
+
+
 def hexagon(across, turn=0.0):
     """A nut's outline: six corners, ``across`` its flats, turned by ``turn`` degrees
     from a corner on the first axis."""
@@ -199,7 +210,8 @@ def receiver_tube():
         segments=32,
         rot=ALONG_X,
     )
-    return cut(tube, bore, aperture, screws, *boss_holes())
+    flare = bed_chamfer("front_chamfer", TUBE_OD / 2)  # the hood slides over it
+    return cut(tube, bore, aperture, screws, flare, *boss_holes())
 
 
 def tripod_boss():
@@ -279,7 +291,7 @@ def sensor_carriage():
     """Slides in the bore to the focus, the LM393 module through it, then is fixed."""
     disc = cylinder("receiver_sensor_carriage", TUBE_ID / 2 - FIT, CARRIAGE_T)
     slot = box("module_slot", MODULE_SLOT[0], MODULE_SLOT[1], CARRIAGE_T + 2, z=-1)
-    return cut(disc, slot)
+    return cut(disc, slot, bed_chamfer("carriage_chamfer", TUBE_ID / 2 - FIT))
 
 
 def emitter_box():
