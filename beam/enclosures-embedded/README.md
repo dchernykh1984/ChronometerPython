@@ -96,9 +96,9 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
 1. **Print the body,** pausing at 147.0 mm. At the pause, without pushing the part off its
    bed:
    - Push the sensor module into the slot in the bay's floor, photoresistor first, its
-     parts (the trimmer) facing the side with the two holes, until its board stops. Wrap a
-     turn of black tape round it where it leaves the slot, so that no light in the bay
-     reaches the photoresistor round it.
+     parts (the trimmer) towards the trimmer's hole, a quarter turn round from the boss,
+     until its board stops. Wrap a turn of black tape round it where it leaves the slot,
+     so that no light in the bay reaches the photoresistor round it.
    - Fix the board (and the BT05) in the bay with foam tape. Stand the board on an edge
      against the wall, its LED at the window 10 mm above the bay's floor, on the same
      side as the trimmer's hole.
