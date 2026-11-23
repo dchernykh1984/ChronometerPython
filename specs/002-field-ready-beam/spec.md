@@ -46,7 +46,7 @@ the wind (FR-019, SC-007, research 11, task T023); this spec takes that over wit
 
 - Q: How does the receiver keep the sun, rain and dew off its lens? -> A: A hood reaching 100 mm
   in front of the lens, printed black like the rest of the receiver, with no cap. It is a part of
-  its own that slides over the tube: the tube and the hood in one piece, about 280 mm, would be
+  its own that slides over the tube: the tube and the hood in one piece, about 270 mm, would be
   taller than most printers print.
 - Q: How many parts, and how are they sealed? -> A: As few as can be: six printed parts, the
   receiver's tube, hood, sensor carriage and back cap, and the emitter's box and lid. Every joint
