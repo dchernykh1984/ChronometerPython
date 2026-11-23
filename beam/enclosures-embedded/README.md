@@ -119,22 +119,22 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
 3. **Focus.** Slide the hood over the body's front until a ruler from the hood's back edge
    to the body's back end reads the lens's focal length and 52 mm: 152 mm for a 100 mm
    lens. A few millimetres either way do not matter.
-4. **The trimmer.** Power the receiver and aim the laser at its lens. Through the hole
-   beside the module, about 30 mm deep, turn the trimmer with a small screwdriver whose
-   shaft is longer than that, until the board's LED, in its window, is just lit, and goes
-   out when the beam is blocked (`beam/README.md`, step 4). Then fill the hole with
-   silicone.
-5. **Seal it.** Run a bead of silicone round the hood's back edge, on the body: where the
-   hood stops is the focus, so hold it there with a strip of tape across the joint, and
-   leave the receiver lying still for a day while the silicone cures. Fill the cable's
-   slot round the cable with silicone, and the LED window with clear silicone or epoxy.
-6. **Tripod.** Slide a 1/4-20 nut into the slot in the boss's top, from the body's back end
+4. **Tripod.** Slide a 1/4-20 nut into the slot in the boss's top, from the body's back end
    side, until it drops to the bottom, and put a dab of hot glue over it: the slot opens
    along the body, and off its tripod the receiver would shake the nut out. The tripod's
    screw goes into the hole in the boss's face; the plastic between them takes the pull, so
    a tightened screw cannot pull the nut out. Tie the cable to a leg of the tripod, the
    emitter's as well: a foot caught in it then pulls the tripod, not the cable out of its
    silicone.
+5. **The trimmer.** Power the receiver on its tripod and aim the laser at its lens. Through
+   the hole beside the module, about 30 mm deep, turn the trimmer with a small screwdriver
+   whose shaft is longer than that, until the board's LED, in its window, is just lit, and
+   goes out when the beam is blocked (`beam/README.md`, step 4). Then fill the hole with
+   silicone.
+6. **Seal it.** Run a bead of silicone round the hood's back edge, on the body: where the
+   hood stops is the focus, so hold it there with a strip of tape across the joint, and
+   leave the receiver lying still for a day while the silicone cures. Fill the cable's
+   slot round the cable with silicone, and the LED window with clear silicone or epoxy.
 
 ## The emitter
 
