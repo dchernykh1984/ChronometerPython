@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.8.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.7.1...v0.8.0) (2026-11-23)
+
+
+### Features
+
+* **beam:** enclosures with the electronics printed in: three PETG parts, the lens focused by its hood ([f637d48](https://github.com/dchernykh1984/ChronometerPython/commit/f637d48b7fa1db33ea807e89d9df676b3687d87d))
+* **beam:** second enclosures: six PETG parts sealed with silicone, a 100 mm hood over the lens ([19345bc](https://github.com/dchernykh1984/ChronometerPython/commit/19345bc1bd06cce78a2fadab026c4db7aa7e15ea))
+
+
+### Bug Fixes
+
+* **beam:** a 0.6 mm chamfer on the tube's front and the carriage's bed edge, where the first layers flare ([490239a](https://github.com/dchernykh1984/ChronometerPython/commit/490239a75ccc4e67e055085620c77a8b79443d59))
+* **beam:** the enclosure script stops when it cannot find its folder, never emptying a stl/ elsewhere ([cf42704](https://github.com/dchernykh1984/ChronometerPython/commit/cf42704182e0518665b3bbc5e264b48f7ede556b))
+* **beam:** the printed-in body's trimmer hole 8 mm across, for a trimmer off the module's middle ([b2b21d0](https://github.com/dchernykh1984/ChronometerPython/commit/b2b21d04a398d539310b0b73ef02de089a035e24))
+* **beam:** the printed-in emitter 10 mm longer, so its power module and the cable's plug fit behind the laser ([ad65f80](https://github.com/dchernykh1984/ChronometerPython/commit/ad65f8058724665017caa93caf0b3032d1627271))
+
+
+### Documentation
+
+* **beam:** a bag of silica gel in each sealed part, or a cold night mists the lens from inside ([1e6e800](https://github.com/dchernykh1984/ChronometerPython/commit/1e6e80017c80a3d0aec8b5e12a2d0892cbc2561f))
+* **beam:** a brim for the tube and the hood, tall parts on narrow rings ([7a7707e](https://github.com/dchernykh1984/ChronometerPython/commit/7a7707e4894d40cf2e2dc3fbd1a9d19d254003a1))
+* **beam:** a photoresistor on leads too short to bend forward soldered on two short wires ([3165fbb](https://github.com/dchernykh1984/ChronometerPython/commit/3165fbb6405aa86e6b00413960086267f8d81343))
+* **beam:** a printed-in board re-flashed over its cable, MicroPython too, with no button to reach ([713f938](https://github.com/dchernykh1984/ChronometerPython/commit/713f9386eff8761e388941270299c5b3fab19624))
+* **beam:** a printed-in part's cable taped to the bed, so the printer's moves cannot catch it ([518cce8](https://github.com/dchernykh1984/ChronometerPython/commit/518cce858b3a84245cc2ab12aa7314742a34edc8))
+* **beam:** bare pins taped over before they are printed in, where a short cannot be reached ([bf9e869](https://github.com/dchernykh1984/ChronometerPython/commit/bf9e869305227246e3392f2cbaa05c001ec4ea29))
+* **beam:** each USB cable tied to its tripod, so a pull never reaches a board's socket ([b29f117](https://github.com/dchernykh1984/ChronometerPython/commit/b29f1171e3e3e76bbbed37bacb5d71d90d9a69fe))
+* **beam:** hot glue over the receiver's tripod nut, its slot open along the tube ([80a2514](https://github.com/dchernykh1984/ChronometerPython/commit/80a2514b3ed78862c06deebd4b4c0b0b8dc10979))
+* **beam:** the beam's and the assembled enclosures' READMEs point to the printed-in version ([a24d23d](https://github.com/dchernykh1984/ChronometerPython/commit/a24d23dfa3b7a3a199c15ac04a1edb0f76e1d393))
+* **beam:** the beam's steps say the printed-in sensor's trimmer is set after the print, through its hole ([f859dd3](https://github.com/dchernykh1984/ChronometerPython/commit/f859dd3f29da4655ce85c3ff0e5269fc5a4c5fde))
+* **beam:** the carriage fixed with silicone a nozzle reaches, the laser's barrel at its hole, not in it ([f77e1e7](https://github.com/dchernykh1984/ChronometerPython/commit/f77e1e737bc47ce5a2c8d2c5e397fd63cc1c91c1))
+* **beam:** the carriage's slot taped round the module, so no light from behind reaches the sensor ([12c2eb4](https://github.com/dchernykh1984/ChronometerPython/commit/12c2eb44830ed330fe925b7f458bd95bc9a42159))
+* **beam:** the emitter printed light, so its laser keeps cool in the sun ([fe3a7be](https://github.com/dchernykh1984/ChronometerPython/commit/fe3a7be5c998bad8415159077d5aa05bf7f8d744))
+* **beam:** the emitter's parts row says the laser shines through its hole, as the assembly has it ([d7f3a2c](https://github.com/dchernykh1984/ChronometerPython/commit/d7f3a2c5dede89902297ab3d67eb96598af57efe))
+* **beam:** the laser's load resistor stood clear of the box, its half watt hotter than PETG takes ([75f1f00](https://github.com/dchernykh1984/ChronometerPython/commit/75f1f00039c289da3729cd2ed7bfb082d3d645b3))
+* **beam:** the laser's power module every kit buys, a copy of Adafruit's 4090, so both enclosures fit it as they are ([7f78bb7](https://github.com/dchernykh1984/ChronometerPython/commit/7f78bb733f9f25142addefcdeed93b7ec3e3df54))
+* **beam:** the laser's silicone kept off its front glass, or the spot smears at 10 m ([dce8294](https://github.com/dchernykh1984/ChronometerPython/commit/dce829492a0b3530870f31f252d79846927f8c5b))
+* **beam:** the printed-in board stood on an edge, its LED at the window 10 mm over the bay's floor ([bb7ffc4](https://github.com/dchernykh1984/ChronometerPython/commit/bb7ffc451cdb8f036484f85b37172b60bd732b49))
+* **beam:** the printed-in board's buttons kept clear of its tape and the wall, or it never starts ([5991a72](https://github.com/dchernykh1984/ChronometerPython/commit/5991a723c31c606b7250f67ff126b83fe95bc032))
+* **beam:** the printed-in extension cable one that carries data, as the board is read and flashed through it ([cf27d5e](https://github.com/dchernykh1984/ChronometerPython/commit/cf27d5e74161e033c2f98dbc3c371ab049043f8f))
+* **beam:** the printed-in hood taped where it focuses while its silicone cures ([59d9c02](https://github.com/dchernykh1984/ChronometerPython/commit/59d9c026a4f59000a94c2bf01138255b63cd0545))
+* **beam:** the printed-in module's trimmer turned towards its hole, a quarter turn from the boss ([5874a81](https://github.com/dchernykh1984/ChronometerPython/commit/5874a81941428b8e60423945a475fd469c655f46))
+* **beam:** the printed-in parts list has the tape that holds the hood while its silicone cures ([013cd6c](https://github.com/dchernykh1984/ChronometerPython/commit/013cd6c89356b16d78dac96f69105ec9ce87155d))
+* **beam:** the printed-in pause tried on a small print first, and everything ready before it ([6b75045](https://github.com/dchernykh1984/ChronometerPython/commit/6b7504521767c4bd9b852bf1ed2597ab5865ab55))
+* **beam:** the printed-in README's opening and measuring lines wrapped again ([070071d](https://github.com/dchernykh1984/ChronometerPython/commit/070071ded1393628b575309e722cc9a18f9cda25))
+* **beam:** the printed-in receiver on its tripod before its trimmer is set with the laser aimed at it ([83f4a58](https://github.com/dchernykh1984/ChronometerPython/commit/83f4a58dd0e05de8d58d8fd2a5c67c94489bb0bb))
+* **beam:** the printed-in script says the hood is pulled off the body for a longer focus, not back ([1370094](https://github.com/dchernykh1984/ChronometerPython/commit/137009429d88fec153ce3bdde84b5dff0fbf4709))
+* **beam:** the printed-in trimmer 30 mm in, so a screwdriver's shaft longer than that ([e9a1a5f](https://github.com/dchernykh1984/ChronometerPython/commit/e9a1a5f871e5cb855ce0d734b38d1c4fd7d38d11))
+* **beam:** the sensor step's lines wrapped again ([4893ee8](https://github.com/dchernykh1984/ChronometerPython/commit/4893ee82496ea6deb0702699257c5276125431d7))
+* **beam:** the tube and the hood in one piece would be about 270 mm, not 280 ([a46f5ac](https://github.com/dchernykh1984/ChronometerPython/commit/a46f5acfd4cede254a5a1f1d89505a51a04bd871))
+* CLAUDE.md and AGENTS.md name both enclosure folders and their scripts ([a3a8ee1](https://github.com/dchernykh1984/ChronometerPython/commit/a3a8ee19937eb6885a9e88b46ef2bd5960632552))
+* **specs:** spec 002 keeps the printed-in enclosures beside the second ones until a print chooses ([7e9edbf](https://github.com/dchernykh1984/ChronometerPython/commit/7e9edbffc8c1632b59a34c88595cbbd9a427554f))
+* **specs:** spec 002 says which parts take a tripod's nut, not each side ([b948062](https://github.com/dchernykh1984/ChronometerPython/commit/b9480627aa30a0d3d59a7654d47a96928083ac3b))
+* **specs:** spec 002's checklist says how the second enclosures are sealed ([a53b5a9](https://github.com/dchernykh1984/ChronometerPython/commit/a53b5a9359feee4a74efd8b9ad42a844d49cb723))
+* **specs:** spec 002's second enclosures: six parts, silicone, a 100 mm hood, a red film ([b7693fc](https://github.com/dchernykh1984/ChronometerPython/commit/b7693fc47f412502733bbaa0d145140627293b6d))
+
 ## [0.7.1](https://github.com/dchernykh1984/ChronometerPython/compare/v0.7.0...v0.7.1) (2026-11-22)
 
 
