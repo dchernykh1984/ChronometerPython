@@ -116,9 +116,10 @@ Whatever is laid in is sealed in for good, and no wire can be pushed back on aft
    beside the module, turn the trimmer with a small screwdriver until the board's LED, in
    its window, is just lit, and goes out when the beam is blocked (`beam/README.md`,
    step 4). Then fill the hole with silicone.
-5. **Seal it.** Run a bead of silicone round the hood's back edge, on the body. Fill the
-   cable's slot round the cable with silicone, and the LED window with clear silicone or
-   epoxy.
+5. **Seal it.** Run a bead of silicone round the hood's back edge, on the body: where the
+   hood stops is the focus, so hold it there with a strip of tape across the joint, and
+   leave the receiver lying still for a day while the silicone cures. Fill the cable's
+   slot round the cable with silicone, and the LED window with clear silicone or epoxy.
 6. **Tripod.** Slide a 1/4-20 nut into the slot in the boss's top, from the body's back end
    side, until it drops to the bottom, and put a dab of hot glue over it: the slot opens
    along the body, and off its tripod the receiver would shake the nut out. The tripod's
