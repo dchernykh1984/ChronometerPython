@@ -171,10 +171,12 @@ lying lens up in the sun. The hood keeps off the sun further aside.
 Every opening the print leaves is sealed with neutral-cure silicone: the lens in the hood,
 the hood on the body, the cable slots and the trimmer's hole; the LED window with a clear
 one. Nothing is a gasket. The cables stay plugged in: the board is re-flashed and the power
-bank changed through them, without opening anything (FR-013). Nothing can be opened either:
-a board that fails is cut out, and its part printed again. Whether this keeps out rain, dust
-and dew, as an IP65 class, is found once the first ones are printed and sprayed (spec 002,
-T018).
+bank changed through them, without opening anything (FR-013). The board's buttons are out of
+reach, and need not be: new files go on over the cable as before (the chip's README, step
+3), and a new MicroPython too, the RP2040 sent to its bootloader by `mpremote bootloader`,
+the ESP32-C3 by esptool's own reset. Nothing can be opened either: a board that fails is cut
+out, and its part printed again. Whether this keeps out rain, dust and dew, as an IP65
+class, is found once the first ones are printed and sprayed (spec 002, T018).
 
 ## Building the parts again
 
