@@ -47,6 +47,11 @@ beam/                         everything for the beam (FR-017)
     beam_enclosures.py        the Blender script that builds every part
     beam_enclosures.blend     the parts as Blender keeps them
     stl/                      one print file per part
+  enclosures-embedded/        the other version: the electronics printed in
+    README.md                 print settings, the pauses and what is laid in, the lens
+    embedded_enclosures.py    the Blender script that builds every part
+    embedded_enclosures.blend the parts as Blender keeps them
+    stl/                      one print file per part
 app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py; ble.py
 ```
 
@@ -92,7 +97,8 @@ app/connectors/boards/        rp2040.py, esp32c3.py; protocol.py; usb_serial.py;
 10. **The lens.** The first receiver is made for a 60 mm lens of about 100 mm focal length (a 3x
     hand magnifier's): FR-009's 2 cm of wavering at 10 m leaves the spot on it with room to spare.
     The sensor slides in its tube to find the focus, and a hood of 100 mm shades the lens; another
-    lens changes three numbers in the Blender script.
+    lens changes three numbers in the Blender script. Printed in, the sensor is fixed and the
+    hood, the lens in it, slides on the body instead.
 11. **A clock read all the time, checked on every board.** The mapping is read anew at every
     answer, never once at the connection (FR-022): set once, its own error would stay for the
     race and the crystal's tens of ppm (the prototype's about +46 and -41, 150 to 170 ms an hour)
