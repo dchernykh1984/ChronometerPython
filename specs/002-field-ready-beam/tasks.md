@@ -35,6 +35,9 @@
 
 - [x] T012 Blender (through its MCP bridge): receiver with the lens tube, emitter, board box, TPU
   gaskets, tripod mount; STL and the .blend; `beam/enclosures/README.md`
+- [x] T023 The second enclosures (2026-11-23): six PETG parts sealed with neutral-cure silicone, a
+  100 mm hood over the lens, the tripod's nuts held by the plastic between them and the tripod;
+  `beam/enclosures/`
 - [x] T013 `beam/README.md`: the two kits, parts with prices, wiring, flashing, the apps, trouble
 - [x] T014 `CLAUDE.md` and `AGENTS.md`: the beam folder and its rules
 - [x] T021 `beam/tools/clock_check.py`: the clock check of FR-022, over USB and Bluetooth at

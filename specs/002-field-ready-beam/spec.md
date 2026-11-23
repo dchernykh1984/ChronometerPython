@@ -42,6 +42,18 @@ the wind (FR-019, SC-007, research 11, task T023); this spec takes that over wit
 - Q: FR-008 asked for the power level, which a power bank does not tell: what now? -> A: No level
   is reported; the power banks last the whole race (the owner).
 
+### Session 2026-11-23
+
+- Q: How does the receiver keep the sun, rain and dew off its lens? -> A: A hood reaching 100 mm
+  in front of the lens, printed black like the rest of the receiver, with no cap. It is a part of
+  its own that slides over the tube: the tube and the hood in one piece, about 280 mm, would be
+  taller than most printers print.
+- Q: How many parts, and how are they sealed? -> A: As few as can be: six printed parts, the
+  receiver's tube, hood, sensor carriage and back cap, and the emitter's box and lid. Every joint
+  is sealed with neutral-cure silicone instead of TPU gaskets; two M3 screws hold the back cap, so
+  that it can be opened, and a 1/4-20 nut slid into each side takes a tripod.
+- Q: Where is the red filter? -> A: A red film on the photoresistor, no part of its own.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The board's own time, whatever the link (Priority: P1)
@@ -238,13 +250,14 @@ unpinned kit is built differently each time.
 - **FR-011**: The beam MUST work with its parts 10 to 12 m apart.
 - **FR-012**: The beam MUST ride out the wind by a lens: the laser's spot caught by a lens of 5 to
   7.5 cm, wide enough for FR-009's wavering, with the sensor at its focus in a black tube behind a
-  red filter. An industrial retroreflective sensor was weighed and set aside: the ones that reach
+  red filter (a red film on the photoresistor), and a hood reaching 100 mm in front of the lens.
+  An industrial retroreflective sensor was weighed and set aside: the ones that reach
   10 to 12 m cost several times FR-020's limit, and the ones within it reach 2 to 4 m.
 - **FR-013**: The emitter and the receiver MUST be sealed against rain, dust and dew, as an IP65
   class at least, IP67 aimed, while keeping a clear optical window, a way to aim, and a way to charge
-  and re-flash without breaking the seal. Sealing is required; the way (potting in a compound, a
-  conformal coating, or a gasketed enclosure) is chosen once the first printed enclosures have been
-  tried, and until then the enclosures leave room for any of them.
+  and re-flash without breaking the seal. Sealing is required; the second enclosures seal every
+  joint with neutral-cure silicone (the owner, 2026-11-23). Whether that holds is found once they
+  are printed and tried; potting in a compound or a conformal coating stay the fallbacks.
 - **FR-014**: The board MUST help aiming: its light shows whether the beam reaches the receiver, and
   it tells the app the light's state, as `STATUS` does today.
 - **FR-015**: On request the board MUST light a light the PhotoFinish cameras see at 10 m in
@@ -253,8 +266,9 @@ unpinned kit is built differently each time.
 - **FR-016**: Every part MUST have a 3D-printable enclosure and mount -- the emitter, the receiver,
   the board with its battery, and a stand or a stake mount that keeps the beam off a ramp with a way
   to aim -- kept in the repository as editable source models, print-ready files, and the print
-  settings: PETG, fit for sun and rain, with TPU for gaskets and other soft parts. The models are
-  made in Blender.
+  settings: PETG, fit for sun and rain, its joints sealed with neutral-cure silicone. As few parts
+  as can be, none taller than 180 mm, so a hobby printer prints them. The models are made in
+  Blender.
 - **FR-017**: The repository MUST keep everything for the beam in one folder next to the code: a
   README for the kits (what to buy with prices, how to wire, flash and use them), the firmware with
   a subfolder for each chip or board, and the enclosure models in a subfolder; each subfolder with
@@ -335,12 +349,12 @@ unpinned kit is built differently each time.
   whether the ESP32-C3's firmware offers the HM-10's service as well, so the apps read one, or the
   apps read both.
 - The USB cable version stays as it is, the fallback and the choice of whoever has no Bluetooth.
-- Parts are printed on a hobby FDM printer, in PETG, with TPU for soft parts.
+- Parts are printed on a hobby FDM printer, in PETG, and sealed with silicone.
 - Two kits are built first, both on Bluetooth: the RP2040-Zero with a BT05 (an HM-10 clone on the
   CC2541) and an ESP32-C3 SuperMini, each with an LM393 light sensor on a photoresistor and a KY-008
   laser; the lenses are bought once one has been tried.
-- The hardware choices are made in this PR; only the way of sealing waits, for the first printed
-  enclosures (FR-013).
+- The hardware choices are made in this PR; only whether the silicone seals well enough waits, for
+  the first printed enclosures (FR-013).
 - Chips and video analysis are out of scope: their own specs cover them.
 - This spec takes over spec 001's FR-019, SC-007 and task T023; once it is planned, 001 points
   here.
