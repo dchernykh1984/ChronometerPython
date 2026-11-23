@@ -28,7 +28,7 @@ FR-016). It has not been printed yet.
 - The tallest part is the tube, 172 mm, standing on its front: the boss beneath it slopes at
   45 degrees towards the bed, so it needs no support. The hood is 115 mm tall, on its front
   rim. A hood of its own lets the tube print on any printer of 180 mm or more; the two in one
-  piece would be about 280 mm.
+  piece would be about 270 mm.
 - **A 5 mm brim for the tube and the hood.** Each stands on a ring a few millimetres wide,
   and a tall part on so little can come off the bed late in its print.
 
