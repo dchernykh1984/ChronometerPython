@@ -69,7 +69,7 @@ opened again.
 | 1/4-20 hex nut (camera thread) | 2 | One slid into the body's boss after the print, one into the emitter's ledge at its pause. |
 | Hot glue | | The emitter's nut, its laser's board and barrel; over the body's nut. |
 | Foam tape, double-sided | a few cm | The board, the BT05 and the power module, fixed in place at the pause. |
-| Black tape (electrical tape) | a few cm | Round the sensor module where it leaves its slot. |
+| Black tape (electrical tape) | a few cm | Round the sensor module where it leaves its slot; across the hood's joint while its silicone cures. |
 | A small bag of silica gel (as comes in a shoe box) | 2 | One in each part, laid in at the pause: it keeps the lens from misting inside. |
 | A camera tripod with a pan and tilt head | 2 | One for the receiver, one for the emitter: aiming them. |
 
