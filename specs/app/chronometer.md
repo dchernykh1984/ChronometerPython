@@ -103,8 +103,10 @@ Under the slots:
 - **Group start**: "Start" stamps the time; "Save group" appends `group#time#` to the groups file,
   removes the group from the list and keeps the time for the next group. With **Beam records** at
   "Group starts", a beam break stamps no slot: the first one with a group chosen fills its time
-  field as "Start" does, and the breaks after it are no start until "Save group" (they stay in the
-  beam file; one a minute on is named once in the action log, as is a break with no group chosen).
+  field, unless the judge gave a start by hand ("Start", or a time typed), which no break
+  replaces; the breaks after it are no start until "Save group". Every break stays in the beam
+  file; each one with no group chosen is named in the action log, and the first no-start break
+  over a minute after the beam's start is named once.
 
 ## Files
 
