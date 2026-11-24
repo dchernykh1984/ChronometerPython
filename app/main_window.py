@@ -1968,7 +1968,8 @@ class MainWindow(QMainWindow):
         self._save_backup_if_enabled()  # with its line, the group still chosen
         self._group_armed = True  # the next break is the next group's start
         self._upload_group_stream()
-        self._combo_group.removeItem(self._combo_group.currentIndex())
+        # By its name: an editable combo's index does not follow the text typed in it.
+        self._combo_group.removeItem(self._combo_group.findText(group))
         self._combo_group.setCurrentText("")
         # The time stays: groups often set off together, and saving each of them
         # would otherwise mean copying the same start time back in every time.

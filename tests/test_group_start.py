@@ -10,6 +10,7 @@ from __future__ import annotations
 from unittest.mock import Mock
 
 import pytest
+from PySide6.QtTest import QTest
 
 from app import main_window as mw
 
@@ -60,6 +61,18 @@ def test_saving_a_group_still_clears_the_group_name(win):
     assert win._combo_group.currentText() == ""
     items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
     assert items == ["GroupB"]
+
+
+def test_saving_a_typed_group_removes_that_group_from_the_list(win):
+    # Typed, not picked: the combo's index stays on M40, the first one listed.
+    _set_groups(win, "M40", "W30", "Juniors")
+    win._combo_group.lineEdit().clear()
+    QTest.keyClicks(win._combo_group.lineEdit(), "Juniors")
+    win._edit_group_time.setText("0 10:00:00.000")
+    win._on_save_group()
+    assert _group_lines(win) == ["Juniors#0 10:00:00.000#"]
+    items = [win._combo_group.itemText(i) for i in range(win._combo_group.count())]
+    assert items == ["M40", "W30"]
 
 
 def test_start_replaces_the_kept_time(win, monkeypatch):
