@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.1](https://github.com/dchernykh1984/ChronometerPython/compare/v0.8.0...v0.8.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **groups:** saving a group typed in takes that group off the list, not another one ([e4038fc](https://github.com/dchernykh1984/ChronometerPython/commit/e4038fcc66bb8cc26f819792f366ce0fd27cb52a))
+
+
+### Documentation
+
+* **specs:** a beam break and the second judge's FINISH come in at the bottom slot with the Next number ([5f4e236](https://github.com/dchernykh1984/ChronometerPython/commit/5f4e236fdcfd6b7f333e56d391f9406da2d87fcb))
+* **specs:** a beam break takes a slot with Beam records at Rider cutoffs, and starts the group at Group starts ([71a8a23](https://github.com/dchernykh1984/ChronometerPython/commit/71a8a23a33d220b58adf69afd58aa98e47b6e3f9))
+* **specs:** a start given by hand is never replaced by a beam break, and every break with no group chosen is named ([478e822](https://github.com/dchernykh1984/ChronometerPython/commit/478e822b016c3ecb90ef8cac97f00e7620ab9fdb))
+* **specs:** any edit of the group's time field by hand, emptying it too, keeps the beam from filling it ([c204898](https://github.com/dchernykh1984/ChronometerPython/commit/c204898fd3bf32e9d45b43c006812a41e87f9905))
+* **specs:** Beam records is locked while a source runs, and kept in the sources file ([ac97cd1](https://github.com/dchernykh1984/ChronometerPython/commit/ac97cd12d14a3b45f20a1a8baed36794265a02c2))
+* **specs:** the quickstart's beam break comes in at the bottom slot with the Next number ([cb3a15b](https://github.com/dchernykh1984/ChronometerPython/commit/cb3a15bad4b8b5658949785d04033aa456c8a8e0))
+* **specs:** the source choices are free again at Stop; only the paths and Load race config wait for the connector to end ([788e863](https://github.com/dchernykh1984/ChronometerPython/commit/788e86375ced2a24afdf5342e63438ea62030c47))
+
 ## [0.8.0](https://github.com/dchernykh1984/ChronometerPython/compare/v0.7.1...v0.8.0) (2026-11-23)
 
 
