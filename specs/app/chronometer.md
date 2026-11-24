@@ -25,13 +25,13 @@ Five slots on the left, each a number field and a time field. The time field hol
   a second person presses it while the judge types numbers.
 - **Crosses** shows how often each slot's number already appears in the results file and the slots;
   "FINISH ALL" lights up when one reaches **Max laps**. This is a hint for the judge only.
-- A **beam break** comes in as FINISH does, with the break's time: a bottom slot without a time
-  takes it and nothing is written. When the bottom slot has a time, slot 1 is written when it holds
-  anything, the others move up and the last one gets the break's time and the "Next" number; slot
-  1 written with no number keeps its time and is named in the action log, to be given its number
-  in the Crossings tab, and while slot 1's number or time is being typed the break is not stamped
-  at all (it stays in the beam file). A write a break causes that fails is reported in the action
-  log, not in a dialog.
+- With **Beam records** at "Rider cutoffs" (the default), a **beam break** comes in as FINISH does,
+  with the break's time: a bottom slot without a time takes it and nothing is written. When the
+  bottom slot has a time, slot 1 is written when it holds anything, the others move up and the last
+  one gets the break's time and the "Next" number; slot 1 written with no number keeps its time and
+  is named in the action log, to be given its number in the Crossings tab, and while slot 1's number
+  or time is being typed the break is not stamped at all (it stays in the beam file). A write a
+  break causes that fails is reported in the action log, not in a dialog.
 
 ## Event source
 
@@ -101,7 +101,10 @@ Under the slots:
 - **DSQ** appends `number#time#DSQ#` or `number#time#DSQ: <reason>#` (`#` and line breaks stripped
   from the reason).
 - **Group start**: "Start" stamps the time; "Save group" appends `group#time#` to the groups file,
-  removes the group from the list and keeps the time for the next group.
+  removes the group from the list and keeps the time for the next group. With **Beam records** at
+  "Group starts", a beam break stamps no slot: the first one with a group chosen fills its time
+  field as "Start" does, and the breaks after it are no start until "Save group" (they stay in the
+  beam file; one a minute on is named once in the action log, as is a break with no group chosen).
 
 ## Files
 
