@@ -2,8 +2,9 @@
 
 1. `uv run python -m app.main`, choose a results file as usual.
 2. **Beam**: Event source -> Light beam, connector "Test beam", Start. Every few seconds a break
-   stamps the next empty slot; type the number and save as usual. The breaks are also in
-   `<results name>.beam_breaks.txt`.
+   comes in at the bottom slot with the number typed in Next, the slots above moving up and slot 1
+   going to the results file; a number not typed in time goes into its slot later. The breaks are
+   also in `<results name>.beam_breaks.txt`.
 3. **Chips**: write a start protocol with chips (StartProtocolMaker, or by hand):
 
    ```text
