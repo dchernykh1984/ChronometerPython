@@ -20,17 +20,18 @@ Five slots on the left, each a number field and a time field. The time field hol
 - **Finish ALL empty** stamps every slot without a time; **Clear all** empties the slots after a
   confirmation.
 - **Finish mode** chooses the action: `finish` when checked, `nextLap` otherwise.
-- **Second user mode** enables a big FINISH button that stamps the first slot without a time (or
-  shifts when all are stamped); a second person presses it while the judge types numbers.
+- **Second user mode** enables a big FINISH button that stamps the bottom slot, with the number
+  typed there or else the "Next" number, and shifts as Save+Shift does when that slot has a time;
+  a second person presses it while the judge types numbers.
 - **Crosses** shows how often each slot's number already appears in the results file and the slots;
   "FINISH ALL" lights up when one reaches **Max laps**. This is a hint for the judge only.
-- A **beam break** stamps the first slot without a time with the break's time, as FINISH does,
-  but never takes the "Next" number. When every slot has a time, slot 1 is written, the others
-  move up and the last one gets the break's time and no number; slot 1 written with no number
-  keeps its time and is named in the action log, to be given its number in the Crossings tab,
-  and while slot 1's number is being typed the break is not stamped at all (it stays in the beam
-  file). Otherwise a break writes slot 1 only once it has a number and the judge types further
-  down. A write a break causes that fails is reported in the action log, not in a dialog.
+- A **beam break** comes in as FINISH does, with the break's time: a bottom slot without a time
+  takes it and nothing is written. When the bottom slot has a time, slot 1 is written when it holds
+  anything, the others move up and the last one gets the break's time and the "Next" number; slot
+  1 written with no number keeps its time and is named in the action log, to be given its number
+  in the Crossings tab, and while slot 1's number or time is being typed the break is not stamped
+  at all (it stays in the beam file). A write a break causes that fails is reported in the action
+  log, not in a dialog.
 
 ## Event source
 
