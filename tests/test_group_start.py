@@ -97,6 +97,23 @@ def test_a_failed_write_keeps_the_time_too(win, monkeypatch):
     assert _group_lines(win) == []
 
 
+def test_a_typed_start_that_is_no_time_is_refused_saying_why(
+    win, monkeypatch, tmp_path
+):
+    """A letter O for a zero, refused as the Crossings tab refuses it: written, it would
+    stop FinishProtocolGenerator's whole protocol."""
+    warnings = []
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a: warnings.append(a[2]))
+    _set_groups(win, "J18")
+    win._combo_group.setCurrentText("J18")
+    win._edit_group_time.setText("11:1O:00")
+    win._on_save_group()
+    assert warnings == ["The time is not 'D H:M:S' or 'D H:M:S.mmm'."]
+    assert not (tmp_path / "groups.txt").exists()
+    win._start_upload.assert_not_called()
+    assert win._combo_group.currentText() == "J18"  # to be saved once corrected
+
+
 def test_saving_without_a_time_does_nothing(win):
     _set_groups(win, "GroupA")
     win._combo_group.setCurrentText("GroupA")

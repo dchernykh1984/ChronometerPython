@@ -1956,6 +1956,11 @@ class MainWindow(QMainWindow):
         time_str = self._edit_group_time.text()
         if not group or not time_str:
             return
+        if parse_time(time_str) is None:  # the Crossings tab's check of a time
+            QMessageBox.warning(
+                self, "Group start", "The time is not 'D H:M:S' or 'D H:M:S.mmm'."
+            )
+            return
         result_line = f"{group}#{time_str}#"
         ok = append_to_group_file(self._groups_path(), group, time_str)
         if not ok:
