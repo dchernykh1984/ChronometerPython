@@ -88,6 +88,9 @@ def _get_json(site_url: str, path: str, token: str) -> Any:
     Raises:
         ValueError: on HTTP error, network/timeout error, or an invalid response.
     """
+    # urllib would quote the whole address in its refusal, the token and all.
+    if not site_url.lower().startswith(("https://", "http://")):
+        raise ValueError("Not a web address: the Site URL must start with https://")
     url = (
         site_url.rstrip("/")
         + path

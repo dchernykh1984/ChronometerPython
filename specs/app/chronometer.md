@@ -159,6 +159,8 @@ Only when the site URL, token and device id are all set; otherwise nothing is se
 - "Download start protocol from the site" reads `GET /api/v1/start-list/`, the lines every device
   uploaded, merged, into the start protocol file, and only on that button. An error or an empty
   list changes nothing.
+- Both downloads carry the token in their address, so a site URL that does not start with
+  `https://` or `http://` is refused before either is asked, as "Not a web address".
 - Uploads and both downloads run on a `QThread`. What the site answers goes to the action log, and
   a download's answer also beside its button, never in a dialog, as it comes seconds after the
   click. Closing the window waits for them.
