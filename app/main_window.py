@@ -1953,7 +1953,7 @@ class MainWindow(QMainWindow):
 
     def _on_save_group(self) -> None:
         group = self._combo_group.currentText()
-        time_str = self._edit_group_time.text()
+        time_str = self._edit_group_time.text().strip()  # as checked, \r\n and all
         if not group or not time_str:
             return
         if parse_time(time_str) is None:  # the Crossings tab's check of a time
