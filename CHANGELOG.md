@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.2](https://github.com/dchernykh1984/ChronometerPython/compare/v0.8.1...v0.8.2) (2026-11-25)
+
+
+### Bug Fixes
+
+* **groups:** Save group refuses a typed start that is not D H:M:S[.mmm], as the Crossings tab does ([de1e837](https://github.com/dchernykh1984/ChronometerPython/commit/de1e837d37e54d25172d495505bfa53f60531fb8))
+* **groups:** Save group writes the start time it checked, without a pasted line break or space around it ([fe5cb09](https://github.com/dchernykh1984/ChronometerPython/commit/fe5cb091b33192bdc840852db5f4f575d2843b6c))
+* keep the time of a FINISH press or an Enter in Next in the action log when slot 1 cannot be written ([f2dfa4a](https://github.com/dchernykh1984/ChronometerPython/commit/f2dfa4aef1c7315e0bf55240e2f9e2e1c4819eba))
+* **site:** a site URL holding a space or a control character is refused before http.client can quote the token ([27080af](https://github.com/dchernykh1984/ChronometerPython/commit/27080afde328b7fdc2c7d600b9d6c5f8b9379a35))
+* **site:** a site URL without https:// is refused before Get groups or the start protocol download can show the token ([7485085](https://github.com/dchernykh1984/ChronometerPython/commit/7485085f0d4d02f7a6d7ec3fcecfaef268257174))
+
+
+### Documentation
+
+* **http:** name the Site URL that is no web address among the errors the site downloads raise ([ce61962](https://github.com/dchernykh1984/ChronometerPython/commit/ce619627ed342ac1429b2b70a92bde54ef1d4b7f))
+
 ## [0.8.1](https://github.com/dchernykh1984/ChronometerPython/compare/v0.8.0...v0.8.1) (2026-11-24)
 
 
