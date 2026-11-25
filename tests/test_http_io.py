@@ -299,3 +299,17 @@ def test_an_upload_answer_that_is_not_an_object_is_invalid(monkeypatch) -> None:
     monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering([1]))
     with pytest.raises(ValueError, match="Invalid response"):
         http_io.upload_finish_times("https://s", "tok", "dev", ["15#t#nextLap#"], 1)
+
+
+@pytest.mark.parametrize("fetch", [http_io.fetch_groups, http_io.fetch_start_list])
+def test_a_site_url_without_https_is_refused_without_the_token(fetch) -> None:
+    """urllib's own refusal quotes the address, its query with the token too, and the
+    window shows it beside the button, in the action log and so in every backup."""
+    with pytest.raises(ValueError, match="Not a web address") as refused:
+        fetch("universalbicycle.team", "SECRET-TOKEN")
+    assert "SECRET-TOKEN" not in str(refused.value)
+
+
+def test_a_site_url_in_capitals_is_still_a_web_address(monkeypatch) -> None:
+    monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering({}))
+    assert http_io.fetch_groups("HTTPS://s", "tok") == []
