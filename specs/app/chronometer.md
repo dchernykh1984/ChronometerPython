@@ -102,7 +102,8 @@ Under the slots:
 - **DSQ** appends `number#time#DSQ#` or `number#time#DSQ: <reason>#` (`#` and line breaks stripped
   from the reason).
 - **Group start**: "Start" stamps the time; "Save group" appends `group#time#` to the groups file,
-  removes the group from the list and keeps the time for the next group. With **Beam records** at
+  removes the group from the list and keeps the time for the next group; a time that is not
+  `D H:M:S[.mmm]` is refused in a dialog, as the Crossings tab refuses it. With **Beam records** at
   "Group starts", a beam break stamps no slot: the first one with a group chosen fills its time
   field, and the breaks after it are no start until "Save group". Once the judge has pressed
   "Start" or edited that field by hand (emptying it too), no break fills it until "Save group".
