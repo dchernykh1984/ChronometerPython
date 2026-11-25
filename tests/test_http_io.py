@@ -310,6 +310,25 @@ def test_a_site_url_without_https_is_refused_without_the_token(fetch) -> None:
     assert "SECRET-TOKEN" not in str(refused.value)
 
 
-def test_a_site_url_in_capitals_is_still_a_web_address(monkeypatch) -> None:
+@pytest.mark.parametrize("fetch", [http_io.fetch_groups, http_io.fetch_start_list])
+@pytest.mark.parametrize("site", ["https://s/ x", "https://s/a\tb", "https://s/\x7f"])
+def test_a_site_url_holding_a_space_or_a_control_character_is_refused(
+    monkeypatch, fetch, site
+) -> None:
+    """http.client's own refusal of one quotes the request's path, the token's query
+    too. A letter outside ASCII is let through: it fails to encode, and that message
+    names no address."""
+    monkeypatch.setattr(
+        http_io.urllib.request, "urlopen", lambda *a, **k: pytest.fail("asked")
+    )
+    with pytest.raises(ValueError, match="Not a web address") as refused:
+        fetch(site, "SECRET-TOKEN")
+    assert "SECRET-TOKEN" not in str(refused.value)
+
+
+@pytest.mark.parametrize("site", ["HTTPS://s", "http://s"])
+def test_a_site_url_in_capitals_or_over_http_is_still_a_web_address(
+    monkeypatch, site
+) -> None:
     monkeypatch.setattr(http_io.urllib.request, "urlopen", _answering({}))
-    assert http_io.fetch_groups("HTTPS://s", "tok") == []
+    assert http_io.fetch_groups(site, "tok") == []
