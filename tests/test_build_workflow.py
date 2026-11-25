@@ -87,3 +87,22 @@ def test_the_smoke_check_fails_on_a_hello_of_another_kind() -> None:
     hello = '{"type": "hello", "protocol": 1, "connector": "x", "kind": "chips"}'
     done = _smoke(sys.executable, "-c", f"print({hello!r})")
     assert done.returncode == 1
+
+
+def _job(name: str) -> str:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    match = re.search(
+        rf"^  {re.escape(name)}:\n(.*?)(?=^  \S|\Z)", text, re.MULTILINE | re.DOTALL
+    )
+    assert match is not None, f"no {name} job in {WORKFLOW.name}"
+    return match.group(1)
+
+
+def test_the_release_check_names_the_repository_for_gh() -> None:
+    # The verify job has no checkout, so gh has no git remote to read the
+    # repository off: without GH_REPO every release run stopped at
+    # "not a git repository".
+    verify = _job("verify")
+    assert re.search(
+        r"^ +GH_REPO: \$\{\{ github\.repository \}\}$", verify, re.MULTILINE
+    )
