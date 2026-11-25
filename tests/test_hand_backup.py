@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QKeyEvent
 
@@ -18,6 +19,33 @@ def _backups(win, monkeypatch):
 def _enter(win, widget, modifiers=Qt.KeyboardModifier.NoModifier):
     event = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Return, modifiers)
     assert win.eventFilter(widget, event)
+
+
+@pytest.mark.parametrize(
+    "press",
+    [
+        lambda win: win._on_finish_second_user(),
+        lambda win: _enter(win, win._next_number),  # as Save+Shift
+        lambda win: _enter(win, win._next_number, Qt.KeyboardModifier.ControlModifier),
+    ],
+    ids=["finish-button", "enter-in-next", "ctrl-enter-in-next"],
+)
+def test_a_hand_cutoff_slot_1_cannot_make_room_for_keeps_its_time(
+    win, tmp_path, monkeypatch, press
+):
+    """The results file held, as Excel holds it: the press's time, in no slot, is in
+    the action log and so in the backup, as a beam break's is in the beam file."""
+    backups = _backups(win, monkeypatch)
+    monkeypatch.setattr(mw, "get_current_time", lambda **k: "1 10:0:9.000")
+    monkeypatch.setattr(mw.QTimer, "singleShot", lambda *a: None)  # the file dialog
+    (tmp_path / "results.txt").mkdir()  # cannot be written
+    for i in range(5):
+        win._number_edits[i].setText(str(10 + i))
+        win._time_edits[i].setText(f"1 10:0:{i}.000#nextLap")
+    win._next_number.setText("6")
+    press(win)
+    said = "hand cutoff 1 10:0:9.000 not stamped: slot 1 could not be written"
+    assert backups[-1]["log_items"][-1:] == [said]
 
 
 def test_a_dsq_is_backed_up_at_once(win, monkeypatch):
