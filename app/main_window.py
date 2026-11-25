@@ -2051,11 +2051,17 @@ class MainWindow(QMainWindow):
         quiet: bool = False,
         keep_focus: bool = False,
     ) -> bool:
+        if get_next_competitor and stamp is None:  # the press's moment, before slot 1
+            stamp = get_current_time(summer_time=self._chk_summer_time.isChecked())
         number_0 = self._number_edits[0].text()
         time_0 = self._time_edits[0].text()
         if number_0 or time_0:
             ok = self._write_to_finish(number_0, time_0, quiet)
             if not ok:
+                if stamp and not quiet:  # a beam break's own line names the beam file
+                    self._append_log(
+                        f"hand cutoff {stamp} not stamped: slot 1 could not be written"
+                    )
                 return False
 
         for i in range(_N_SLOTS - 1):
@@ -2064,8 +2070,7 @@ class MainWindow(QMainWindow):
 
         if get_next_competitor:
             self._number_edits[_N_SLOTS - 1].setText(self._next_number.text())
-            t = stamp or get_current_time(summer_time=self._chk_summer_time.isChecked())
-            self._time_edits[_N_SLOTS - 1].setText(t + "#" + self._action())
+            self._time_edits[_N_SLOTS - 1].setText(f"{stamp}#{self._action()}")
             self._next_number.clear()
             if not keep_focus:
                 self._next_number.setFocus()

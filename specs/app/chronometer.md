@@ -16,7 +16,8 @@ Five slots on the left, each a number field and a time field. The time field hol
   shows a dialog.
 - **Save All and Clear** writes every filled slot; **Save+Shift** writes slot 1, moves slots 2-5 up
   and fills slot 5 with the "Next" number stamped now; Enter in "Next" does the same, Ctrl+Enter
-  stamps `nextStage` instead of the action.
+  stamps `nextStage` instead of the action. When slot 1 cannot be written nothing moves, and the
+  action log keeps the time stamped: `hand cutoff <time> not stamped: slot 1 could not be written`.
 - **Finish ALL empty** stamps every slot without a time; **Clear all** empties the slots after a
   confirmation.
 - **Finish mode** chooses the action: `finish` when checked, `nextLap` otherwise.
