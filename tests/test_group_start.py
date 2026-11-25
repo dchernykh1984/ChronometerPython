@@ -114,6 +114,17 @@ def test_a_typed_start_that_is_no_time_is_refused_saying_why(
     assert win._combo_group.currentText() == "J18"  # to be saved once corrected
 
 
+def test_a_start_pasted_with_its_line_break_is_saved_as_one_line(win, tmp_path):
+    """An Excel cell pasted keeps its line break in the field: written as it is, the
+    groups file would read back a stray '#' line, a group with no name."""
+    _set_groups(win, "J18")
+    win._combo_group.setCurrentText("J18")
+    win._edit_group_time.setText("1 11:10:00\r\n")
+    win._on_save_group()
+    groups = (tmp_path / "groups.txt").read_text(encoding="utf-8")
+    assert groups == "J18#1 11:10:00#\n"
+
+
 def test_saving_without_a_time_does_nothing(win):
     _set_groups(win, "GroupA")
     win._combo_group.setCurrentText("GroupA")
