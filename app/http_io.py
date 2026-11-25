@@ -30,7 +30,8 @@ def fetch_groups(site_url: str, token: str) -> list[str]:
     has a 10s timeout so an offline machine fails fast instead of hanging.
 
     Raises:
-        ValueError: on HTTP error, network/timeout error, or an invalid JSON response.
+        ValueError: on a Site URL that is no web address, HTTP error, network/timeout
+            error, or an invalid JSON response.
     """
     data = _get_json(site_url, "/api/v1/participants/", token)
     if not isinstance(data, dict):
@@ -59,8 +60,8 @@ def fetch_start_list(site_url: str, token: str) -> list[str]:
     start protocol file.
 
     Raises:
-        ValueError: on HTTP error, network/timeout error, an invalid response, or a
-            start list with no lines.
+        ValueError: on a Site URL that is no web address, HTTP error, network/timeout
+            error, an invalid response, or a start list with no lines.
     """
     data = _get_json(site_url, "/api/v1/start-list/", token)
     if not isinstance(data, dict):
@@ -87,7 +88,10 @@ def _get_json(site_url: str, path: str, token: str) -> Any:
     """GET a competition's path from the site; the JSON it answers with.
 
     Raises:
-        ValueError: on HTTP error, network/timeout error, or an invalid response.
+        ValueError: before any request, on a Site URL that does not start with
+            https:// or http:// or holds a space or a control character (the message
+            never quotes it); on HTTP error, network/timeout error, or an invalid
+            response.
     """
     # urllib and http.client quote the address they refuse, the token and all.
     if not site_url.lower().startswith(("https://", "http://")) or re.search(
