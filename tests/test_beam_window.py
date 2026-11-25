@@ -128,6 +128,7 @@ def test_a_break_that_finds_no_slot_says_so(win, tmp_path):
     log = [win._log.item(i).text() for i in range(win._log.count())]
     said = f"beam break {format_time(T0)} not stamped: the bottom slot has a time and"
     assert any(line.startswith(said) for line in log)
+    assert not any(line.startswith("hand cutoff") for line in log)  # said once
     beam = tmp_path / "results.beam_breaks.txt"
     assert beam.read_text(encoding="utf-8") == f"6#{format_time(T0)}##\n"
 
