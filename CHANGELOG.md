@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.3](https://github.com/dchernykh1984/ChronometerPython/compare/v0.8.2...v0.8.3) (2026-11-25)
+
+
+### Bug Fixes
+
+* **release:** the release check tells gh which repository it asks about, as it has no checkout ([b999361](https://github.com/dchernykh1984/ChronometerPython/commit/b99936103e96963d5614df85f162236d366c5950))
+
 ## [0.8.2](https://github.com/dchernykh1984/ChronometerPython/compare/v0.8.1...v0.8.2) (2026-11-25)
 
 
