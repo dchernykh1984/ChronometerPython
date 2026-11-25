@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -88,9 +89,14 @@ def _get_json(site_url: str, path: str, token: str) -> Any:
     Raises:
         ValueError: on HTTP error, network/timeout error, or an invalid response.
     """
-    # urllib would quote the whole address in its refusal, the token and all.
-    if not site_url.lower().startswith(("https://", "http://")):
-        raise ValueError("Not a web address: the Site URL must start with https://")
+    # urllib and http.client quote the address they refuse, the token and all.
+    if not site_url.lower().startswith(("https://", "http://")) or re.search(
+        r"[\x00-\x20\x7f]", site_url
+    ):
+        raise ValueError(
+            "Not a web address: the Site URL must start with https:// or http:// and "
+            "hold no space or control character"
+        )
     url = (
         site_url.rstrip("/")
         + path
