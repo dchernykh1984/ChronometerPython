@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.4](https://github.com/dchernykh1984/ChronometerPython/compare/v0.8.3...v0.8.4) (2026-11-26)
+
+
+### Bug Fixes
+
+* **beam:** a group time field emptied one key at a time takes its typing back, the minute as before it ([1a5f9e3](https://github.com/dchernykh1984/ChronometerPython/commit/1a5f9e31e9c4964b9498f9b031355bc79c789bf5))
+* **beam:** emptying the group's time field by hand starts no new minute before a break is said ([9c5c900](https://github.com/dchernykh1984/ChronometerPython/commit/9c5c900f1c5c1e5613ef22bb2051fd2a2306b1ce))
+* **beam:** the minute before a break is said as likely the next group's counts from a start given by hand too ([de9dd6e](https://github.com/dchernykh1984/ChronometerPython/commit/de9dd6e6aee2a5d626a089a36eb6a784dd2d725a))
+
 ## [0.8.3](https://github.com/dchernykh1984/ChronometerPython/compare/v0.8.2...v0.8.3) (2026-11-25)
 
 
