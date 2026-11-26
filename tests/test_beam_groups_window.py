@@ -179,6 +179,25 @@ def test_a_field_emptied_by_hand_starts_no_minute(win):
     )
 
 
+def test_a_field_emptied_key_by_key_takes_its_typing_back(win):
+    """Every Backspace but the last leaves text, a start typed; the last one empties the
+    field and puts the minute back as it was before the typing."""
+    win._start_upload = Mock()  # Save group uploads; the network is not tested here
+    _group_starts(win)
+    win._on_source_event(Break(1, T0))  # M40 started by the beam
+    win._on_save_group()
+    _group_starts(win, "W30")
+    _clock_at(win, T0 + 170_000)
+    win._edit_group_time.end(False)
+    for _ in win._edit_group_time.text():
+        QTest.keyClick(win._edit_group_time, Qt.Key.Key_Backspace)
+    assert win._edit_group_time.text() == ""
+    win._on_source_event(Break(2, T0 + 180_000))  # W30's start, 10 s on
+    assert _said(win)[-1].startswith(
+        f"beam break {format_time(T0 + 180_000)} is no start: the start in the group's"
+    )
+
+
 def test_a_break_with_no_group_chosen_starts_none_and_says_so(win):
     win._combo_beam_records.setCurrentIndex(win._combo_beam_records.findData("groups"))
     win._combo_group.setCurrentText("")

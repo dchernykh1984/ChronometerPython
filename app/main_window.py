@@ -539,6 +539,9 @@ class MainWindow(QMainWindow):
         # breaks of its riders that follow are not starts, until Save group.
         self._group_armed = True
         self._group_started_ms, self._group_warned = 0, False
+        # The minute as it was before the judge typed in the time field, put back
+        # when they empty it: at once or one key at a time, the typing is undone.
+        self._minute_before_typing: tuple[int, bool] | None = None
         self._btn_source_start = QPushButton("Start")
         self._btn_source_stop = QPushButton("Stop")
         self._lbl_source_state = QLabel("stopped")
@@ -1003,6 +1006,7 @@ class MainWindow(QMainWindow):
         elif self._group_armed:
             self._group_armed = False
             self._group_started_ms, self._group_warned = at_ms, False
+            self._minute_before_typing = None
             self._edit_group_time.setText(stamp)
             self._append_log(
                 f"group {group} started by the beam at {stamp}: Save group"
@@ -1946,13 +1950,18 @@ class MainWindow(QMainWindow):
         )
         self._group_armed = False  # the judge's own start: no break replaces it
         self._group_started_ms, self._group_warned = self._event_ms(None), False
+        self._minute_before_typing = None
         self._save_backup_if_enabled()
 
     def _on_group_time_typed(self, text: str) -> None:
         """A start the judge types stays theirs: no break replaces it until Save."""
         self._group_armed = False
-        if text.strip():  # an emptied field holds no start to count a minute from
+        if self._minute_before_typing is None:
+            self._minute_before_typing = (self._group_started_ms, self._group_warned)
+        if text.strip():
             self._group_started_ms, self._group_warned = self._event_ms(None), False
+        else:  # emptied, at once or key by key: the typing is taken back
+            self._group_started_ms, self._group_warned = self._minute_before_typing
 
     def _on_save_group(self) -> None:
         group = self._combo_group.currentText()
@@ -1975,6 +1984,7 @@ class MainWindow(QMainWindow):
         self._append_log(result_line)
         self._save_backup_if_enabled()  # with its line, the group still chosen
         self._group_armed = True  # the next break is the next group's start
+        self._minute_before_typing = None  # the typed start is saved: no taking it back
         self._upload_group_stream()
         # By its name: an editable combo's index does not follow the text typed in it.
         self._combo_group.removeItem(self._combo_group.findText(group))
