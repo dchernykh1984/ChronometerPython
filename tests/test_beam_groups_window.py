@@ -10,6 +10,7 @@ from __future__ import annotations
 from unittest.mock import Mock
 
 import pytest
+from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
 
 from app import sources_config as sources
@@ -158,6 +159,24 @@ def test_a_group_said_once_leaves_the_next_started_by_hand_to_be_said(win, by_ha
     win._on_source_event(Break(4, T0 + 200_000))  # Save group forgotten again
     assert "is not saved yet; Save group" in _said(win)[-1]
     assert win._log.count() == count + 1
+
+
+def test_a_field_emptied_by_hand_starts_no_minute(win):
+    """An emptied field holds no start: the next group's break, its start missed, is
+    named at once with its time, the minute counted from the last start."""
+    win._start_upload = Mock()  # Save group uploads; the network is not tested here
+    _group_starts(win)
+    win._on_source_event(Break(1, T0))  # M40 started by the beam
+    win._on_save_group()
+    _group_starts(win, "W30")
+    _clock_at(win, T0 + 170_000)
+    win._edit_group_time.selectAll()
+    QTest.keyClick(win._edit_group_time, Qt.Key.Key_Backspace)
+    assert win._edit_group_time.text() == ""
+    win._on_source_event(Break(2, T0 + 180_000))  # W30's start, 10 s on
+    assert _said(win)[-1].startswith(
+        f"beam break {format_time(T0 + 180_000)} is no start: the start in the group's"
+    )
 
 
 def test_a_break_with_no_group_chosen_starts_none_and_says_so(win):

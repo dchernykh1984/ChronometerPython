@@ -109,7 +109,8 @@ Under the slots:
   "Start" or edited that field by hand (emptying it too), no break fills it until "Save group".
   Every break stays in the beam file; each one with no group chosen is named in the action log,
   and the first no-start break over a minute after the group was started -- by the beam, by
-  "Start" or by typing its time, whatever time was typed -- is named once.
+  "Start" or by typing its time, whatever time was typed, not by an edit that empties the field
+  -- is named once.
 
 ## Files
 

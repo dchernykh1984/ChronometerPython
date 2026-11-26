@@ -1948,10 +1948,11 @@ class MainWindow(QMainWindow):
         self._group_started_ms, self._group_warned = self._event_ms(None), False
         self._save_backup_if_enabled()
 
-    def _on_group_time_typed(self, _text: str) -> None:
+    def _on_group_time_typed(self, text: str) -> None:
         """A start the judge types stays theirs: no break replaces it until Save."""
         self._group_armed = False
-        self._group_started_ms, self._group_warned = self._event_ms(None), False
+        if text.strip():  # an emptied field holds no start to count a minute from
+            self._group_started_ms, self._group_warned = self._event_ms(None), False
 
     def _on_save_group(self) -> None:
         group = self._combo_group.currentText()
