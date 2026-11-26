@@ -7,6 +7,9 @@ Save group. Every break is in the beam file all the same.
 
 from __future__ import annotations
 
+from unittest.mock import Mock
+
+import pytest
 from PySide6.QtTest import QTest
 
 from app import sources_config as sources
@@ -107,6 +110,54 @@ def test_a_break_long_after_a_start_not_saved_is_said_once_as_likely_a_group(win
     win._on_source_event(Break(4, T0 + 95_000))
     assert win._log.count() == count + 1  # said once
     assert win._edit_group_time.text() == format_time(T0)  # the start kept
+
+
+def _clock_at(win, ms: int) -> None:
+    """The window's clock reads ``ms`` now; a break keeps its own time."""
+    win._device_clock.system = lambda: ms / 1000
+
+
+def _press_start(win) -> None:
+    win._btn_start_group.click()
+
+
+def _type_a_start(win) -> None:
+    win._edit_group_time.clear()
+    QTest.keyClicks(win._edit_group_time, "1 12:00:00.000")
+
+
+@pytest.mark.parametrize("by_hand", [_press_start, _type_a_start])
+def test_a_riders_break_just_after_a_start_given_by_hand_is_not_said(win, by_hand):
+    """The minute counts from the judge's own start too, not from a beam start that
+    never came."""
+    _group_starts(win)
+    _clock_at(win, T0)
+    by_hand(win)
+    count = win._log.count()
+    win._on_source_event(Break(1, T0 + 3_000))  # the group's first rider
+    assert win._log.count() == count  # nothing said for it
+    win._on_source_event(Break(2, T0 + 90_000))  # the next group, Save forgotten
+    assert "is not saved yet; Save group" in _said(win)[-1]
+
+
+@pytest.mark.parametrize("by_hand", [_press_start, _type_a_start])
+def test_a_group_said_once_leaves_the_next_started_by_hand_to_be_said(win, by_hand):
+    """A group said once leaves the next one, started by hand, to be said again."""
+    win._start_upload = Mock()  # Save group uploads; the network is not tested here
+    _group_starts(win)
+    win._on_source_event(Break(1, T0))  # the beam's start
+    win._on_source_event(Break(2, T0 + 90_000))  # Save group forgotten: said
+    assert "is not saved yet; Save group" in _said(win)[-1]
+    win._on_save_group()
+    _group_starts(win, "W30")
+    _clock_at(win, T0 + 120_000)
+    by_hand(win)
+    count = win._log.count()
+    win._on_source_event(Break(3, T0 + 123_000))  # its first rider
+    assert win._log.count() == count
+    win._on_source_event(Break(4, T0 + 200_000))  # Save group forgotten again
+    assert "is not saved yet; Save group" in _said(win)[-1]
+    assert win._log.count() == count + 1
 
 
 def test_a_break_with_no_group_chosen_starts_none_and_says_so(win):
