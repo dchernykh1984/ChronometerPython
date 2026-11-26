@@ -198,6 +198,68 @@ def test_a_field_emptied_key_by_key_takes_its_typing_back(win):
     )
 
 
+def _typed(win, at_ms: int) -> None:
+    _clock_at(win, at_ms)
+    win._edit_group_time.clear()
+    QTest.keyClicks(win._edit_group_time, "1 12:00:00.000")
+
+
+def _emptied(win) -> None:
+    win._edit_group_time.selectAll()
+    QTest.keyClick(win._edit_group_time, Qt.Key.Key_Backspace)
+
+
+def _saved_then_emptied(win) -> int:
+    """M40's time typed and saved; W30's field emptied 10 s on."""
+    _group_starts(win)
+    _typed(win, T0)
+    win._on_save_group()
+    _group_starts(win, "W30")
+    _clock_at(win, T0 + 10_000)
+    _emptied(win)
+    return T0 + 20_000
+
+
+def _started_then_emptied(win) -> int:
+    """A time typed, then Start 5 s on, then the field emptied."""
+    _group_starts(win)
+    _typed(win, T0)
+    _clock_at(win, T0 + 5_000)
+    win._btn_start_group.click()
+    _clock_at(win, T0 + 8_000)
+    _emptied(win)
+    return T0 + 12_000
+
+
+def _beam_started_then_emptied(win) -> int:
+    """A time typed while the beam records riders; then Group starts, the beam starting
+    M40 5 s on, and the field emptied."""
+    win._combo_source.setCurrentIndex(win._combo_source.findData("beam"))
+    win._combo_group.addItem("M40")
+    win._combo_group.setCurrentText("M40")
+    _typed(win, T0)
+    win._combo_beam_records.setCurrentIndex(win._combo_beam_records.findData("groups"))
+    win._on_source_event(Break(1, T0 + 5_000))
+    _emptied(win)
+    return T0 + 15_000
+
+
+@pytest.mark.parametrize(
+    "newer_start",
+    [_saved_then_emptied, _started_then_emptied, _beam_started_then_emptied],
+)
+def test_a_field_emptied_after_a_newer_start_takes_back_no_more_than_its_own_typing(
+    win, newer_start
+):
+    """Save group, Start and a beam start forget the minute a typing before them
+    remembered: emptied after them, the field leaves the newer start's minute."""
+    win._start_upload = Mock()  # Save group uploads; the network is not tested here
+    inside_its_minute = newer_start(win)
+    count = win._log.count()
+    win._on_source_event(Break(9, inside_its_minute))
+    assert win._log.count() == count
+
+
 def test_a_break_with_no_group_chosen_starts_none_and_says_so(win):
     win._combo_beam_records.setCurrentIndex(win._combo_beam_records.findData("groups"))
     win._combo_group.setCurrentText("")
